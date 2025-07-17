@@ -1,4 +1,3 @@
-
 {
   "name": "f1-night-tracker",
   "version": "0.1.0",
@@ -15,6 +14,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.15.0",
+    "autoprefixer": "^10.4.21",
     "next": "14.2.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
