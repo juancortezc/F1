@@ -1,0 +1,210 @@
+
+import React, { useState } from 'react';
+import { Player, Circuit } from '../types';
+import { PlusIcon, PencilIcon, TrashIcon } from './icons';
+import { useSWRConfig } from 'swr';
+
+interface AdminViewProps {
+    players: Player[];
+    circuits: Circuit[];
+    onBack: () => void;
+    pinCode: string;
+}
+
+type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | null;
+
+const UpdatePinForm: React.FC<{currentPin: string}> = ({ currentPin }) => {
+    const [newPin, setNewPin] = useState('');
+    const [confirmPin, setConfirmPin] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const { mutate } = useSWRConfig();
+
+    const handlePinUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+            setError('PIN must be exactly 4 digits.');
+            return;
+        }
+
+        if (newPin !== confirmPin) {
+            setError('PINs do not match.');
+            return;
+        }
+
+        try {
+            await fetch('/api/admin/pin', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: newPin })
+            });
+            mutate('/api/settings'); // revalidate pin
+            setSuccess('PIN updated successfully!');
+            setNewPin('');
+            setConfirmPin('');
+            setTimeout(() => setSuccess(''), 3000);
+        } catch(err) {
+            setError('Failed to update PIN.');
+        }
+    };
+
+    return (
+        <form onSubmit={handlePinUpdate} className="bg-slate-800 p-4 rounded-lg max-w-sm">
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-slate-400 mb-1 text-sm font-semibold">New 4-Digit PIN</label>
+                    <input type="password" value={newPin} onChange={e => setNewPin(e.target.value)} maxLength={4} className="w-full p-2 rounded bg-slate-700" />
+                </div>
+                 <div>
+                    <label className="block text-slate-400 mb-1 text-sm font-semibold">Confirm New PIN</label>
+                    <input type="password" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} maxLength={4} className="w-full p-2 rounded bg-slate-700" />
+                </div>
+            </div>
+            {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
+            {success && <p className="text-green-500 mt-3 text-sm">{success}</p>}
+            <button type="submit" className="w-full bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] mt-4">Update PIN</button>
+        </form>
+    );
+}
+
+const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, pinCode }) => {
+    const [editingItem, setEditingItem] = useState<EditingItem>(null);
+    const { mutate } = useSWRConfig();
+
+    const handleDeletePlayer = async (id: string) => {
+        if(window.confirm('Are you sure you want to delete this player?')) {
+            await fetch(`/api/players/${id}`, { method: 'DELETE' });
+            mutate('/api/players');
+        }
+    }
+
+    const handleDeleteCircuit = async (id: string) => {
+        if(window.confirm('Are you sure you want to delete this circuit?')) {
+            await fetch(`/api/circuits/${id}`, { method: 'DELETE' });
+            mutate('/api/circuits');
+        }
+    }
+
+    const handleSave = async (itemData: Partial<Player | Circuit>, type: 'player' | 'circuit') => {
+        const isNew = !itemData.id;
+        const url = isNew ? `/api/${type}s` : `/api/${type}s/${itemData.id}`;
+        const method = isNew ? 'POST' : 'PUT';
+        
+        await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(itemData)
+        });
+
+        mutate(`/api/${type}s`);
+        setEditingItem(null);
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto p-4 md:p-8">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold">Administration</h1>
+                <button onClick={onBack} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700">
+                    Back to Hub
+                </button>
+            </div>
+            
+            <div className="mb-8 pb-8 border-b border-slate-700">
+                <h2 className="text-2xl font-semibold mb-4">Security Settings</h2>
+                <UpdatePinForm currentPin={pinCode} />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+                {/* Players Section */}
+                <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-semibold">Players</h2>
+                        <button onClick={() => setEditingItem('new-player')} className="bg-[#FF1801] text-white p-2 rounded-full hover:bg-[#E61601]">
+                            <PlusIcon className="w-6 h-6"/>
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {players.map(player => (
+                            <div key={player.id} className="flex items-center bg-slate-800 p-2 rounded-lg">
+                                <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full mr-4"/>
+                                <span className="flex-grow font-semibold">{player.name}</span>
+                                <button onClick={() => setEditingItem(player)} className="p-2 text-slate-400 hover:text-white"><PencilIcon className="w-5 h-5"/></button>
+                                <button onClick={() => handleDeletePlayer(player.id)} className="p-2 text-slate-400 hover:text-red-500"><TrashIcon className="w-5 h-5"/></button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Circuits Section */}
+                <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-semibold">Circuits</h2>
+                        <button onClick={() => setEditingItem('new-circuit')} className="bg-[#FF1801] text-white p-2 rounded-full hover:bg-[#E61601]">
+                             <PlusIcon className="w-6 h-6"/>
+                        </button>
+                    </div>
+                     <div className="space-y-2">
+                        {circuits.map(circuit => (
+                            <div key={circuit.id} className="flex items-center bg-slate-800 p-2 rounded-lg">
+                                <img src={circuit.imageUrl} alt={circuit.name} className="w-20 h-10 object-cover rounded mr-4"/>
+                                <span className="flex-grow font-semibold">{circuit.name}</span>
+                                <button onClick={() => setEditingItem(circuit)} className="p-2 text-slate-400 hover:text-white"><PencilIcon className="w-5 h-5"/></button>
+                                <button onClick={() => handleDeleteCircuit(circuit.id)} className="p-2 text-slate-400 hover:text-red-500"><TrashIcon className="w-5 h-5"/></button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {editingItem && <EditModal item={editingItem} onSave={handleSave} onCancel={() => setEditingItem(null)} />}
+        </div>
+    );
+};
+
+const EditModal: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Circuit>, type: 'player' | 'circuit') => void, onCancel: () => void}> = ({ item, onSave, onCancel }) => {
+    const isNewPlayer = item === 'new-player';
+    const isNewCircuit = item === 'new-circuit';
+    const isPlayer = isNewPlayer || (typeof item === 'object' && item && 'imageUrl' in item && !('historicalBestLap' in item));
+    const isCircuit = isNewCircuit || (typeof item === 'object' && item && 'historicalBestLap' in item);
+
+    const [formData, setFormData] = useState(() => {
+        if (isNewPlayer || isNewCircuit) {
+            return { name: '', imageUrl: ''};
+        }
+        return { ...item };
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    }
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(formData, isPlayer ? 'player' : 'circuit');
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4">
+                    {isNewPlayer ? 'Create Player' : isNewCircuit ? 'Create Circuit' : `Edit ${(formData as Player).name}`}
+                </h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Name" required className="w-full p-2 rounded bg-slate-700"/>
+                    <input type="url" name="imageUrl" value={(formData as Player).imageUrl} onChange={handleChange} placeholder="Image URL" required className="w-full p-2 rounded bg-slate-700"/>
+                    
+                    <div className="flex justify-end gap-4 mt-6">
+                        <button type="button" onClick={onCancel} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700">Cancel</button>
+                        <button type="submit" className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601]">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+export default AdminView;

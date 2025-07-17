@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id       String @id @default(cuid())
+  name     String
+  imageUrl String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("players")
+}
+
+model Circuit {
+  id       String @id @default(cuid())
+  name     String
+  imageUrl String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("circuits")
+}
+
+model Game {
+  id       String @id @default(cuid())
+  state    Json
+  status   String @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("games")
+}
+
+model Settings {
+  id  String @id @default("singleton")
+  pin String @default("2024")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

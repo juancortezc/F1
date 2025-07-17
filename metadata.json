@@ -1,0 +1,6 @@
+{
+  "name": "F1 Night",
+  "description": "An application to track scores and lap times for F1 racing nights with friends. Set up your game, enter lap times, and see who comes out on top with detailed results and standings.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

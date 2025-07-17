@@ -1,0 +1,357 @@
+
+import React, { useState, useCallback } from 'react';
+import useSWR, { useSWRConfig } from 'swr';
+
+import LoginScreen from '../components/LoginScreen';
+import GameSetup from '../components/GameSetup';
+import RaceView from '../components/RaceView';
+import ResultsView from '../components/ResultsView';
+import HubScreen from '../components/HubScreen';
+import AdminView from '../components/AdminView';
+import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry } from '../types';
+import { F1CarIcon } from '../components/icons';
+
+type GamePhase = 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading';
+
+// API data fetching hook
+function useApiData() {
+    const { data: players, error: playersError, isLoading: playersLoading } = useSWR<Player[]>('/api/players');
+    const { data: circuits, error: circuitsError, isLoading: circuitsLoading } = useSWR<Circuit[]>('/api/circuits');
+    const { data: activeGame, error: gameError, isLoading: gameLoading } = useSWR<{game: {id: string, state: GameState} | null}>('/api/game/active');
+    const { data: settings, error: settingsError, isLoading: settingsLoading } = useSWR<{pin: string}>('/api/settings');
+    const { data: history, error: historyError, isLoading: historyLoading } = useSWR<GameHistoryEntry[]>('/api/game/history');
+    
+    const isLoading = playersLoading || circuitsLoading || gameLoading || settingsLoading || historyLoading;
+    const error = playersError || circuitsError || gameError || settingsError || historyError;
+
+    return { players, circuits, activeGame: activeGame?.game, pinCode: settings?.pin, gameHistory: history, isLoading, error };
+}
+
+
+function App() {
+  const [gamePhase, setGamePhase] = useState<GamePhase>('login');
+  const [activeTab, setActiveTab] = useState<'race' | 'results'>('race');
+  
+  const { mutate } = useSWRConfig();
+  const { players, circuits, activeGame, pinCode, gameHistory, isLoading, error } = useApiData();
+
+  const handleLoginSuccess = () => {
+    if (activeGame) {
+      const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
+      setGamePhase(isFinished ? 'results' : 'race');
+      setActiveTab(isFinished ? 'results' : 'race');
+    } else {
+      setGamePhase('hub');
+    }
+  };
+
+  const handleSetupComplete = async (settings: GameSettings) => {
+    const playerStats: Record<string, PlayerStats> = {};
+    settings.players.forEach(p => {
+        playerStats[p.id] = { totalScore: 0, bestLaps: 0, bestAverages: 0 };
+    });
+
+    const newGameState: GameState = {
+      settings,
+      circuits: settings.circuits,
+      playerOrder: settings.players.map(p => p.id),
+      currentCircuitIndex: 0,
+      currentTurn: 1,
+      currentPlayerIndex: 0,
+      circuitResults: Array(settings.circuits.length).fill(null).map((_, i) => ({ circuitId: settings.circuits[i].id, turns: [] })),
+      playerStats,
+      sessionBestLap: Infinity,
+      sessionBestAverage: Infinity,
+      lapTimesLog: [],
+    };
+    
+    try {
+      await fetch('/api/game/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: newGameState }),
+      });
+      await mutate('/api/game/active');
+      setGamePhase('race');
+    } catch(err) {
+      console.error("Failed to create game", err);
+      alert("Error: Could not start new game.");
+    }
+  };
+  
+  const handleNewGame = async () => {
+      // Starting a new game means marking the old one as complete if it exists
+      if (activeGame) {
+          try {
+              await fetch(`/api/game/update`, {
+                  method: 'PUT',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ id: activeGame.id, status: 'COMPLETED' })
+              });
+              await mutate('/api/game/active'); // This should now return null
+              await mutate('/api/game/history'); // This should now have the new entry
+          } catch(err) {
+              console.error("Failed to archive game", err);
+          }
+      }
+      setGamePhase('setup');
+  };
+  
+  const handleAdmin = () => setGamePhase('admin');
+  const handleExitAdmin = () => setGamePhase('hub');
+
+  const updateGameState = async (newState: GameState) => {
+      if (!activeGame) return;
+      try {
+          // Optimistic update
+          mutate('/api/game/active', { game: { ...activeGame, state: newState } }, false);
+          
+          await fetch(`/api/game/update`, {
+              method: 'PUT',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ id: activeGame.id, state: newState, status: 'ACTIVE' })
+          });
+          
+          // Revalidate
+          mutate('/api/game/active');
+      } catch (err) {
+          console.error("Failed to update game state:", err);
+      }
+  };
+
+  const handleTurnComplete = useCallback((playerId: string, lapTimes: number[]) => {
+    if (!activeGame) return;
+    const gameState = activeGame.state;
+    
+    let newSessionBestLap = gameState.sessionBestLap;
+    lapTimes.forEach(time => {
+        if(time < newSessionBestLap) newSessionBestLap = time;
+    });
+
+    const timesToAverage = (gameState.settings.lapsPerTurn === 5 && gameState.settings.useBest4Of5Laps)
+        ? [...lapTimes].sort((a,b) => a - b).slice(0, 4)
+        : lapTimes;
+    
+    const averageTime = Math.round(timesToAverage.reduce((a, b) => a + b, 0) / timesToAverage.length);
+    
+    let newSessionBestAverage = gameState.sessionBestAverage;
+    if (averageTime < newSessionBestAverage) {
+        newSessionBestAverage = averageTime;
+    }
+    
+    const newCircuitResults = [...gameState.circuitResults];
+    if (!newCircuitResults[gameState.currentCircuitIndex]) {
+        newCircuitResults[gameState.currentCircuitIndex] = { circuitId: gameState.circuits[gameState.currentCircuitIndex].id, turns: [] };
+    }
+    if (!newCircuitResults[gameState.currentCircuitIndex].turns[gameState.currentTurn - 1]) {
+        newCircuitResults[gameState.currentCircuitIndex].turns[gameState.currentTurn - 1] = [];
+    }
+    
+    newCircuitResults[gameState.currentCircuitIndex].turns[gameState.currentTurn - 1].push({
+        playerId,
+        lapTimes,
+        averageTime,
+        turnScore: 0,
+    });
+
+    const newLapTimesLog = [...gameState.lapTimesLog];
+    lapTimes.forEach((time, index) => {
+        newLapTimesLog.push({
+            playerId,
+            circuitName: gameState.circuits[gameState.currentCircuitIndex].name,
+            turn: gameState.currentTurn,
+            lap: index + 1,
+            time,
+        });
+    });
+
+    const isLastPlayerOfTurn = gameState.currentPlayerIndex === gameState.settings.players.length - 1;
+    let nextPlayerIndex = gameState.currentPlayerIndex + 1;
+    let nextTurn = gameState.currentTurn;
+    let newPlayerOrder = gameState.playerOrder;
+    let finalPlayerStats = gameState.playerStats;
+
+    if (isLastPlayerOfTurn) {
+        const turnResults = newCircuitResults[gameState.currentCircuitIndex].turns[gameState.currentTurn - 1];
+        const newPlayerStats: Record<string, PlayerStats> = JSON.parse(JSON.stringify(gameState.playerStats));
+        const { scoringMethod, scoringMultiplier } = gameState.settings;
+
+        const getPoints = (rank: number): number => {
+            if (rank === 0) return 3;
+            if (rank === 1) return 2;
+            if (rank === 2) return 1;
+            return 0;
+        };
+
+        const pointsThisTurn = new Map<string, number>();
+        gameState.settings.players.forEach(p => pointsThisTurn.set(p.id, 0));
+        
+        turnResults.forEach(r => r.turnScore = 0);
+
+        if (scoringMethod === 'average' || scoringMethod === 'both') {
+            const sortedByAverage = [...turnResults].sort((a, b) => (a.averageTime ?? Infinity) - (b.averageTime ?? Infinity));
+            sortedByAverage.forEach((result, rank) => {
+                let points = getPoints(rank);
+                if (scoringMethod === 'both' && scoringMultiplier?.appliesTo === 'average') {
+                    points *= scoringMultiplier.factor;
+                }
+                pointsThisTurn.set(result.playerId, (pointsThisTurn.get(result.playerId) || 0) + points);
+            });
+        }
+
+        if (scoringMethod === 'lap' || scoringMethod === 'both') {
+            const playerBests = turnResults.map(tr => ({
+                playerId: tr.playerId,
+                bestLap: Math.min(...tr.lapTimes)
+            }));
+            const sortedByLap = playerBests.sort((a, b) => a.bestLap - b.bestLap);
+            
+            sortedByLap.forEach((lapResult, rank) => {
+                let points = getPoints(rank);
+                if (scoringMethod === 'both' && scoringMultiplier?.appliesTo === 'lap') {
+                    points *= scoringMultiplier.factor;
+                }
+                pointsThisTurn.set(lapResult.playerId, (pointsThisTurn.get(lapResult.playerId) || 0) + points);
+            });
+        }
+        
+        turnResults.forEach(result => {
+            const totalTurnPoints = pointsThisTurn.get(result.playerId) || 0;
+            result.turnScore = totalTurnPoints;
+            newPlayerStats[result.playerId].totalScore += totalTurnPoints;
+        });
+        
+        finalPlayerStats = newPlayerStats;
+        nextPlayerIndex = 0;
+        nextTurn = gameState.currentTurn + 1;
+
+        newPlayerOrder = Object.entries(finalPlayerStats)
+            .sort((a, b) => (b[1] as PlayerStats).totalScore - (a[1] as PlayerStats).totalScore)
+            .map(([playerId]) => playerId);
+    }
+    
+    const newGameState = {
+      ...gameState,
+      circuitResults: newCircuitResults,
+      sessionBestLap: newSessionBestLap,
+      sessionBestAverage: newSessionBestAverage,
+      playerStats: finalPlayerStats,
+      currentPlayerIndex: nextPlayerIndex,
+      currentTurn: nextTurn,
+      playerOrder: newPlayerOrder,
+      lapTimesLog: newLapTimesLog,
+    };
+    updateGameState(newGameState);
+
+  }, [activeGame, updateGameState]);
+
+
+  const handleNextCircuit = () => {
+    if (!activeGame) return;
+    const gameState = activeGame.state;
+    const nextCircuitIndex = gameState.currentCircuitIndex + 1;
+    
+    if (nextCircuitIndex >= gameState.settings.circuits.length) {
+      handleGameEnd();
+      return;
+    }
+    
+     const newPlayerOrder = Object.entries(gameState.playerStats)
+            .sort((a, b) => (b[1] as PlayerStats).totalScore - (a[1] as PlayerStats).totalScore)
+            .map(([playerId]) => playerId);
+
+    const newGameState = {
+      ...gameState,
+      currentCircuitIndex: nextCircuitIndex,
+      currentTurn: 1,
+      currentPlayerIndex: 0,
+      playerOrder: newPlayerOrder
+    };
+    updateGameState(newGameState);
+  };
+
+  const handleGameEnd = async () => {
+      if (!activeGame) return;
+      const newGameState = {
+        ...activeGame.state,
+        currentCircuitIndex: activeGame.state.settings.circuits.length 
+      };
+      
+      try {
+        mutate('/api/game/active', { game: { ...activeGame, state: newGameState } }, false);
+        await fetch(`/api/game/update`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: activeGame.id, state: newGameState, status: 'COMPLETED' })
+        });
+        mutate('/api/game/active');
+        mutate('/api/game/history');
+        setGamePhase('results');
+        setActiveTab('results');
+      } catch (err) {
+        console.error('Failed to end game:', err)
+      }
+  };
+  
+  if (isLoading) {
+      return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  if (error) {
+      return <div className="min-h-screen flex items-center justify-center text-red-500">Error loading application data. Please try again later.</div>;
+  }
+
+  const renderContent = () => {
+    switch (gamePhase) {
+      case 'login':
+        return <LoginScreen onLoginSuccess={handleLoginSuccess} pinCode={pinCode!} />;
+      case 'hub':
+        return <HubScreen onNewGame={handleNewGame} onAdmin={handleAdmin} />;
+      case 'admin':
+        return <AdminView players={players!} circuits={circuits!} onBack={handleExitAdmin} pinCode={pinCode!} />;
+      case 'setup':
+        return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} />;
+      case 'race':
+      case 'results':
+        if (activeGame && players && circuits) {
+          const gameStateFromDB = activeGame.state;
+          const isFinished = gameStateFromDB.currentCircuitIndex >= gameStateFromDB.settings.circuits.length;
+
+          return (
+            <div className="w-full">
+                <div className="bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="flex justify-between items-center py-3 border-b border-slate-700">
+                             <div className="flex items-center gap-2">
+                                <F1CarIcon className="w-8 h-8 text-[#FF1801]" />
+                                <h1 className="text-xl font-bold">F1 Night Tracker</h1>
+                            </div>
+                            <div className="flex border border-slate-600 rounded-lg p-1">
+                                <button onClick={() => setActiveTab('race')} className={`px-3 py-1 text-sm font-semibold rounded-md ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300'}`} disabled={isFinished}>
+                                    Race
+                                </button>
+                                <button onClick={() => setActiveTab('results')} className={`px-3 py-1 text-sm font-semibold rounded-md ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300'}`}>
+                                    Results
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <main className="mt-4">
+                    {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd}/>}
+                    {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
+                    {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}
+                </main>
+            </div>
+          );
+        }
+        return <div className="text-center p-8">Loading game... Please wait.</div>;
+      default:
+        return <div>Something went wrong</div>;
+    }
+  };
+
+  return <div className="min-h-screen bg-slate-900 text-slate-50">{renderContent()}</div>;
+}
+
+export default App;
