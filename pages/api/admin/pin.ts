@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) {
         return res.status(400).json({ error: 'PIN must be a 4-digit string.' });
       }
-      await prisma.setting.upsert({
+      await prisma.settings.upsert({
         where: { id: 'singleton' },
         update: { pin },
         create: { id: 'singleton', pin },

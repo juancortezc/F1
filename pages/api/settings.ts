@@ -5,12 +5,12 @@ import prisma from '../../lib/prisma';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         try {
-            const settings = await prisma.setting.findUnique({
+            const settings = await prisma.settings.findUnique({
                 where: { id: 'singleton' },
             });
             // Ensure there's a default pin if none is found
             if (!settings) {
-                const defaultSettings = await prisma.setting.create({
+                const defaultSettings = await prisma.settings.create({
                     data: { id: 'singleton', pin: '2024' },
                 });
                 return res.status(200).json(defaultSettings);
