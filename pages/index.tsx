@@ -96,6 +96,24 @@ function App() {
       setGamePhase('setup');
   };
   
+  const handleCancelGame = async () => {
+      // Cancel current game and go to hub
+      if (activeGame) {
+          try {
+              await fetch(`/api/game/update`, {
+                  method: 'PUT',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ id: activeGame.id, status: 'COMPLETED' })
+              });
+              await mutate('/api/game/active');
+              await mutate('/api/game/history');
+          } catch(err) {
+              console.error("Failed to cancel game", err);
+          }
+      }
+      setGamePhase('hub');
+  };
+  
   const handleAdmin = () => setGamePhase('admin');
   const handleExitAdmin = () => setGamePhase('hub');
 
@@ -342,12 +360,12 @@ function App() {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        if (window.confirm('Are you sure you want to cancel this game? All progress will be lost.')) {
-                                            handleNewGame();
+                                        if (window.confirm('¿Estás seguro de que quieres cancelar este juego? Todo el progreso se perderá.')) {
+                                            handleCancelGame();
                                         }
                                     }}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
-                                    title="Cancel Game"
+                                    title="Cancelar Juego"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -361,16 +379,22 @@ function App() {
                             <div className="flex border border-slate-600 rounded-lg p-1">
                                 <button 
                                     onClick={() => setActiveTab('race')} 
-                                    className={`px-6 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
+                                    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
                                     disabled={isFinished}
                                 >
-                                    Race
+                                    Carrera
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('results')} 
-                                    className={`px-6 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Results
+                                    Resultados
+                                </button>
+                                <button
+                                    onClick={handleAdmin}
+                                    className="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+                                >
+                                    Admin
                                 </button>
                             </div>
                         </div>
@@ -393,13 +417,13 @@ function App() {
                                     className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
                                     disabled={isFinished}
                                 >
-                                    Race
+                                    Carrera
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('results')} 
                                     className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Results
+                                    Resultados
                                 </button>
                             </div>
                             
@@ -419,12 +443,12 @@ function App() {
                                 
                                 <button
                                     onClick={() => {
-                                        if (window.confirm('Are you sure you want to cancel this game? All progress will be lost.')) {
-                                            handleNewGame();
+                                        if (window.confirm('¿Estás seguro de que quieres cancelar este juego? Todo el progreso se perderá.')) {
+                                            handleCancelGame();
                                         }
                                     }}
                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
-                                    title="Cancel Game"
+                                    title="Cancelar Juego"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
