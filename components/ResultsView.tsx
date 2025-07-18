@@ -35,18 +35,18 @@ const FinalResults: React.FC<{ gameState: GameState; players: Player[]; onNewGam
     return (
         <div className="text-center p-4 md:p-8 max-w-2xl mx-auto">
             <TrophyIcon className="w-28 h-28 mx-auto text-yellow-400" />
-            <h1 className="text-4xl font-black mt-4 uppercase tracking-wider">Game Over!</h1>
-            <h2 className="text-2xl text-slate-300 mt-2">The winner is...</h2>
+            <h1 className="text-4xl font-black mt-4 uppercase tracking-wider">¡Juego Terminado!</h1>
+            <h2 className="text-2xl text-slate-300 mt-2">El ganador es...</h2>
             {winner && <div className="mt-4 flex items-center justify-center gap-4">
                 <img src={winner.player.imageUrl} alt={winner.player.name} className="w-20 h-20 rounded-full border-4 border-yellow-400" />
                 <div>
                     <p className="text-4xl font-bold text-yellow-300">{winner.player.name}</p>
-                    <p className="text-xl font-semibold text-slate-200">{winner.totalScore} Points</p>
+                    <p className="text-xl font-semibold text-slate-200">{winner.totalScore} Puntos</p>
                 </div>
             </div>}
 
             <div className="mt-8 text-left bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <h3 className="font-bold text-xl mb-3 text-center">Final Standings</h3>
+                <h3 className="font-bold text-xl mb-3 text-center">Clasificación Final</h3>
                 {finalStandings.map(({ player, totalScore }, index) => (
                     <div key={player.id} className={`flex justify-between items-center p-3 rounded mb-2 ${index === 0 ? 'bg-yellow-400/20' : 'bg-slate-700/50'}`}>
                         <div className="flex items-center gap-3">
@@ -170,21 +170,21 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                             
                             <div className="grid grid-cols-3 gap-2 mt-3 text-center">
                                 <div>
-                                    <p className="text-slate-400 text-xs font-semibold">WINS</p>
+                                    <p className="text-slate-400 text-xs font-semibold">GANA</p>
                                     <p className="font-bold text-xl text-[#FF1801]">{career?.wins ?? 0}</p>
                                 </div>
                                 <div>
-                                    <p className="text-slate-400 text-xs font-semibold">LAP REC</p>
+                                    <p className="text-slate-400 text-xs font-semibold">M VLTA</p>
                                     <p className="font-bold text-xl text-[#FF1801]">{records?.lapRecords ?? 0}</p>
                                 </div>
                                 <div>
-                                    <p className="text-slate-400 text-xs font-semibold">AVG REC</p>
+                                    <p className="text-slate-400 text-xs font-semibold">M PROM</p>
                                     <p className="font-bold text-xl text-[#FF1801]">{records?.avgRecords ?? 0}</p>
                                 </div>
                             </div>
 
                             <div className="mt-3 pt-2 border-t border-slate-700/50">
-                                <p className="text-slate-400 text-xs font-semibold">MOST WINS ON</p>
+                                <p className="text-slate-400 text-xs font-semibold">GANA MAS EN</p>
                                 <p className="font-semibold text-[#FF1801] truncate" title={career?.mostWonCircuit || 'N/A'}>
                                     {career?.mostWonCircuit || 'N/A'}
                                 </p>
@@ -194,16 +194,16 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                 })}
             </div>
 
-            <h2 className="text-2xl font-bold mt-4">All-Time Circuit Records</h2>
+            <h2 className="text-2xl font-bold mt-4">Records Históricos</h2>
             <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <label htmlFor="circuit-select" className="sr-only">Select a circuit</label>
+                <label htmlFor="circuit-select" className="sr-only">Seleccionar Circuito</label>
                 <select 
                     id="circuit-select"
                     value={selectedCircuitId} 
                     onChange={e => setSelectedCircuitId(e.target.value)}
                     className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg mb-4 focus:ring-2 focus:ring-[#FF1801] focus:border-[#FF1801]"
                 >
-                    <option value="" disabled>-- Select a circuit --</option>
+                    <option value="" disabled>-- Circuito --</option>
                     {circuits.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -213,7 +213,7 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                     <div className="space-y-4">
                         {/* Best Lap Card */}
                         <div className="bg-slate-900/50 p-4 rounded-lg">
-                            <h4 className="font-semibold text-lg">Best Lap</h4>
+                            <h4 className="font-semibold text-lg">Vuelta Rápida</h4>
                             <div className="flex justify-between items-center mt-2">
                                 <p className="font-mono text-2xl text-[#FF1801] font-bold">{formatTime(selectedCircuit.historicalBestLap)}</p>
                                 <div className="text-right">
@@ -222,7 +222,7 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                                 </div>
                             </div>
                             <p className="text-xs text-slate-500 mt-2 text-right">
-                                Record held for {calculateDaysHeld(selectedCircuit.historicalBestLapDate)}
+                                Record desde hace {calculateDaysHeld(selectedCircuit.historicalBestLapDate)}
                             </p>
                         </div>
                         {/* Best Average Card */}
@@ -236,7 +236,7 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                                 </div>
                             </div>
                             <p className="text-xs text-slate-500 mt-2 text-right">
-                                Record held for {calculateDaysHeld(selectedCircuit.historicalBestAverageDate)}
+                                Record desde hace {calculateDaysHeld(selectedCircuit.historicalBestAverageDate)}
                             </p>
                         </div>
                     </div>
@@ -336,22 +336,22 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
 
     return (
         <div className="mt-6 bg-slate-800/50 p-4 rounded-lg border border-slate-700 text-sm text-slate-300 space-y-2">
-            <h4 className="font-bold text-lg mb-2 text-center text-[#FF1801]">Scoring Rules Summary</h4>
-            <p>• <strong>Main Points:</strong> Awarded per turn based on <strong>{mainScoringText}</strong>.</p>
+            <h4 className="font-bold text-lg mb-2 text-center text-[#FF1801]">Reglas de Puntaje</h4>
+            <p>• <strong>Puntos Principales:</strong> en base a <strong>{mainScoringText}</strong>.</p>
             {scoringMethod === 'both' && scoringMultiplier && (
-                 <p className="pl-4">↳ With a <strong>x{scoringMultiplier.factor} multiplier</strong> on points for <strong>{scoringMultiplier.appliesTo === 'average' ? 'Best Average' : 'Fastest Lap'}</strong>.</p>
+                 <p className="pl-4">↳ Con un multipicador de <strong>x{scoringMultiplier.factor} </strong> en puntos de <strong>{scoringMultiplier.appliesTo === 'average' ? 'Best Average' : 'Fastest Lap'}</strong>.</p>
             )}
             {scoringMethod === 'both' && !scoringMultiplier && (
-                 <p className="pl-4">↳ Both categories are awarded equal points (3-2-1).</p>
+                 <p className="pl-4">↳ Puntos iguales en las dos opciones de puntaje (3-2-1).</p>
             )}
             {(pointsForBestLap > 0 || pointsForBestAverage > 0) && (
-                <p>• <strong>Extra Points:</strong> Awarded per <strong>{awardBestTimeFor}</strong>:
-                    <span className="ml-2">{pointsForBestLap} pt(s) for Best Lap</span>
-                    <span className="ml-2">& {pointsForBestAverage} pt(s) for Best Average.</span>
+                <p>• <strong>Puntos Extra:</strong> Entregados por <strong>{awardBestTimeFor}</strong>:
+                    <span className="ml-2">{pointsForBestLap} pt(s) por Vuelta Rápida</span>
+                    <span className="ml-2">& {pointsForBestAverage} pt(s) por Mejor Promedio.</span>
                 </p>
             )}
             {settings.lapsPerTurn === 5 && (
-                <p>• <strong>Lap Calculation:</strong> Averages are calculated using the <strong>{settings.useBest4Of5Laps ? 'best 4 of 5 laps' : 'all 5 laps'}</strong>.</p>
+                <p>• <strong>Cálculo de veutlas:</strong> Promedios se calculan en base a  <strong>{settings.useBest4Of5Laps ? 'best 4 of 5 laps' : 'all 5 laps'}</strong>.</p>
             )}
         </div>
     );
@@ -363,7 +363,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
             return (
                  <div>
                     <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700 space-y-2">
-                        <h3 className="font-bold text-xl mb-3 text-center">Current Standings</h3>
+                        <h3 className="font-bold text-xl mb-3 text-center">Posiciones</h3>
                         {sortedStandings.map(({ player, totalScore, bestLaps, bestAverages }, index) => {
                             const placements = placementStats[player.id] || { first: 0, second: 0, third: 0 };
                             return (
@@ -404,11 +404,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
                             <thead className="text-xs text-slate-400 uppercase bg-slate-700/50">
                                 <tr>
                                     <th scope="col" className="px-4 py-3">#</th>
-                                    <th scope="col" className="px-4 py-3">Circuit</th>
-                                    <th scope="col" className="px-4 py-3">Player</th>
-                                    <th scope="col" className="px-4 py-3">Turn</th>
-                                    {nightlyView === 'lap' && <th scope="col" className="px-4 py-3">Lap</th>}
-                                    <th scope="col" className="px-4 py-3 text-right">Time</th>
+                                    <th scope="col" className="px-4 py-3">Circuito</th>
+                                    <th scope="col" className="px-4 py-3">Jugador</th>
+                                    <th scope="col" className="px-4 py-3">Turno</th>
+                                    {nightlyView === 'lap' && <th scope="col" className="px-4 py-3">Vuelta</th>}
+                                    <th scope="col" className="px-4 py-3 text-right">Tiempo</th>
                                     <th scope="col" className="px-4 py-3 text-right">Delta</th>
                                 </tr>
                             </thead>
@@ -443,9 +443,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
   return (
     <div className="max-w-4xl mx-auto p-4">
         <div className="mb-4 flex border-b border-slate-700">
-             <button onClick={() => setActiveTab('standings')} className={`py-2 px-4 font-semibold ${activeTab === 'standings' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Standings</button>
-             <button onClick={() => setActiveTab('nightly')} className={`py-2 px-4 font-semibold ${activeTab === 'nightly' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Night's Results</button>
-             <button onClick={() => setActiveTab('top')} className={`py-2 px-4 font-semibold ${activeTab === 'top' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Top Stats</button>
+             <button onClick={() => setActiveTab('standings')} className={`py-2 px-4 font-semibold ${activeTab === 'standings' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Posiciones</button>
+             <button onClick={() => setActiveTab('nightly')} className={`py-2 px-4 font-semibold ${activeTab === 'nightly' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Resultados Campeonato</button>
+             <button onClick={() => setActiveTab('top')} className={`py-2 px-4 font-semibold ${activeTab === 'top' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Top </button>
         </div>
         <div>
             {renderTabContent()}

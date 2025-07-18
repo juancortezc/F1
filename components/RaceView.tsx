@@ -99,7 +99,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const handleSubmit = () => {
     const timesInMs = lapTimes.map(timeToMs).filter(ms => ms > 0);
     if (timesInMs.length !== settings.lapsPerTurn) {
-      alert(`Please enter all ${settings.lapsPerTurn} lap times.`);
+      alert(`Por favor ingresa todos los ${settings.lapsPerTurn} tiempos de vuelta.`);
       return;
     }
     onTurnComplete(currentPlayerId, timesInMs);
@@ -140,7 +140,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                   ))}
               </div>
               <button onClick={isLastCircuit ? onGameEnd : onNextCircuit} className="mt-8 w-full bg-[#FF1801] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#E61601] transition-all">
-                  {isLastCircuit ? 'View Final Results' : 'Continue to Next Circuit'}
+                  {isLastCircuit ? 'Ver Resultados Finales' : 'Continuar al Siguiente Circuito'}
               </button>
           </div>
       );
@@ -156,11 +156,11 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             <div className="flex flex-col sm:flex-row justify-between items-start">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-[#FF1801]">{currentCircuit.name}</h1>
-                    <p className="text-slate-400">Turn {currentTurn} of {settings.turnsPerCircuit}</p>
+                    <p className="text-slate-400">Turno {currentTurn} de {settings.turnsPerCircuit}</p>
                 </div>
                 <div className="text-lg font-semibold mt-2 sm:mt-0 text-right">
-                    <p>Racing: {currentPlayer.name}</p>
-                    {nextPlayer && <p className="text-sm text-slate-400">Next up: {nextPlayer.name}</p>}
+                    <p>Corriendo: {currentPlayer.name}</p>
+                    {nextPlayer && <p className="text-sm text-slate-400">Siguiente: {nextPlayer.name}</p>}
                 </div>
             </div>
         </div>
@@ -168,24 +168,24 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         {/* Best Times */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <div className="bg-slate-800 p-3 rounded-lg">
-                <h3 className="text-slate-400 text-sm font-semibold mb-2 flex items-center gap-2"><TrophyIcon className="w-4 h-4 text-[#FF1801]"/> Historical Bests</h3>
+                <h3 className="text-slate-400 text-sm font-semibold mb-2 flex items-center gap-2"><TrophyIcon className="w-4 h-4 text-[#FF1801]"/> Mejores Históricos</h3>
                 <div className="flex justify-around font-mono text-lg">
-                    <p><span className="text-xs text-slate-500">Lap:</span> {formatTime(currentCircuit.historicalBestLap)}</p>
-                    <p><span className="text-xs text-slate-500">Avg:</span> {formatTime(currentCircuit.historicalBestAverage)}</p>
+                    <p><span className="text-xs text-slate-500">Vuelta:</span> {formatTime(currentCircuit.historicalBestLap)}</p>
+                    <p><span className="text-xs text-slate-500">Prom:</span> {formatTime(currentCircuit.historicalBestAverage)}</p>
                 </div>
              </div>
              <div className="bg-slate-800 p-3 rounded-lg">
-                <h3 className="text-slate-400 text-sm font-semibold mb-2 flex items-center gap-2"><StopwatchIcon className="w-4 h-4 text-green-400"/> Session Bests</h3>
+                <h3 className="text-slate-400 text-sm font-semibold mb-2 flex items-center gap-2"><StopwatchIcon className="w-4 h-4 text-green-400"/> Mejores de la Sesión</h3>
                 <div className="flex justify-around font-mono text-lg">
-                    <p><span className="text-xs text-slate-500">Lap:</span> <span className="text-green-400">{formatTime(sessionBestLap)}</span></p>
-                    <p><span className="text-xs text-slate-500">Avg:</span> <span className="text-green-400">{formatTime(sessionBestAverage)}</span></p>
+                    <p><span className="text-xs text-slate-500">Vuelta:</span> <span className="text-green-400">{formatTime(sessionBestLap)}</span></p>
+                    <p><span className="text-xs text-slate-500">Prom:</span> <span className="text-green-400">{formatTime(sessionBestAverage)}</span></p>
                 </div>
              </div>
         </div>
 
       {/* Time Input Form */}
       <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700 space-y-4">
-        <h2 className="text-xl font-bold text-center">Enter {currentPlayer.name}'s Lap Times</h2>
+        <h2 className="text-xl font-bold text-center">Ingresa los Tiempos de Vuelta de {currentPlayer.name}</h2>
         {lapTimes.map((lapTime, i) => {
             const timeInMs = timeToMs(lapTime);
             
@@ -207,7 +207,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                 
                 return (
                   <div key={i} className="flex items-center gap-2 md:gap-4">
-                    <span className="font-bold text-slate-400 w-16">Lap {i + 1}</span>
+                    <span className="font-bold text-slate-400 w-16">Vuelta {i + 1}</span>
                     <div className="flex-1 grid grid-cols-3 gap-2">
                         <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" isBest={bestType} />
                         <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" isBest={bestType}/>
@@ -220,7 +220,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             // If no valid time yet, show normal inputs
             return (
               <div key={i} className="flex items-center gap-2 md:gap-4">
-                <span className="font-bold text-slate-400 w-16">Lap {i + 1}</span>
+                <span className="font-bold text-slate-400 w-16">Vuelta {i + 1}</span>
                 <div className="flex-1 grid grid-cols-3 gap-2">
                     <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" />
                     <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" />
@@ -252,7 +252,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                     avgBestType === 'session' ? 'border-green-500 bg-green-900/20' : 
                     'border-slate-700'
                 }`}>
-                    <p className="text-slate-400">Average Time</p>
+                    <p className="text-slate-400">Tiempo Promedio</p>
                     <p className={`text-3xl font-mono font-bold ${
                         avgBestType === 'historical' ? 'text-purple-400' : 
                         avgBestType === 'session' ? 'text-green-400' : 
@@ -274,10 +274,10 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button onClick={handleClear} className="bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
-            <span className="text-lg">↻</span> Clear Times
+            <span className="text-lg">↻</span> Limpiar Tiempos
           </button>
           <button onClick={handleSubmit} className="bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
-            <CheckCircleIcon className="w-6 h-6" /> Record Times & Finish Turn
+            <CheckCircleIcon className="w-6 h-6" /> Grabar Tiempos y Terminar Turno
           </button>
         </div>
       </div>

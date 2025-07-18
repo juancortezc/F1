@@ -293,10 +293,10 @@ function App() {
   };
   
   if (isLoading) {
-      return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+      return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
   }
   if (error) {
-      return <div className="min-h-screen flex items-center justify-center text-red-500">Error loading application data. Please try again later.</div>;
+      return <div className="min-h-screen flex items-center justify-center text-red-500">Error cargando datos. Inténtalo más tarde.</div>;
   }
 
   const renderContent = () => {
@@ -327,7 +327,7 @@ function App() {
                                     alt="F1 Logo" 
                                     className="w-8 h-6 object-contain"
                                 />
-                                <h1 className="text-lg font-bold">F1 Tracker</h1>
+                                <h1 className="text-lg font-bold">F1 Night</h1>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
@@ -383,7 +383,7 @@ function App() {
                                     alt="F1 Logo" 
                                     className="w-10 h-8 object-contain"
                                 />
-                                <h1 className="text-xl font-bold">F1 Night Tracker</h1>
+                                <h1 className="text-xl font-bold">F1 Night</h1>
                             </div>
                             
                             {/* Center: Tab Navigation */}

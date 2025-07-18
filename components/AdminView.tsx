@@ -77,7 +77,7 @@ const UpdatePinForm: React.FC<{currentPin: string}> = ({ currentPin }) => {
         <form onSubmit={handlePinUpdate} className="bg-slate-800 p-4 rounded-lg max-w-sm">
             <div className="space-y-4">
                 <div>
-                    <label className="block text-slate-400 mb-1 text-sm font-semibold">Current PIN</label>
+                    <label className="block text-slate-400 mb-1 text-sm font-semibold">PIN Actual</label>
                     <input 
                         type="password" 
                         value={inputCurrentPin} 
@@ -89,7 +89,7 @@ const UpdatePinForm: React.FC<{currentPin: string}> = ({ currentPin }) => {
                     />
                 </div>
                 <div>
-                    <label className="block text-slate-400 mb-1 text-sm font-semibold">New 4-Digit PIN</label>
+                    <label className="block text-slate-400 mb-1 text-sm font-semibold">Nuevo PIN</label>
                     <input 
                         type="password" 
                         value={newPin} 
@@ -101,7 +101,7 @@ const UpdatePinForm: React.FC<{currentPin: string}> = ({ currentPin }) => {
                     />
                 </div>
                 <div>
-                    <label className="block text-slate-400 mb-1 text-sm font-semibold">Confirm New PIN</label>
+                    <label className="block text-slate-400 mb-1 text-sm font-semibold">Confirmar Nuevo PIN</label>
                     <input 
                         type="password" 
                         value={confirmPin} 
@@ -190,14 +190,14 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, pinCod
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-8">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Administration</h1>
+                <h1 className="text-3xl font-bold">Administracion</h1>
                 <button onClick={onBack} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700">
                     Back to Hub
                 </button>
             </div>
             
             <div className="mb-8 pb-8 border-b border-slate-700">
-                <h2 className="text-2xl font-semibold mb-4">Security Settings</h2>
+                <h2 className="text-2xl font-semibold mb-4">Settings Seguridad</h2>
                 <UpdatePinForm currentPin={pinCode} />
             </div>
 
@@ -205,7 +205,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, pinCod
                 {/* Players Section */}
                 <div>
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-semibold">Players</h2>
+                        <h2 className="text-2xl font-semibold">Jugadores</h2>
                         <button onClick={() => setEditingItem('new-player')} className="bg-[#FF1801] text-white p-2 rounded-full hover:bg-[#E61601]">
                             <PlusIcon className="w-6 h-6"/>
                         </button>
@@ -225,7 +225,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, pinCod
                 {/* Circuits Section */}
                 <div>
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-semibold">Circuits</h2>
+                        <h2 className="text-2xl font-semibold">Circuitos</h2>
                         <button onClick={() => setEditingItem('new-circuit')} className="bg-[#FF1801] text-white p-2 rounded-full hover:bg-[#E61601]">
                              <PlusIcon className="w-6 h-6"/>
                         </button>
@@ -287,7 +287,7 @@ const EditModal: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Ci
         try {
             new URL(formData.imageUrl);
         } catch {
-            alert('Please enter a valid URL');
+            alert('Por favor ingresa una URL válida');
             return;
         }
         

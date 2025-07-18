@@ -67,12 +67,12 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
 
   const handleSubmit = () => {
     if (orderedPlayers.length < 2) {
-      alert("Please select and order at least 2 players.");
+      alert("Seleccionar y Ordenar al menos 2 jugadores");
       setStep(1);
       return;
     }
     if (selectedCircuits.length < 1) {
-      alert("Please select and order at least 1 circuit.");
+      alert("Seleccionar al menos 1 circuito");
       setStep(3);
       return;
     }
@@ -98,7 +98,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
       case 1: // Select Players
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-4">1. Select Players</h2>
+            <h2 className="text-2xl font-bold mb-4">1. Seleccionar Jugadores</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {allPlayers.map(player => (
                 <div key={player.id} onClick={() => handlePlayerToggle(player)} className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlayers.find(p => p.id === player.id) ? 'border-[#FF1801] bg-red-900/50' : 'border-slate-600 bg-slate-800 hover:bg-slate-700'}`}>
@@ -112,7 +112,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
       case 2: // Order Players
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">2. Set Player Order</h2>
+                <h2 className="text-2xl font-bold mb-4">2. Orden de Inicio</h2>
                 <div className="space-y-2">
                     {orderedPlayers.map((player, index) => (
                         <div key={player.id} className="flex items-center justify-between bg-slate-700 p-2 rounded-lg">
@@ -134,10 +134,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         const availableCircuits = allCircuits.filter(c => !selectedCircuits.find(sc => sc.id === c.id));
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">3. Select & Order Circuits</h2>
+                <h2 className="text-2xl font-bold mb-4">3. Selecciona & Ordenar Circuitos</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 className="font-semibold mb-2">Available Circuits</h3>
+                        <h3 className="font-semibold mb-2">Circuitos</h3>
                         <div className="space-y-2 max-h-60 overflow-y-auto p-2 bg-slate-900/50 rounded-lg">
                             {availableCircuits.map(circuit => (
                                 <div key={circuit.id} onClick={() => handleCircuitToggle(circuit)} className="p-2 bg-slate-700 rounded-lg cursor-pointer hover:bg-slate-600">
@@ -147,7 +147,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                         </div>
                     </div>
                     <div>
-                        <h3 className="font-semibold mb-2">Selected Race Order</h3>
+                        <h3 className="font-semibold mb-2">Orden de Carrrera</h3>
                         <div className="space-y-2 max-h-60 overflow-y-auto p-2 bg-slate-900/50 rounded-lg">
                            {selectedCircuits.map((circuit, index) => (
                                 <div key={circuit.id} className="flex items-center justify-between bg-slate-700 p-2 rounded-lg">
@@ -166,26 +166,26 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
       case 4: // Race Parameters
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">4. Race Parameters</h2>
+            <h2 className="text-2xl font-bold mb-6">4. Configuración</h2>
             <div className="space-y-6">
               <div>
-                <label className="block text-slate-400 mb-2">Laps per Turn</label>
+                <label className="block text-slate-400 mb-2">Vueltas por Turno</label>
                 <div className="flex gap-4">
-                  <button onClick={() => setLapsPerTurn(3)} className={`flex-1 p-3 rounded-lg ${lapsPerTurn === 3 ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>3 Laps</button>
-                  <button onClick={() => setLapsPerTurn(5)} className={`flex-1 p-3 rounded-lg ${lapsPerTurn === 5 ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>5 Laps</button>
+                  <button onClick={() => setLapsPerTurn(3)} className={`flex-1 p-3 rounded-lg ${lapsPerTurn === 3 ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>3 Vueltas</button>
+                  <button onClick={() => setLapsPerTurn(5)} className={`flex-1 p-3 rounded-lg ${lapsPerTurn === 5 ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>5 Vueltas</button>
                 </div>
               </div>
               {lapsPerTurn === 5 && (
                  <div>
-                    <label className="block text-slate-400 mb-2">For 5-lap turns, count:</label>
+                    <label className="block text-slate-400 mb-2">En 5-vueltas, valen:</label>
                      <div className="flex items-center gap-4 bg-slate-700 p-3 rounded-lg">
                         <input type="checkbox" id="best4of5" checked={useBest4Of5Laps} onChange={e => setUseBest4Of5Laps(e.target.checked)} className="h-5 w-5 rounded bg-slate-800 border-slate-600 text-[#FF1801] focus:ring-red-500"/>
-                        <label htmlFor="best4of5">Best 4 of 5 laps for average</label>
+                        <label htmlFor="best4of5">Mejores 4 de 5 vueltas para el promedio</label>
                      </div>
                  </div>
               )}
                <div>
-                <label className="block text-slate-400 mb-2">Turns per Circuit ({turnsPerCircuit})</label>
+                <label className="block text-slate-400 mb-2">Turnos por Circuito ({turnsPerCircuit})</label>
                 <input type="range" min="1" max="10" value={turnsPerCircuit} onChange={e => setTurnsPerCircuit(parseInt(e.target.value))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#FF1801]" />
               </div>
             </div>
@@ -194,31 +194,31 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
       case 5: // Points System
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">5. Points System</h2>
+            <h2 className="text-2xl font-bold mb-6">5. Puntaje</h2>
             <div className="space-y-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                <h3 className="font-semibold text-lg text-[#FF1801]">Main Scoring per Turn</h3>
-                <p className="text-sm text-slate-400">Choose how base points (1st: 3, 2nd: 2, 3rd: 1) are awarded.</p>
+                <h3 className="font-semibold text-lg text-[#FF1801]">Puntaje Principal por Turno</h3>
+                <p className="text-sm text-slate-400">Elija como asignar  (1ro: 3, 2do: 2, 3ro: 1) puntos</p>
                 <div>
-                <label className="block text-slate-400 mb-2">Award points based on:</label>
+                <label className="block text-slate-400 mb-2">Se entregan puntos en base a:</label>
                 <div className="flex gap-2">
-                    <button onClick={() => setScoringMethod('average')} className={`flex-1 p-2 rounded-lg ${scoringMethod === 'average' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Best Average</button>
-                    <button onClick={() => setScoringMethod('lap')} className={`flex-1 p-2 rounded-lg ${scoringMethod === 'lap' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Fastest Lap</button>
-                    <button onClick={() => setScoringMethod('both')} className={`flex-1 p-2 rounded-lg ${scoringMethod === 'both' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Both</button>
+                    <button onClick={() => setScoringMethod('average')} className={`flex-1 p-2 rounded-lg ${scoringMethod === 'average' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Mejor Promedio</button>
+                    <button onClick={() => setScoringMethod('lap')} className={`flex-1 p-2 rounded-lg ${scoringMethod === 'lap' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Vuelta Rápida</button>
+                    <button onClick={() => setScoringMethod('both')} className={`flex-1 p-2 rounded-lg ${scoringMethod === 'both' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Los Dos</button>
                 </div>
                 </div>
 
                 {scoringMethod === 'both' && (
                 <div className="space-y-4 pt-4 border-t border-slate-600/50">
                     <div className="flex gap-4 p-2 bg-slate-800 rounded-lg">
-                    <button onClick={() => setUseMultiplier(false)} className={`flex-1 p-2 rounded-lg ${!useMultiplier ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Equal (3-2-1 each)</button>
-                    <button onClick={() => setUseMultiplier(true)} className={`flex-1 p-2 rounded-lg ${useMultiplier ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Use Multiplier</button>
+                    <button onClick={() => setUseMultiplier(false)} className={`flex-1 p-2 rounded-lg ${!useMultiplier ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Igual (3-2-1 each)</button>
+                    <button onClick={() => setUseMultiplier(true)} className={`flex-1 p-2 rounded-lg ${useMultiplier ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Usar Multiplicador</button>
                     </div>
                     {useMultiplier && (
                     <div className="space-y-4 p-3 bg-slate-800 rounded-lg">
-                        <label className="block text-slate-400 mb-2">Apply x{multiplierFactor} multiplier to:</label>
+                        <label className="block text-slate-400 mb-2">Apply x{multiplierFactor} multiplicar por:</label>
                         <div className="flex gap-2">
-                            <button onClick={() => setMultiplierTarget('average')} className={`flex-1 p-2 rounded-lg ${multiplierTarget === 'average' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Best Average</button>
-                            <button onClick={() => setMultiplierTarget('lap')} className={`flex-1 p-2 rounded-lg ${multiplierTarget === 'lap' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Fastest Lap</button>
+                            <button onClick={() => setMultiplierTarget('average')} className={`flex-1 p-2 rounded-lg ${multiplierTarget === 'average' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Mejor Promedio</button>
+                            <button onClick={() => setMultiplierTarget('lap')} className={`flex-1 p-2 rounded-lg ${multiplierTarget === 'lap' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Vuelta Rápida</button>
                         </div>
                         <input type="range" min="2" max="5" value={multiplierFactor} onChange={e => setMultiplierFactor(parseInt(e.target.value))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#FF1801]" />
                     </div>
@@ -228,21 +228,21 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
 
             <div className="space-y-4 mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                <h3 className="font-semibold text-lg text-[#FF1801]">Extra Points</h3>
+                <h3 className="font-semibold text-lg text-[#FF1801]">Puntos Extra</h3>
                 <div>
-                    <label className="block text-slate-400 mb-2">Extra Points for Best Lap ({pointsForBestLap})</label>
+                    <label className="block text-slate-400 mb-2">Puntos extra por Vuelta Rápida ({pointsForBestLap})</label>
                     <input type="range" min="0" max="5" value={pointsForBestLap} onChange={e => setPointsForBestLap(parseInt(e.target.value))} className="w-full accent-[#FF1801]" />
                 </div>
                 <div>
-                    <label className="block text-slate-400 mb-2">Extra Points for Best Average ({pointsForBestAverage})</label>
+                    <label className="block text-slate-400 mb-2">Puntos Extra por Mejor Promedio ({pointsForBestAverage})</label>
                     <input type="range" min="0" max="5" value={pointsForBestAverage} onChange={e => setPointsForBestAverage(parseInt(e.target.value))} className="w-full accent-[#FF1801]" />
                 </div>
                 <div>
-                    <label className="block text-slate-400 mb-2">Award Extra Points Per:</label>
+                    <label className="block text-slate-400 mb-2">Entregar puntos extra por:</label>
                     <div className="flex gap-2">
-                        <button onClick={()=>setAwardBestTimeFor('turn')} className={`flex-1 p-2 rounded-lg ${awardBestTimeFor === 'turn' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Turn</button>
-                        <button onClick={()=>setAwardBestTimeFor('circuit')} className={`flex-1 p-2 rounded-lg ${awardBestTimeFor === 'circuit' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Circuit</button>
-                        <button onClick={()=>setAwardBestTimeFor('both')} className={`flex-1 p-2 rounded-lg ${awardBestTimeFor === 'both' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Both</button>
+                        <button onClick={()=>setAwardBestTimeFor('turn')} className={`flex-1 p-2 rounded-lg ${awardBestTimeFor === 'turn' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Vuelta</button>
+                        <button onClick={()=>setAwardBestTimeFor('circuit')} className={`flex-1 p-2 rounded-lg ${awardBestTimeFor === 'circuit' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Circuito</button>
+                        <button onClick={()=>setAwardBestTimeFor('both')} className={`flex-1 p-2 rounded-lg ${awardBestTimeFor === 'both' ? 'bg-[#FF1801]' : 'bg-slate-700'}`}>Los Dos</button>
                     </div>
                 </div>
             </div>
@@ -255,9 +255,9 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
 
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">6. Review & Start</h2>
+                <h2 className="text-2xl font-bold mb-4">6. Revisión e Inicio</h2>
                 <div className="bg-slate-800 p-4 rounded-lg space-y-4 text-slate-300">
-                    <div><strong>Starting Player Order:</strong>
+                    <div><strong>Orden de Jugadores:</strong>
                         <ol className="list-decimal list-inside pl-4">
                             {orderedPlayers.map(p => <li key={p.id}>{p.name}</li>)}
                         </ol>
@@ -267,12 +267,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                             {selectedCircuits.map(c => <li key={c.id}>{c.name}</li>)}
                         </ol>
                     </div>
-                    <p><strong>Laps/Turn:</strong> {lapsPerTurn} {lapsPerTurn === 5 ? `(Using best 4 laps: ${useBest4Of5Laps ? 'Yes' : 'No'})` : ''}</p>
-                    <p><strong>Turns/Circuit:</strong> {turnsPerCircuit}</p>
-                    <p><strong>Scoring Method:</strong> Based on {scoringMethod}{scoringMethod === 'both' && scoringMultiplier ? ` (x${scoringMultiplier.factor} on ${scoringMultiplier.appliesTo})` : scoringMethod === 'both' ? ' (Equal points)' : ''}</p>
-                    <p><strong>Extra Points (Best Lap):</strong> {pointsForBestLap}</p>
-                    <p><strong>Extra Points (Best Avg):</strong> {pointsForBestAverage}</p>
-                    <p><strong>Award Extra Points:</strong> Per {awardBestTimeFor}</p>
+                    <p><strong>Vueltas/Turnos:</strong> {lapsPerTurn} {lapsPerTurn === 5 ? `(Using best 4 laps: ${useBest4Of5Laps ? 'Yes' : 'No'})` : ''}</p>
+                    <p><strong>Turnos/Circuito:</strong> {turnsPerCircuit}</p>
+                    <p><strong>Sistema de Puntaje:</strong> Basado en {scoringMethod}{scoringMethod === 'both' && scoringMultiplier ? ` (x${scoringMultiplier.factor} on ${scoringMultiplier.appliesTo})` : scoringMethod === 'both' ? ' (Equal points)' : ''}</p>
+                    <p><strong>Puntos Extra (Vuelta Rápida):</strong> {pointsForBestLap}</p>
+                    <p><strong>Puntos Extra (Mejor Promedio):</strong> {pointsForBestAverage}</p>
+                    <p><strong>
+                      
+                      
+                      Entrega Puntos Extra:</strong> Por {awardBestTimeFor}</p>
                 </div>
             </div>
         );
@@ -296,15 +299,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         </div>
         <div className="flex justify-between mt-8">
           <button onClick={handleBack} disabled={step === 1} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            Back
+            Regresar
           </button>
           {step < totalSteps ? (
             <button onClick={handleNext} disabled={(step === 1 || step === 2) && selectedPlayers.length < 2 || step === 3 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed">
-              Next
+              Siguiente
             </button>
           ) : (
             <button onClick={handleSubmit} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
-              Start Game!
+              Iniciar!
             </button>
           )}
         </div>

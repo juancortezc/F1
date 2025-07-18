@@ -22,7 +22,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, pinCode }) =>
     if (pin === pinCode) {
       onLoginSuccess();
     } else {
-      setError('Invalid PIN. Please try again.');
+      setError('PIN inválido. Inténtalo de nuevo.');
       setPin('');
     }
   };
@@ -35,8 +35,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, pinCode }) =>
           alt="F1 Logo" 
           className="w-32 h-24 mx-auto object-contain"
         />
-        <h1 className="text-4xl font-bold mt-4 text-slate-100">F1 Night Tracker</h1>
-        <p className="text-slate-400 mt-2 mb-8">Enter the 4-digit PIN to continue.</p>
+        <h1 className="text-4xl font-bold mt-4 text-slate-100">F1 Night </h1>
+        <p className="text-slate-400 mt-2 mb-8">Ingrese el PIN.</p>
         
         <form onSubmit={handleSubmit}>
           <input
@@ -54,7 +54,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, pinCode }) =>
             disabled={pin.length !== 4}
             className="w-full bg-[#FF1801] text-white font-bold py-3 px-4 rounded-lg mt-6 hover:bg-[#E61601] disabled:bg-slate-700 disabled:cursor-not-allowed transition-all"
           >
-            Enter
+            INGRESAR
           </button>
         </form>
       </div>

@@ -42,13 +42,13 @@ const RecordNotification: React.FC<RecordNotificationProps> = ({
         <div className="flex items-center gap-3">
           <TrophyIcon className="w-8 h-8 text-yellow-800" />
           <div className="flex-1">
-            <h3 className="font-bold text-lg">🎉 NEW RECORD!</h3>
+            <h3 className="font-bold text-lg">🎉 NUEVO RECORD!</h3>
             <p className="text-sm opacity-90">
-              <strong>{playerName}</strong> set a new record at <strong>{circuitName}</strong>
+              <strong>{playerName}</strong> tiene nuevo record en <strong>{circuitName}</strong>
             </p>
             <div className="mt-1 text-xs">
-              {isNewBestLap && <span className="bg-red-200 text-red-800 px-2 py-1 rounded mr-2">Best Lap</span>}
-              {isNewBestAverage && <span className="bg-green-200 text-green-800 px-2 py-1 rounded">Best Average</span>}
+              {isNewBestLap && <span className="bg-red-200 text-red-800 px-2 py-1 rounded mr-2">Vuelta Reapida</span>}
+              {isNewBestAverage && <span className="bg-green-200 text-green-800 px-2 py-1 rounded">Mejor Promedio</span>}
             </div>
           </div>
           <button 
