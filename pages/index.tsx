@@ -318,19 +318,110 @@ function App() {
 
           return (
             <div className="w-full">
-                <div className="bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10">
+                <div className="bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10 shadow-lg">
                     <div className="max-w-7xl mx-auto px-4">
-                        <div className="flex justify-between items-center py-3 border-b border-slate-700">
+                        {/* Mobile Layout */}
+                        <div className="flex md:hidden justify-between items-center py-3 border-b border-slate-700">
+                            <div className="flex items-center gap-2">
+                                <F1CarIcon className="w-6 h-6 text-[#FF1801]" />
+                                <h1 className="text-lg font-bold">F1 Tracker</h1>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleAdmin}
+                                    className="p-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+                                    title="Admin Panel"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('Are you sure you want to cancel this game? All progress will be lost.')) {
+                                            handleNewGame();
+                                        }
+                                    }}
+                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
+                                    title="Cancel Game"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Mobile Tab Navigation */}
+                        <div className="flex md:hidden justify-center py-2 border-b border-slate-700">
+                            <div className="flex border border-slate-600 rounded-lg p-1">
+                                <button 
+                                    onClick={() => setActiveTab('race')} 
+                                    className={`px-6 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
+                                    disabled={isFinished}
+                                >
+                                    Race
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('results')} 
+                                    className={`px-6 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    Results
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Desktop Layout */}
+                        <div className="hidden md:flex justify-between items-center py-3 border-b border-slate-700">
                              <div className="flex items-center gap-2">
                                 <F1CarIcon className="w-8 h-8 text-[#FF1801]" />
                                 <h1 className="text-xl font-bold">F1 Night Tracker</h1>
                             </div>
+                            
+                            {/* Center: Tab Navigation */}
                             <div className="flex border border-slate-600 rounded-lg p-1">
-                                <button onClick={() => setActiveTab('race')} className={`px-3 py-1 text-sm font-semibold rounded-md ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300'}`} disabled={isFinished}>
+                                <button 
+                                    onClick={() => setActiveTab('race')} 
+                                    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
+                                    disabled={isFinished}
+                                >
                                     Race
                                 </button>
-                                <button onClick={() => setActiveTab('results')} className={`px-3 py-1 text-sm font-semibold rounded-md ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300'}`}>
+                                <button 
+                                    onClick={() => setActiveTab('results')} 
+                                    className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
                                     Results
+                                </button>
+                            </div>
+                            
+                            {/* Right: Action Buttons */}
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleAdmin}
+                                    className="px-3 py-2 text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 rounded-md transition-colors flex items-center gap-2"
+                                    title="Admin Panel"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span>Admin</span>
+                                </button>
+                                
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('Are you sure you want to cancel this game? All progress will be lost.')) {
+                                            handleNewGame();
+                                        }
+                                    }}
+                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
+                                    title="Cancel Game"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
@@ -338,7 +429,7 @@ function App() {
                 </div>
                 
                 <main className="mt-4">
-                    {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd}/>}
+                    {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} />}
                     {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                     {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}
                 </main>
