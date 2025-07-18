@@ -1,5 +1,5 @@
 import React from 'react';
-import { F1CarIcon, PencilIcon } from './icons';
+import { PencilIcon } from './icons';
 
 interface HubScreenProps {
     onNewGame: () => void;
@@ -17,7 +17,11 @@ const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin }) => {
                         onClick={onNewGame}
                         className="w-full flex items-center justify-center gap-4 bg-[#FF1801] text-white font-bold py-6 px-4 rounded-lg hover:bg-[#E61601] transition-all text-2xl"
                     >
-                        <F1CarIcon className="w-8 h-8" />
+                        <img 
+                            src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+                            alt="F1 Logo" 
+                            className="w-10 h-8 object-contain"
+                        />
                         Start New Game
                     </button>
                     <button

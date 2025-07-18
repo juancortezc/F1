@@ -9,7 +9,6 @@ import ResultsView from '../components/ResultsView';
 import HubScreen from '../components/HubScreen';
 import AdminView from '../components/AdminView';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry } from '../types';
-import { F1CarIcon } from '../components/icons';
 
 type GamePhase = 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading';
 
@@ -323,7 +322,11 @@ function App() {
                         {/* Mobile Layout */}
                         <div className="flex md:hidden justify-between items-center py-3 border-b border-slate-700">
                             <div className="flex items-center gap-2">
-                                <F1CarIcon className="w-6 h-6 text-[#FF1801]" />
+                                <img 
+                                    src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+                                    alt="F1 Logo" 
+                                    className="w-8 h-6 object-contain"
+                                />
                                 <h1 className="text-lg font-bold">F1 Tracker</h1>
                             </div>
                             <div className="flex items-center gap-2">
@@ -375,7 +378,11 @@ function App() {
                         {/* Desktop Layout */}
                         <div className="hidden md:flex justify-between items-center py-3 border-b border-slate-700">
                              <div className="flex items-center gap-2">
-                                <F1CarIcon className="w-8 h-8 text-[#FF1801]" />
+                                <img 
+                                    src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+                                    alt="F1 Logo" 
+                                    className="w-10 h-8 object-contain"
+                                />
                                 <h1 className="text-xl font-bold">F1 Night Tracker</h1>
                             </div>
                             

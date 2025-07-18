@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { F1CarIcon } from './icons';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -31,7 +30,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, pinCode }) =>
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <div className="w-full max-w-sm text-center">
-        <F1CarIcon className="w-24 h-24 mx-auto text-[#FF1801]" />
+        <img 
+          src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+          alt="F1 Logo" 
+          className="w-32 h-24 mx-auto object-contain"
+        />
         <h1 className="text-4xl font-bold mt-4 text-slate-100">F1 Night Tracker</h1>
         <p className="text-slate-400 mt-2 mb-8">Enter the 4-digit PIN to continue.</p>
         
