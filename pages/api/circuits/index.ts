@@ -15,24 +15,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const { name, imageUrl } = req.body;
       
-      // Validation
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
-        return res.status(400).json({ error: 'Circuit name is required' });
+      // Validate required fields
+      if (!name || !imageUrl) {
+        return res.status(400).json({ error: 'Name and imageUrl are required' });
       }
       
-      if (!imageUrl || typeof imageUrl !== 'string') {
-        return res.status(400).json({ error: 'Circuit image URL is required' });
+      // Validate name length
+      if (name.trim().length < 1 || name.trim().length > 50) {
+        return res.status(400).json({ error: 'Name must be between 1 and 50 characters' });
+      }
+      
+      // Validate URL format
+      try {
+        new URL(imageUrl);
+      } catch {
+        return res.status(400).json({ error: 'Invalid image URL format' });
       }
 
       const newCircuit = await prisma.circuit.create({
         data: { 
             name: name.trim(), 
-            imageUrl: imageUrl.trim(),
+            imageUrl,
          },
       });
       res.status(201).json(newCircuit);
     } catch (error) {
-      console.error('Error creating circuit:', error);
+      console.error('Failed to create circuit:', error);
       res.status(500).json({ error: 'Failed to create circuit' });
     }
   } else {

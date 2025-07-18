@@ -15,11 +15,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } else if (req.method === 'POST') {
     try {
       const { name, imageUrl } = req.body;
+      
+      // Validate required fields
+      if (!name || !imageUrl) {
+        return res.status(400).json({ error: 'Name and imageUrl are required' });
+      }
+      
+      // Validate name length
+      if (name.trim().length < 1 || name.trim().length > 50) {
+        return res.status(400).json({ error: 'Name must be between 1 and 50 characters' });
+      }
+      
+      // Validate URL format
+      try {
+        new URL(imageUrl);
+      } catch {
+        return res.status(400).json({ error: 'Invalid image URL format' });
+      }
+      
       const newPlayer = await prisma.player.create({
-        data: { name, imageUrl },
+        data: { name: name.trim(), imageUrl },
       });
       res.status(201).json(newPlayer);
     } catch (error) {
+      console.error('Failed to create player:', error);
       res.status(500).json({ error: 'Failed to create player' });
     }
   } else {

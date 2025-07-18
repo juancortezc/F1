@@ -13,7 +13,7 @@ interface AdminViewProps {
 
 type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | null;
 
-const UpdatePinForm: React.FC<{currentPin: string}> = ({ currentPin }) => {
+const UpdatePinForm: React.FC<{currentPin: string}> = () => {
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [error, setError] = useState('');
@@ -76,15 +76,33 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, pinCod
 
     const handleDeletePlayer = async (id: string) => {
         if(window.confirm('Are you sure you want to delete this player?')) {
-            await fetch(`/api/players/${id}`, { method: 'DELETE' });
-            mutate('/api/players');
+            try {
+                const response = await fetch(`/api/players/${id}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(`Failed to delete player: ${error.error || 'Unknown error'}`);
+                    return;
+                }
+                mutate('/api/players');
+            } catch (error) {
+                alert('Failed to delete player: Network error');
+            }
         }
     }
 
     const handleDeleteCircuit = async (id: string) => {
         if(window.confirm('Are you sure you want to delete this circuit?')) {
-            await fetch(`/api/circuits/${id}`, { method: 'DELETE' });
-            mutate('/api/circuits');
+            try {
+                const response = await fetch(`/api/circuits/${id}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(`Failed to delete circuit: ${error.error || 'Unknown error'}`);
+                    return;
+                }
+                mutate('/api/circuits');
+            } catch (error) {
+                alert('Failed to delete circuit: Network error');
+            }
         }
     }
 
@@ -93,14 +111,24 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, pinCod
         const url = isNew ? `/api/${type}s` : `/api/${type}s/${itemData.id}`;
         const method = isNew ? 'POST' : 'PUT';
         
-        await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(itemData)
-        });
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(itemData)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                alert(`Failed to save ${type}: ${error.error || 'Unknown error'}`);
+                return;
+            }
 
-        mutate(`/api/${type}s`);
-        setEditingItem(null);
+            mutate(`/api/${type}s`);
+            setEditingItem(null);
+        } catch (error) {
+            alert(`Failed to save ${type}: Network error`);
+        }
     }
 
     return (
@@ -167,8 +195,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, pinCod
 const EditModal: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Circuit>, type: 'player' | 'circuit') => void, onCancel: () => void}> = ({ item, onSave, onCancel }) => {
     const isNewPlayer = item === 'new-player';
     const isNewCircuit = item === 'new-circuit';
-    const isPlayer = isNewPlayer || (typeof item === 'object' && item && 'imageUrl' in item && !('historicalBestLap' in item));
-    const isCircuit = isNewCircuit || (typeof item === 'object' && item && 'historicalBestLap' in item);
+    const isPlayer = isNewPlayer || (typeof item === 'object' && item && 'id' in item && !isNewCircuit);
 
     const [formData, setFormData] = useState(() => {
         if (isNewPlayer || isNewCircuit) {
@@ -184,6 +211,30 @@ const EditModal: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Ci
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Client-side validation
+        if (!formData.name || !formData.name.trim()) {
+            alert('Name is required');
+            return;
+        }
+        
+        if (formData.name.trim().length > 50) {
+            alert('Name must be 50 characters or less');
+            return;
+        }
+        
+        if (!formData.imageUrl) {
+            alert('Image URL is required');
+            return;
+        }
+        
+        try {
+            new URL(formData.imageUrl);
+        } catch {
+            alert('Please enter a valid URL');
+            return;
+        }
+        
         onSave(formData, isPlayer ? 'player' : 'circuit');
     }
 
