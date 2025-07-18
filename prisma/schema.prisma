@@ -21,6 +21,16 @@ model Circuit {
   id       String @id @default(cuid())
   name     String
   imageUrl String
+  
+  // Historical record tracking
+  historicalBestLap        Int?      // Best lap time in milliseconds
+  historicalBestLapDate    DateTime? // When the record was set
+  bestLapHolderId         String?   // Player who holds the record
+  
+  historicalBestAverage      Int?      // Best average time in milliseconds
+  historicalBestAverageDate  DateTime? // When the record was set
+  bestAverageHolderId       String?   // Player who holds the record
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

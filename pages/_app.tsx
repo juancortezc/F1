@@ -1,5 +1,5 @@
 
-import type AppProps from 'next/app';
+import type { AppProps } from 'next/app';
 import { SWRConfig } from 'swr';
 import '../styles/globals.css';
 

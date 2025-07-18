@@ -146,9 +146,9 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
 
     const selectedCircuit = circuits.find(c => c.id === selectedCircuitId);
 
-    const calculateDaysHeld = (dateString: string | null | undefined): string => {
-        if (!dateString) return '-';
-        const recordDate = new Date(dateString);
+    const calculateDaysHeld = (date: Date | string | null | undefined): string => {
+        if (!date) return '-';
+        const recordDate = date instanceof Date ? date : new Date(date);
         if (isNaN(recordDate.getTime())) return '-';
         const today = new Date();
         const diffTime = Math.abs(today.getTime() - recordDate.getTime());

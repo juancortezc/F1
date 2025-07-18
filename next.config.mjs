@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // Temporarily ignore build errors for deployment
-    ignoreBuildErrors: true,
+    // Only ignore build errors in development, never in production
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
   eslint: {
-    // Temporarily ignore linting errors for deployment
-    ignoreDuringBuilds: true,
+    // Only ignore linting errors in development, never in production
+    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
   },
 };
 

@@ -1,6 +1,7 @@
 
 // Re-export Prisma types for use in components
-export type { Player, Circuit, Game };import type { Player, Circuit, Game } from '@prisma/client';
+import type { Player, Circuit, Game } from '@prisma/client';
+export type { Player, Circuit, Game };
 
 export type LapTime = {
   min: string;

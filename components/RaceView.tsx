@@ -30,7 +30,7 @@ const timeToMs = (lapTime: LapTimeType): number => {
 const TimeInput: React.FC<{ value: string; onChange: (val: string) => void; maxLength: number; placeholder: string; isBest?: 'session' | 'historical' }> = ({ value, onChange, maxLength, placeholder, isBest }) => {
     let colorClass = 'bg-slate-700 border-slate-600 text-slate-200';
     if(isBest === 'session') colorClass = 'bg-green-900/50 border-green-500 text-green-300';
-    if(isBest === 'historical') colorClass = 'bg-red-900/50 border-red-500 text-red-300';
+    if(isBest === 'historical') colorClass = 'bg-purple-900/50 border-purple-500 text-purple-300';
 
     return (
         <input
@@ -211,12 +211,26 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
         {/* Average Display */}
         {currentAverage !== null && (
-            <div className="pt-4 border-t border-slate-700 text-center">
+            <div className={`pt-4 border-t text-center rounded-lg p-3 ${
+                currentAverage < (currentCircuit.historicalBestAverage || Infinity) ? 'border-purple-500 bg-purple-900/20' : 
+                currentAverage < sessionBestAverage ? 'border-green-500 bg-green-900/20' : 
+                'border-slate-700'
+            }`}>
                 <p className="text-slate-400">Average Time</p>
-                <p className={`text-3xl font-mono font-bold ${currentAverage < (currentCircuit.historicalBestAverage || Infinity) ? 'text-red-400' : currentAverage < sessionBestAverage ? 'text-green-400' : ''}`}>
+                <p className={`text-3xl font-mono font-bold ${
+                    currentAverage < (currentCircuit.historicalBestAverage || Infinity) ? 'text-purple-400' : 
+                    currentAverage < sessionBestAverage ? 'text-green-400' : 
+                    'text-slate-200'
+                }`}>
                     {formatTime(currentAverage)}
                 </p>
-                 {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && <p className="text-xs text-slate-500">Based on best 4 laps</p>}
+                {currentAverage < (currentCircuit.historicalBestAverage || Infinity) && (
+                    <p className="text-xs text-purple-300 mt-1">🏆 NEW HISTORICAL RECORD!</p>
+                )}
+                {currentAverage < sessionBestAverage && currentAverage >= (currentCircuit.historicalBestAverage || 0) && (
+                    <p className="text-xs text-green-300 mt-1">⭐ NEW SESSION BEST!</p>
+                )}
+                {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && <p className="text-xs text-slate-500 mt-1">Based on best 4 laps</p>}
             </div>
         )}
 
