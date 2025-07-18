@@ -13,7 +13,8 @@ interface AdminViewProps {
 
 type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | null;
 
-const UpdatePinForm: React.FC<{currentPin: string}> = () => {
+const UpdatePinForm: React.FC<{currentPin: string}> = ({ currentPin }) => {
+    const [inputCurrentPin, setInputCurrentPin] = useState('');
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
     const [error, setError] = useState('');
@@ -25,24 +26,45 @@ const UpdatePinForm: React.FC<{currentPin: string}> = () => {
         setError('');
         setSuccess('');
 
+        if (inputCurrentPin.length !== 4 || !/^\d{4}$/.test(inputCurrentPin)) {
+            setError('Current PIN must be exactly 4 digits.');
+            return;
+        }
+
         if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
-            setError('PIN must be exactly 4 digits.');
+            setError('New PIN must be exactly 4 digits.');
             return;
         }
 
         if (newPin !== confirmPin) {
-            setError('PINs do not match.');
+            setError('New PINs do not match.');
+            return;
+        }
+
+        if (inputCurrentPin === newPin) {
+            setError('New PIN must be different from current PIN.');
             return;
         }
 
         try {
-            await fetch('/api/admin/pin', {
+            const response = await fetch('/api/admin/pin', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin: newPin })
+                body: JSON.stringify({ 
+                    currentPin: inputCurrentPin, 
+                    newPin: newPin 
+                })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                setError(errorData.error || 'Failed to update PIN.');
+                return;
+            }
+
             mutate('/api/settings'); // revalidate pin
             setSuccess('PIN updated successfully!');
+            setInputCurrentPin('');
             setNewPin('');
             setConfirmPin('');
             setTimeout(() => setSuccess(''), 3000);
@@ -55,17 +77,51 @@ const UpdatePinForm: React.FC<{currentPin: string}> = () => {
         <form onSubmit={handlePinUpdate} className="bg-slate-800 p-4 rounded-lg max-w-sm">
             <div className="space-y-4">
                 <div>
-                    <label className="block text-slate-400 mb-1 text-sm font-semibold">New 4-Digit PIN</label>
-                    <input type="password" value={newPin} onChange={e => setNewPin(e.target.value)} maxLength={4} className="w-full p-2 rounded bg-slate-700" />
+                    <label className="block text-slate-400 mb-1 text-sm font-semibold">Current PIN</label>
+                    <input 
+                        type="password" 
+                        value={inputCurrentPin} 
+                        onChange={e => setInputCurrentPin(e.target.value)} 
+                        maxLength={4} 
+                        placeholder="Enter current PIN"
+                        className="w-full p-2 rounded bg-slate-700 text-slate-200" 
+                        required
+                    />
                 </div>
-                 <div>
+                <div>
+                    <label className="block text-slate-400 mb-1 text-sm font-semibold">New 4-Digit PIN</label>
+                    <input 
+                        type="password" 
+                        value={newPin} 
+                        onChange={e => setNewPin(e.target.value)} 
+                        maxLength={4} 
+                        placeholder="Enter new PIN"
+                        className="w-full p-2 rounded bg-slate-700 text-slate-200" 
+                        required
+                    />
+                </div>
+                <div>
                     <label className="block text-slate-400 mb-1 text-sm font-semibold">Confirm New PIN</label>
-                    <input type="password" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} maxLength={4} className="w-full p-2 rounded bg-slate-700" />
+                    <input 
+                        type="password" 
+                        value={confirmPin} 
+                        onChange={e => setConfirmPin(e.target.value)} 
+                        maxLength={4} 
+                        placeholder="Confirm new PIN"
+                        className="w-full p-2 rounded bg-slate-700 text-slate-200" 
+                        required
+                    />
                 </div>
             </div>
             {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
             {success && <p className="text-green-500 mt-3 text-sm">{success}</p>}
-            <button type="submit" className="w-full bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] mt-4">Update PIN</button>
+            <button 
+                type="submit" 
+                className="w-full bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] mt-4 disabled:bg-slate-600 disabled:cursor-not-allowed"
+                disabled={inputCurrentPin.length !== 4 || newPin.length !== 4 || confirmPin.length !== 4}
+            >
+                Update PIN
+            </button>
         </form>
     );
 }
