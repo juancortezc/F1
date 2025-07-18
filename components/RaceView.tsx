@@ -8,6 +8,7 @@ interface RaceViewProps {
   onTurnComplete: (playerId: string, lapTimes: number[]) => void;
   onNextCircuit: () => void;
   onGameEnd: () => void;
+  onCancel?: () => void;
 }
 
 const formatTime = (ms: number | null | undefined): string => {
@@ -47,7 +48,7 @@ const TimeInput: React.FC<{ value: string; onChange: (val: string) => void; maxL
     );
 };
 
-const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete, onNextCircuit, onGameEnd }) => {
+const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete, onNextCircuit, onGameEnd, onCancel }) => {
   const { settings, circuits, currentCircuitIndex, currentTurn, currentPlayerIndex, sessionBestLap, sessionBestAverage, playerOrder } = gameState;
   const currentCircuit = circuits[currentCircuitIndex];
   const currentPlayerId = playerOrder[currentPlayerIndex];
@@ -103,6 +104,17 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
       return;
     }
     onTurnComplete(currentPlayerId, timesInMs);
+  };
+
+  const handleCancel = () => {
+    // Clear all lap times
+    setLapTimes(Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' }));
+    setCurrentAverage(null);
+    
+    // If onCancel prop is provided, call it (for navigation back to hub/menu)
+    if (onCancel) {
+      onCancel();
+    }
   };
   
   const allTurnsForCircuitDone = gameState.circuitResults[currentCircuitIndex]?.turns.length === settings.turnsPerCircuit && gameState.circuitResults[currentCircuitIndex]?.turns[settings.turnsPerCircuit - 1]?.length === settings.players.length;
@@ -208,10 +220,15 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             </div>
         )}
 
-        {/* Submit Button */}
-        <button onClick={handleSubmit} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+        {/* Action Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button onClick={handleCancel} className="bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
+            <span className="text-lg">✕</span> Cancel & Clear
+          </button>
+          <button onClick={handleSubmit} className="bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
             <CheckCircleIcon className="w-6 h-6" /> Record Times & Finish Turn
-        </button>
+          </button>
+        </div>
       </div>
     </div>
   );
