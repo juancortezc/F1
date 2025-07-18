@@ -188,45 +188,88 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         <h2 className="text-xl font-bold text-center">Enter {currentPlayer.name}'s Lap Times</h2>
         {lapTimes.map((lapTime, i) => {
             const timeInMs = timeToMs(lapTime);
-            const isSessionBest = timeInMs > 0 && timeInMs < sessionBestLap;
-            const isHistoricalBest = timeInMs > 0 && currentCircuit.historicalBestLap !== null && timeInMs < currentCircuit.historicalBestLap;
             
+            // If we have a valid time entered
+            if (timeInMs > 0) {
+                // Check if this is a historical best (or first time if no historical record)
+                const isHistoricalBest = currentCircuit.historicalBestLap === null || 
+                                       currentCircuit.historicalBestLap === undefined || 
+                                       timeInMs < currentCircuit.historicalBestLap;
+                
+                // Check if this is a session best (or first time if no session record)
+                const isSessionBest = sessionBestLap === Infinity || 
+                                    sessionBestLap === null || 
+                                    sessionBestLap === undefined || 
+                                    timeInMs < sessionBestLap;
+                
+                // Historical takes priority over session
+                const bestType = isHistoricalBest ? 'historical' : isSessionBest ? 'session' : undefined;
+                
+                return (
+                  <div key={i} className="flex items-center gap-2 md:gap-4">
+                    <span className="font-bold text-slate-400 w-16">Lap {i + 1}</span>
+                    <div className="flex-1 grid grid-cols-3 gap-2">
+                        <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" isBest={bestType} />
+                        <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" isBest={bestType}/>
+                        <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" isBest={bestType}/>
+                    </div>
+                  </div>
+                );
+            }
+            
+            // If no valid time yet, show normal inputs
             return (
               <div key={i} className="flex items-center gap-2 md:gap-4">
                 <span className="font-bold text-slate-400 w-16">Lap {i + 1}</span>
                 <div className="flex-1 grid grid-cols-3 gap-2">
-                    <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" isBest={isHistoricalBest ? 'historical' : isSessionBest ? 'session' : undefined} />
-                    <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" isBest={isHistoricalBest ? 'historical' : isSessionBest ? 'session' : undefined}/>
-                    <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" isBest={isHistoricalBest ? 'historical' : isSessionBest ? 'session' : undefined}/>
+                    <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" />
+                    <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" />
+                    <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" />
                 </div>
               </div>
             );
         })}
 
         {/* Average Display */}
-        {currentAverage !== null && (
-            <div className={`pt-4 border-t text-center rounded-lg p-3 ${
-                currentAverage < (currentCircuit.historicalBestAverage || Infinity) ? 'border-purple-500 bg-purple-900/20' : 
-                currentAverage < sessionBestAverage ? 'border-green-500 bg-green-900/20' : 
-                'border-slate-700'
-            }`}>
-                <p className="text-slate-400">Average Time</p>
-                <p className={`text-3xl font-mono font-bold ${
-                    currentAverage < (currentCircuit.historicalBestAverage || Infinity) ? 'text-purple-400' : 
-                    currentAverage < sessionBestAverage ? 'text-green-400' : 
-                    'text-slate-200'
+        {currentAverage !== null && (() => {
+            // Check if this is a historical best average (or first time if no historical record)
+            const isHistoricalBestAvg = currentCircuit.historicalBestAverage === null || 
+                                      currentCircuit.historicalBestAverage === undefined || 
+                                      currentAverage < currentCircuit.historicalBestAverage;
+            
+            // Check if this is a session best average (or first time if no session record)
+            const isSessionBestAvg = sessionBestAverage === Infinity || 
+                                   sessionBestAverage === null || 
+                                   sessionBestAverage === undefined || 
+                                   currentAverage < sessionBestAverage;
+            
+            // Historical takes priority over session
+            const avgBestType = isHistoricalBestAvg ? 'historical' : isSessionBestAvg ? 'session' : 'normal';
+            
+            return (
+                <div className={`pt-4 border-t text-center rounded-lg p-3 ${
+                    avgBestType === 'historical' ? 'border-purple-500 bg-purple-900/20' : 
+                    avgBestType === 'session' ? 'border-green-500 bg-green-900/20' : 
+                    'border-slate-700'
                 }`}>
-                    {formatTime(currentAverage)}
-                </p>
-                {currentAverage < (currentCircuit.historicalBestAverage || Infinity) && (
-                    <p className="text-xs text-purple-300 mt-1">🏆 NEW HISTORICAL RECORD!</p>
-                )}
-                {currentAverage < sessionBestAverage && currentAverage >= (currentCircuit.historicalBestAverage || 0) && (
-                    <p className="text-xs text-green-300 mt-1">⭐ NEW SESSION BEST!</p>
-                )}
-                {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && <p className="text-xs text-slate-500 mt-1">Based on best 4 laps</p>}
-            </div>
-        )}
+                    <p className="text-slate-400">Average Time</p>
+                    <p className={`text-3xl font-mono font-bold ${
+                        avgBestType === 'historical' ? 'text-purple-400' : 
+                        avgBestType === 'session' ? 'text-green-400' : 
+                        'text-slate-200'
+                    }`}>
+                        {formatTime(currentAverage)}
+                    </p>
+                    {avgBestType === 'historical' && (
+                        <p className="text-xs text-purple-300 mt-1">🏆 NEW HISTORICAL RECORD!</p>
+                    )}
+                    {avgBestType === 'session' && (
+                        <p className="text-xs text-green-300 mt-1">⭐ NEW SESSION BEST!</p>
+                    )}
+                    {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && <p className="text-xs text-slate-500 mt-1">Based on best 4 laps</p>}
+                </div>
+            );
+        })()}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
