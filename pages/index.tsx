@@ -1,6 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
+import { useToast } from '../components/Toast';
 
 import LoginScreen from '../components/LoginScreen';
 import GameSetup from '../components/GameSetup';
@@ -32,6 +33,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'race' | 'results'>('race');
   
   const { mutate } = useSWRConfig();
+  const { addToast } = useToast();
   const { players, circuits, activeGame, pinCode, gameHistory, isLoading, error } = useApiData();
 
   const handleLoginSuccess = () => {
@@ -45,36 +47,57 @@ function App() {
   };
 
   const handleSetupComplete = async (settings: GameSettings) => {
-    const playerStats: Record<string, PlayerStats> = {};
-    settings.players.forEach(p => {
-        playerStats[p.id] = { totalScore: 0, bestLaps: 0, bestAverages: 0 };
-    });
-
-    const newGameState: GameState = {
-      settings,
-      circuits: settings.circuits,
-      playerOrder: settings.players.map(p => p.id),
-      currentCircuitIndex: 0,
-      currentTurn: 1,
-      currentPlayerIndex: 0,
-      circuitResults: Array(settings.circuits.length).fill(null).map((_, i) => ({ circuitId: settings.circuits[i].id, turns: [] })),
-      playerStats,
-      sessionBestLap: Infinity,
-      sessionBestAverage: Infinity,
-      lapTimesLog: [],
-    };
-    
     try {
-      await fetch('/api/game/create', {
+      addToast({
+        type: 'info',
+        title: 'Creando juego...',
+        message: 'Configurando la nueva carrera'
+      });
+
+      const playerStats: Record<string, PlayerStats> = {};
+      settings.players.forEach(p => {
+          playerStats[p.id] = { totalScore: 0, bestLaps: 0, bestAverages: 0 };
+      });
+
+      const newGameState: GameState = {
+        settings,
+        circuits: settings.circuits,
+        playerOrder: settings.players.map(p => p.id),
+        currentCircuitIndex: 0,
+        currentTurn: 1,
+        currentPlayerIndex: 0,
+        circuitResults: Array(settings.circuits.length).fill(null).map((_, i) => ({ circuitId: settings.circuits[i].id, turns: [] })),
+        playerStats,
+        sessionBestLap: Infinity,
+        sessionBestAverage: Infinity,
+        lapTimesLog: [],
+      };
+      
+      const response = await fetch('/api/game/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ state: newGameState }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to create game');
+      }
+
       await mutate('/api/game/active');
       setGamePhase('race');
+      
+      addToast({
+        type: 'success',
+        title: '¡Juego creado!',
+        message: `Carrera iniciada con ${settings.players.length} pilotos`
+      });
     } catch(err) {
       console.error("Failed to create game", err);
-      alert("Error: Could not start new game.");
+      addToast({
+        type: 'error',
+        title: 'Error al crear juego',
+        message: 'No se pudo iniciar la nueva carrera. Inténtalo de nuevo.'
+      });
     }
   };
   
@@ -123,20 +146,31 @@ function App() {
           // Optimistic update
           mutate('/api/game/active', { game: { ...activeGame, state: newState } }, false);
           
-          await fetch(`/api/game/update`, {
+          const response = await fetch(`/api/game/update`, {
               method: 'PUT',
               headers: {'Content-Type': 'application/json'},
               body: JSON.stringify({ id: activeGame.id, state: newState, status: 'ACTIVE' })
           });
+
+          if (!response.ok) {
+            throw new Error('Failed to update game state');
+          }
           
           // Revalidate
           mutate('/api/game/active');
       } catch (err) {
           console.error("Failed to update game state:", err);
+          addToast({
+            type: 'error',
+            title: 'Error de sincronización',
+            message: 'No se pudo guardar el progreso del juego'
+          });
+          // Revert optimistic update
+          mutate('/api/game/active');
       }
   };
 
-  const handleTurnComplete = useCallback((playerId: string, lapTimes: number[]) => {
+  const handleTurnComplete = useCallback(async (playerId: string, lapTimes: number[]) => {
     if (!activeGame) return;
     const gameState = activeGame.state;
     
@@ -258,9 +292,17 @@ function App() {
       playerOrder: newPlayerOrder,
       lapTimesLog: newLapTimesLog,
     };
-    updateGameState(newGameState);
+    await updateGameState(newGameState);
+    
+    // Show success toast
+    const playerName = players?.find(p => p.id === playerId)?.name || 'Piloto';
+    addToast({
+      type: 'success',
+      title: 'Tiempos guardados',
+      message: `Vuelta de ${playerName} registrada correctamente`
+    });
 
-  }, [activeGame, updateGameState]);
+  }, [activeGame, updateGameState, players, addToast]);
 
 
   const handleNextCircuit = () => {
@@ -311,10 +353,36 @@ function App() {
   };
   
   if (isLoading) {
-      return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4">
+              <div className="animate-spin rounded-full border-4 border-slate-600 border-t-[#FF1801] h-16 w-16"></div>
+            </div>
+            <h2 className="text-xl font-semibold text-slate-200 mb-2">Cargando F1 Night</h2>
+            <p className="text-slate-400">Preparando la aplicación...</p>
+          </div>
+        </div>
+      );
   }
   if (error) {
-      return <div className="min-h-screen flex items-center justify-center text-red-500">Error cargando datos. Inténtalo más tarde.</div>;
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+          <div className="text-center max-w-md">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h1 className="text-2xl font-bold text-slate-100 mb-4">Error de Conexión</h1>
+            <p className="text-slate-400 mb-6">
+              No se pudieron cargar los datos. Verifica tu conexión e inténtalo de nuevo.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-[#FF1801] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#E61601] transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      );
   }
 
   const renderContent = () => {
@@ -326,7 +394,7 @@ function App() {
       case 'admin':
         return <AdminView players={players!} circuits={circuits!} onBack={handleExitAdmin} pinCode={pinCode!} />;
       case 'setup':
-        return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} />;
+        return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
       case 'race':
       case 'results':
         if (activeGame && players && circuits) {

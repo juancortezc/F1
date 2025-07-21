@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameState, LapTime as LapTimeType, Player } from '../types';
 import { StopwatchIcon, TrophyIcon, CheckCircleIcon } from './icons';
+import LoadingSpinner from './LoadingSpinner';
 
 interface RaceViewProps {
   gameState: GameState;
@@ -55,6 +56,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
   const [lapTimes, setLapTimes] = useState<LapTimeType[]>(() => Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' }));
   const [currentAverage, setCurrentAverage] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLapTimeChange = (index: number, field: keyof LapTimeType, value: string) => {
     const newLapTimes = [...lapTimes];
@@ -96,13 +98,19 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
      setCurrentAverage(null);
   }, [currentPlayerIndex, currentTurn, currentCircuitIndex, settings.lapsPerTurn]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const timesInMs = lapTimes.map(timeToMs).filter(ms => ms > 0);
     if (timesInMs.length !== settings.lapsPerTurn) {
       alert(`Por favor ingresa todos los ${settings.lapsPerTurn} tiempos de vuelta.`);
       return;
     }
-    onTurnComplete(currentPlayerId, timesInMs);
+    
+    setIsSubmitting(true);
+    try {
+      await onTurnComplete(currentPlayerId, timesInMs);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClear = () => {
@@ -273,11 +281,29 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button onClick={handleClear} className="bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
+          <button 
+            onClick={handleClear} 
+            disabled={isSubmitting}
+            className="bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+          >
             <span className="text-lg">↻</span> Limpiar Tiempos
           </button>
-          <button onClick={handleSubmit} className="bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
-            <CheckCircleIcon className="w-6 h-6" /> Grabar Tiempos y Terminar Turno
+          <button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting}
+            className="bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <LoadingSpinner size="sm" className="text-white" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <CheckCircleIcon className="w-6 h-6" /> 
+                Grabar Tiempos y Terminar Turno
+              </>
+            )}
           </button>
         </div>
       </div>

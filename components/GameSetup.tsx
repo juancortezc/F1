@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Player, Circuit, GameSettings } from '../types';
 import { ArrowUpIcon, ArrowDownIcon } from './icons';
+import NavigationBar from './NavigationBar';
 
 interface GameSetupProps {
   players: Player[];
   circuits: Circuit[];
   onSetupComplete: (settings: GameSettings) => void;
+  onCancel?: () => void;
 }
 
-const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: allCircuits, onSetupComplete }) => {
+const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: allCircuits, onSetupComplete, onCancel }) => {
   const [step, setStep] = useState(1);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [orderedPlayers, setOrderedPlayers] = useState<Player[]>([]);
@@ -287,29 +289,38 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
   const totalSteps = 6;
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-8">
-      <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-slate-700">
-        <div className="mb-6">
-            <div className="w-full bg-slate-700 rounded-full h-2.5">
-                <div className="bg-[#FF1801] h-2.5 rounded-full" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
-            </div>
-        </div>
-        <div className="min-h-[350px]">
-         {renderStep()}
-        </div>
-        <div className="flex justify-between mt-8">
-          <button onClick={handleBack} disabled={step === 1} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
-            Regresar
-          </button>
-          {step < totalSteps ? (
-            <button onClick={handleNext} disabled={(step === 1 || step === 2) && selectedPlayers.length < 2 || step === 3 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed">
-              Siguiente
+    <div className="min-h-screen bg-slate-900">
+      <NavigationBar 
+        title="Configuración de Carrera"
+        subtitle={`Paso ${step} de ${totalSteps}`}
+        onBack={step > 1 ? handleBack : undefined}
+        onCancel={onCancel}
+      />
+      
+      <div className="max-w-2xl mx-auto p-4 md:p-8">
+        <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-slate-700">
+          <div className="mb-6">
+              <div className="w-full bg-slate-700 rounded-full h-2.5">
+                  <div className="bg-[#FF1801] h-2.5 rounded-full transition-all duration-300" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
+              </div>
+          </div>
+          <div className="min-h-[350px]">
+           {renderStep()}
+          </div>
+          <div className="flex justify-between mt-8">
+            <button onClick={handleBack} disabled={step === 1} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              Regresar
             </button>
-          ) : (
-            <button onClick={handleSubmit} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">
-              Iniciar!
-            </button>
-          )}
+            {step < totalSteps ? (
+              <button onClick={handleNext} disabled={(step === 1 || step === 2) && selectedPlayers.length < 2 || step === 3 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Siguiente
+              </button>
+            ) : (
+              <button onClick={handleSubmit} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                Iniciar!
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
