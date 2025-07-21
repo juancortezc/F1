@@ -1,0 +1,40 @@
+{
+  "name": "F1 Night - Race Tracker",
+  "short_name": "F1 Night",
+  "description": "Professional F1 racing session tracker and championship manager",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#FF1801",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["sports", "racing", "entertainment"],
+  "icons": [
+    {
+      "src": "https://storage.googleapis.com/poker-enfermos/f1-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://storage.googleapis.com/poker-enfermos/f1-logo.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://storage.googleapis.com/poker-enfermos/f1-logo.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "features": [
+    "offline-support",
+    "real-time-updates", 
+    "data-sync"
+  ],
+  "prefer_related_applications": false
+}

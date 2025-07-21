@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { GameState, LapTime as LapTimeType, Player } from '../types';
 import { StopwatchIcon, TrophyIcon, CheckCircleIcon } from './icons';
 import LoadingSpinner from './LoadingSpinner';
+import DataCard from './DataCard';
+import StatsGrid from './StatsGrid';
+import SectionHeader from './SectionHeader';
+import KeyboardShortcuts, { KeyboardHelp } from './KeyboardShortcuts';
 
 interface RaceViewProps {
   gameState: GameState;
@@ -27,7 +31,15 @@ const timeToMs = (lapTime: LapTimeType): number => {
     return min * 60000 + sec * 1000 + ms;
 };
 
-const TimeInput: React.FC<{ value: string; onChange: (val: string) => void; maxLength: number; placeholder: string; isBest?: 'session' | 'historical' }> = ({ value, onChange, maxLength, placeholder, isBest }) => {
+const TimeInput: React.FC<{ 
+  value: string; 
+  onChange: (val: string) => void; 
+  maxLength: number; 
+  placeholder: string; 
+  isBest?: 'session' | 'historical';
+  'data-lap'?: number;
+  'data-field'?: string;
+}> = ({ value, onChange, maxLength, placeholder, isBest, ...dataProps }) => {
     let colorClass = 'bg-slate-700 border-slate-600 text-slate-200';
     if(isBest === 'session') colorClass = 'bg-green-900/50 border-green-500 text-green-300';
     if(isBest === 'historical') colorClass = 'bg-purple-900/50 border-purple-500 text-purple-300';
@@ -44,6 +56,7 @@ const TimeInput: React.FC<{ value: string; onChange: (val: string) => void; maxL
             maxLength={maxLength}
             placeholder={placeholder}
             className={`w-full text-center text-2xl md:text-3xl font-mono p-2 rounded-md border-2 focus:outline-none focus:border-[#FF1801] transition-colors ${colorClass}`}
+            {...dataProps}
         />
     );
 };
@@ -57,6 +70,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const [lapTimes, setLapTimes] = useState<LapTimeType[]>(() => Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' }));
   const [currentAverage, setCurrentAverage] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
   const handleLapTimeChange = (index: number, field: keyof LapTimeType, value: string) => {
     const newLapTimes = [...lapTimes];
@@ -157,39 +171,86 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const isLastPlayerOfTurn = currentPlayerIndex === settings.players.length - 1;
   const nextPlayer = !isLastPlayerOfTurn ? players.find(p => p.id === playerOrder[currentPlayerIndex + 1]) : null;
 
+  // Keyboard shortcuts
+  const shortcuts = [
+    {
+      key: 'Enter',
+      description: 'Guardar tiempos y continuar',
+      action: handleSubmit
+    },
+    {
+      key: 'c',
+      description: 'Limpiar tiempos',
+      action: handleClear
+    },
+    {
+      key: '1',
+      description: 'Enfocar primera vuelta',
+      action: () => {
+        const firstInput = document.querySelector('[data-lap="0"][data-field="min"]') as HTMLInputElement;
+        firstInput?.focus();
+      }
+    },
+    {
+      key: '?',
+      description: 'Mostrar/ocultar ayuda de atajos',
+      action: () => setShowKeyboardHelp(!showKeyboardHelp)
+    }
+  ];
+
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
         {/* Header Info */}
-        <div className="bg-slate-800 p-4 rounded-lg shadow-lg border border-slate-700">
-            <div className="flex flex-col sm:flex-row justify-between items-start">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-[#FF1801]">{currentCircuit.name}</h1>
-                    <p className="text-slate-400">Turno {currentTurn} de {settings.turnsPerCircuit}</p>
+        <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700 shadow-lg">
+            <SectionHeader
+              title={currentCircuit.name}
+              subtitle={`Turno ${currentTurn} de ${settings.turnsPerCircuit}`}
+              variant="large"
+              action={
+                <div className="text-right">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="font-semibold text-lg text-slate-100">{currentPlayer.name}</span>
+                  </div>
+                  {nextPlayer && (
+                    <p className="text-sm text-slate-400">Siguiente: {nextPlayer.name}</p>
+                  )}
                 </div>
-                <div className="text-lg font-semibold mt-2 sm:mt-0 text-right">
-                    <p>Corriendo: {currentPlayer.name}</p>
-                    {nextPlayer && <p className="text-sm text-slate-400">Siguiente: {nextPlayer.name}</p>}
-                </div>
-            </div>
+              }
+            />
         </div>
 
         {/* Best Times */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div className="bg-slate-800 p-3 rounded-lg">
-                <h3 className="text-slate-400 text-sm font-semibold mb-2 flex items-center gap-2"><TrophyIcon className="w-4 h-4 text-[#FF1801]"/> Mejores Históricos</h3>
-                <div className="flex justify-around font-mono text-lg">
-                    <p><span className="text-xs text-slate-500">Vuelta:</span> {formatTime(currentCircuit.historicalBestLap)}</p>
-                    <p><span className="text-xs text-slate-500">Prom:</span> {formatTime(currentCircuit.historicalBestAverage)}</p>
-                </div>
-             </div>
-             <div className="bg-slate-800 p-3 rounded-lg">
-                <h3 className="text-slate-400 text-sm font-semibold mb-2 flex items-center gap-2"><StopwatchIcon className="w-4 h-4 text-green-400"/> Mejores de la Sesión</h3>
-                <div className="flex justify-around font-mono text-lg">
-                    <p><span className="text-xs text-slate-500">Vuelta:</span> <span className="text-green-400">{formatTime(sessionBestLap)}</span></p>
-                    <p><span className="text-xs text-slate-500">Prom:</span> <span className="text-green-400">{formatTime(sessionBestAverage)}</span></p>
-                </div>
-             </div>
-        </div>
+        <StatsGrid columns={4} gap="md">
+          <DataCard
+            title="Mejor Vuelta Histórica"
+            value={formatTime(currentCircuit.historicalBestLap)}
+            icon={<TrophyIcon className="w-4 h-4" />}
+            variant="info"
+            size="sm"
+          />
+          <DataCard
+            title="Mejor Promedio Histórico"
+            value={formatTime(currentCircuit.historicalBestAverage)}
+            icon={<TrophyIcon className="w-4 h-4" />}
+            variant="info"
+            size="sm"
+          />
+          <DataCard
+            title="Mejor Vuelta Sesión"
+            value={formatTime(sessionBestLap)}
+            icon={<StopwatchIcon className="w-4 h-4" />}
+            variant="success"
+            size="sm"
+          />
+          <DataCard
+            title="Mejor Promedio Sesión"
+            value={formatTime(sessionBestAverage)}
+            icon={<StopwatchIcon className="w-4 h-4" />}
+            variant="success"
+            size="sm"
+          />
+        </StatsGrid>
 
       {/* Time Input Form */}
       <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700 space-y-4">
@@ -307,6 +368,14 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
           </button>
         </div>
       </div>
+      
+      {/* Keyboard Shortcuts */}
+      <KeyboardShortcuts shortcuts={shortcuts} enabled={!isSubmitting} />
+      <KeyboardHelp 
+        shortcuts={shortcuts} 
+        isOpen={showKeyboardHelp} 
+        onClose={() => setShowKeyboardHelp(false)} 
+      />
     </div>
   );
 };
