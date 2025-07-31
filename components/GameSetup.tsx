@@ -35,7 +35,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         ? selectedPlayers.filter(p => p.id !== player.id)
         : [...selectedPlayers, player];
     setSelectedPlayers(newSelection);
-    setOrderedPlayers(newSelection); // Keep ordered list in sync
+    
+    // Update ordered players list keeping existing order when possible
+    if (isSelected) {
+      // Remove player from ordered list
+      setOrderedPlayers(prev => prev.filter(p => p.id !== player.id));
+    } else {
+      // Add player to end of ordered list
+      setOrderedPlayers(prev => [...prev, player]);
+    }
   };
 
   const movePlayer = (index: number, direction: 'up' | 'down') => {
@@ -69,19 +77,24 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
   const handleBack = () => setStep(s => s - 1);
 
   const handleSubmit = () => {
-    if (orderedPlayers.length < 2) {
-      alert("Seleccionar y Ordenar al menos 2 jugadores");
+    if (selectedPlayers.length < 2) {
+      alert("Seleccionar al menos 2 jugadores");
       setStep(1);
+      return;
+    }
+    if (orderedPlayers.length < 2) {
+      alert("Ordenar al menos 2 jugadores");
+      setStep(2);
       return;
     }
     if (controllerIds.length < 1) {
       alert("Seleccionar al menos 1 registrador de tiempos");
-      setStep(2);
+      setStep(3);
       return;
     }
     if (selectedCircuits.length < 1) {
       alert("Seleccionar al menos 1 circuito");
-      setStep(3);
+      setStep(4);
       return;
     }
     const settings: GameSettings = {
@@ -102,13 +115,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
     onSetupComplete(settings);
   };
   
-  // Initialize with all players if none selected - moved outside of renderStep
-  React.useEffect(() => {
-    if (allPlayers && allPlayers.length > 0 && selectedPlayers.length === 0) {
-      setSelectedPlayers([...allPlayers]);
-      setOrderedPlayers([...allPlayers]);
-    }
-  }, [allPlayers]);
+  // Don't auto-select all players - let user choose
 
   const renderStep = () => {
     switch (step) {
@@ -117,7 +124,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         if (!allPlayers || allPlayers.length === 0) {
           return (
             <div>
-              <h2 className="text-2xl font-bold mb-4">1. Orden de Inicio</h2>
+              <h2 className="text-2xl font-bold mb-4">1. Seleccionar Jugadores</h2>
               <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-4">
                 <p className="text-yellow-300">
                   <strong>Cargando:</strong> Esperando a que se carguen los jugadores... Si el problema persiste, verifica que haya jugadores registrados en el sistema.
@@ -130,12 +137,88 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         return (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">1. Orden de Inicio</h2>
+              <h2 className="text-2xl font-bold">1. Seleccionar Jugadores</h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
-                    setSelectedPlayers(shuffled);
+                    if (selectedPlayers.length === allPlayers.length) {
+                      // Deselect all
+                      setSelectedPlayers([]);
+                      setOrderedPlayers([]);
+                    } else {
+                      // Select all
+                      setSelectedPlayers([...allPlayers]);
+                      setOrderedPlayers([...allPlayers]);
+                    }
+                  }}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {selectedPlayers.length === allPlayers.length ? '❌ Deseleccionar Todos' : '✅ Seleccionar Todos'}
+                </button>
+              </div>
+            </div>
+            <p className="text-slate-400 mb-4">Selecciona los jugadores que participarán en este torneo:</p>
+            <div className="space-y-2">
+              {allPlayers.map((player) => {
+                const isSelected = selectedPlayers.find(p => p.id === player.id);
+                return (
+                  <div 
+                    key={player.id} 
+                    onClick={() => handlePlayerToggle(player)}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'bg-green-900/50 border-2 border-green-500' 
+                        : 'bg-slate-800 border-2 border-slate-600 hover:bg-slate-700'
+                    }`}
+                  >
+                    <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full" />
+                    <div className="flex-grow">
+                      <div className="font-semibold">{player.name}</div>
+                      <div className="text-sm text-slate-400">
+                        {isSelected ? 'Participará en el torneo' : 'No participará'}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="text-green-400">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-600 rounded-lg">
+              <p className="text-sm text-blue-300">
+                <strong>Seleccionados:</strong> {selectedPlayers.length} de {allPlayers.length} jugadores
+              </p>
+            </div>
+          </div>
+        );
+      case 2: // Order Players
+        // Verificar que hay jugadores seleccionados
+        if (!selectedPlayers || selectedPlayers.length === 0) {
+          return (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">2. Orden de Inicio</h2>
+              <div className="bg-red-900/20 border border-red-600 rounded-lg p-4">
+                <p className="text-red-300">
+                  <strong>Error:</strong> No hay jugadores seleccionados. Por favor regresa al paso anterior y selecciona al menos 2 jugadores.
+                </p>
+              </div>
+            </div>
+          );
+        }
+        
+        return (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">2. Orden de Inicio</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const shuffled = [...selectedPlayers].sort(() => Math.random() - 0.5);
                     setOrderedPlayers(shuffled);
                   }}
                   className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -144,6 +227,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                 </button>
               </div>
             </div>
+            <p className="text-slate-400 mb-4">Arrastra o usa las flechas para ordenar a los jugadores seleccionados:</p>
             <div className="space-y-2">
               {orderedPlayers.map((player, index) => (
                 <div key={player.id} className="flex items-center justify-between bg-slate-700 p-3 rounded-lg">
@@ -173,15 +257,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-      case 2: // Select Controllers
-        // Verificar que hay jugadores disponibles
+      case 3: // Select Controllers
+        // Verificar que hay jugadores ordenados
         if (!orderedPlayers || orderedPlayers.length === 0) {
           return (
             <div>
-              <h2 className="text-2xl font-bold mb-4">2. Registradores de Tiempos</h2>
+              <h2 className="text-2xl font-bold mb-4">3. Registradores de Tiempos</h2>
               <div className="bg-red-900/20 border border-red-600 rounded-lg p-4">
                 <p className="text-red-300">
-                  <strong>Error:</strong> No hay jugadores disponibles. Por favor regresa al paso anterior y verifica que haya jugadores seleccionados.
+                  <strong>Error:</strong> No hay jugadores disponibles. Por favor regresa a los pasos anteriores y selecciona jugadores.
                 </p>
               </div>
             </div>
@@ -190,7 +274,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-4">2. Registradores de Tiempos</h2>
+            <h2 className="text-2xl font-bold mb-4">3. Registradores de Tiempos</h2>
             <p className="text-slate-400 mb-4">Selecciona quiénes pueden registrar tiempos durante las carreras:</p>
             <div className="space-y-2">
               {orderedPlayers.map(player => {
@@ -237,12 +321,12 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-      case 3: // Select & Order Circuits
+      case 4: // Select & Order Circuits
         const availableCircuits = allCircuits.filter(c => !selectedCircuits.find(sc => sc.id === c.id));
         return (
             <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-bold">3. Selecciona Circuitos</h2>
+                  <h2 className="text-2xl font-bold">4. Selecciona Circuitos</h2>
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
@@ -290,10 +374,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                 </div>
             </div>
         );
-      case 4: // Race Parameters
+      case 5: // Race Parameters
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">4. Configuración</h2>
+            <h2 className="text-2xl font-bold mb-6">5. Configuración</h2>
             <div className="space-y-6">
               <div>
                 <label className="block text-slate-400 mb-2">Vueltas por Turno</label>
@@ -318,10 +402,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-      case 5: // Points System
+      case 6: // Points System
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">5. Puntaje</h2>
+            <h2 className="text-2xl font-bold mb-6">6. Puntaje</h2>
             <div className="space-y-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
                 <h3 className="font-semibold text-lg text-[#FF1801]">Puntaje Principal por Turno</h3>
                 <p className="text-sm text-slate-400">Elija como asignar  (1ro: 3, 2do: 2, 3ro: 1) puntos</p>
@@ -403,14 +487,14 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-       case 6: // Review
+       case 7: // Review
         const { scoringMultiplier } = (scoringMethod === 'both' && useMultiplier) 
             ? { scoringMultiplier: { appliesTo: multiplierTarget, factor: multiplierFactor } } 
             : { scoringMultiplier: null };
 
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">6. Revisión e Inicio</h2>
+                <h2 className="text-2xl font-bold mb-4">7. Revisión e Inicio</h2>
                 <div className="bg-slate-800 p-4 rounded-lg space-y-4 text-slate-300">
                     <div><strong>Orden de Jugadores:</strong>
                         <ol className="list-decimal list-inside pl-4">
@@ -447,7 +531,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
     }
   };
 
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -473,7 +557,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
               Regresar
             </button>
             {step < totalSteps ? (
-              <button onClick={handleNext} disabled={step === 2 && controllerIds.length < 1 || step === 3 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <button 
+                onClick={handleNext} 
+                disabled={
+                  (step === 1 && selectedPlayers.length < 2) ||
+                  (step === 3 && controllerIds.length < 1) || 
+                  (step === 4 && selectedCircuits.length < 1)
+                } 
+                className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
                 Siguiente
               </button>
             ) : (
