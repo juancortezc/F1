@@ -1,12 +1,13 @@
 
 // Re-export Prisma types for use in components
-import type { Player, Circuit, Game } from '@prisma/client';
-export type { Player, Circuit, Game };
+import type { Circuit, Game } from '@prisma/client';
+export type { Circuit, Game };
 
-// Extender Player con PIN individual
-export interface UserWithPin {
+// Player interface with PIN integration
+export interface Player {
   id: string;
   name: string;
+  imageUrl: string;
   pin: string;
   isActive: boolean;
 }
@@ -20,6 +21,7 @@ export type LapTime = {
 export interface GameSettings {
   players: Player[]; // Ordered players for the game
   circuits: Circuit[]; // Ordered circuits for the game
+  controllerIds: string[]; // IDs of players who can register times
   lapsPerTurn: 3 | 5;
   turnsPerCircuit: number;
 
@@ -72,8 +74,8 @@ export interface GameState {
   currentPlayerIndex: number;
   circuitResults: CircuitResult[];
   playerStats: Record<string, PlayerStats>;
-  sessionBestLap: number;
-  sessionBestAverage: number;
+  sessionBestLap: number | null;
+  sessionBestAverage: number | null;
   lapTimesLog: NightlyResult[];
   // Control de turnos
   currentController: string; // ID del usuario que puede registrar resultados

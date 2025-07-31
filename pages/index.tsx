@@ -120,6 +120,18 @@ function App() {
           playerStats[p.id] = { totalScore: 0, bestLaps: 0, bestAverages: 0 };
       });
 
+      // Create participant users based on all players
+      const participantUsers = settings.players.map(player => ({
+        userId: player.id,
+        name: player.name,
+        role: settings.controllerIds.includes(player.id) ? 'controller' as const : 'spectator' as const
+      }));
+
+      // Set initial controller to the first controller in the list, or current user if they're a controller
+      const initialController = settings.controllerIds.includes(currentUser!.userId) 
+        ? currentUser!.userId 
+        : settings.controllerIds[0];
+
       const newGameState: GameState = {
         settings,
         circuits: settings.circuits,
@@ -129,11 +141,11 @@ function App() {
         currentPlayerIndex: 0,
         circuitResults: Array(settings.circuits.length).fill(null).map((_, i) => ({ circuitId: settings.circuits[i].id, turns: [] })),
         playerStats,
-        sessionBestLap: Infinity,
-        sessionBestAverage: Infinity,
+        sessionBestLap: null,
+        sessionBestAverage: null,
         lapTimesLog: [],
-        currentController: currentUser!.userId, // El creador del juego tiene el control inicial
-        participantUsers: [{ userId: currentUser!.userId, name: currentUser!.name, role: 'controller' }],
+        currentController: initialController,
+        participantUsers,
       };
       
       const response = await fetch('/api/game/create', {
@@ -257,7 +269,7 @@ function App() {
     
     let newSessionBestLap = gameState.sessionBestLap;
     lapTimes.forEach(time => {
-        if(time < newSessionBestLap) newSessionBestLap = time;
+        if(newSessionBestLap === null || time < newSessionBestLap) newSessionBestLap = time;
     });
 
     const timesToAverage = (gameState.settings.lapsPerTurn === 5 && gameState.settings.useBest4Of5Laps)
@@ -267,7 +279,7 @@ function App() {
     const averageTime = Math.round(timesToAverage.reduce((a, b) => a + b, 0) / timesToAverage.length);
     
     let newSessionBestAverage = gameState.sessionBestAverage;
-    if (averageTime < newSessionBestAverage) {
+    if (newSessionBestAverage === null || averageTime < newSessionBestAverage) {
         newSessionBestAverage = averageTime;
     }
     

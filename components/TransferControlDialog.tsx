@@ -19,7 +19,9 @@ const TransferControlDialog: React.FC<TransferControlDialogProps> = ({
 
   if (!isOpen) return null;
 
-  const availableUsers = participantUsers.filter(user => user.userId !== currentControllerId);
+  const availableUsers = participantUsers.filter(user => 
+    user.userId !== currentControllerId && user.role === 'controller'
+  );
 
   const handleTransfer = () => {
     if (selectedUserId) {

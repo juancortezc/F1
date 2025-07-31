@@ -18,7 +18,7 @@ interface RaceViewProps {
 }
 
 const formatTime = (ms: number | null | undefined): string => {
-    if (ms === null || ms === undefined) return '-:--.---';
+    if (ms === null || ms === undefined || ms === Infinity || !isFinite(ms)) return '-:--.---';
     const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.floor(totalSeconds % 60);
@@ -329,8 +329,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                                        timeInMs < currentCircuit.historicalBestLap;
                 
                 // Check if this is a session best (or first time if no session record)
-                const isSessionBest = sessionBestLap === Infinity || 
-                                    sessionBestLap === null || 
+                const isSessionBest = sessionBestLap === null || 
                                     sessionBestLap === undefined || 
                                     timeInMs < sessionBestLap;
                 
@@ -370,8 +369,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                                       currentAverage < currentCircuit.historicalBestAverage;
             
             // Check if this is a session best average (or first time if no session record)
-            const isSessionBestAvg = sessionBestAverage === Infinity || 
-                                   sessionBestAverage === null || 
+            const isSessionBestAvg = sessionBestAverage === null || 
                                    sessionBestAverage === undefined || 
                                    currentAverage < sessionBestAverage;
             

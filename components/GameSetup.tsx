@@ -15,6 +15,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [orderedPlayers, setOrderedPlayers] = useState<Player[]>([]);
   const [selectedCircuits, setSelectedCircuits] = useState<Circuit[]>([]);
+  const [controllerIds, setControllerIds] = useState<string[]>([]);
   
   const [lapsPerTurn, setLapsPerTurn] = useState<3 | 5>(3);
   const [turnsPerCircuit, setTurnsPerCircuit] = useState(3);
@@ -73,14 +74,20 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
       setStep(1);
       return;
     }
+    if (controllerIds.length < 1) {
+      alert("Seleccionar al menos 1 registrador de tiempos");
+      setStep(3);
+      return;
+    }
     if (selectedCircuits.length < 1) {
       alert("Seleccionar al menos 1 circuito");
-      setStep(3);
+      setStep(4);
       return;
     }
     const settings: GameSettings = {
       players: orderedPlayers,
       circuits: selectedCircuits,
+      controllerIds,
       lapsPerTurn,
       turnsPerCircuit,
       scoringMethod,
@@ -132,11 +139,61 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                 </div>
             </div>
         )
-      case 3: // Select & Order Circuits
+      case 3: // Select Controllers
+        return (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">3. Registradores de Tiempos</h2>
+            <p className="text-slate-400 mb-4">Selecciona quiénes pueden registrar tiempos durante las carreras:</p>
+            <div className="space-y-2">
+              {orderedPlayers.map(player => {
+                const isSelected = controllerIds.includes(player.id);
+                return (
+                  <div 
+                    key={player.id} 
+                    onClick={() => {
+                      if (isSelected) {
+                        setControllerIds(prev => prev.filter(id => id !== player.id));
+                      } else {
+                        setControllerIds(prev => [...prev, player.id]);
+                      }
+                    }}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'bg-green-900/50 border-2 border-green-500' 
+                        : 'bg-slate-800 border-2 border-slate-600 hover:bg-slate-700'
+                    }`}
+                  >
+                    <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full" />
+                    <div className="flex-grow">
+                      <div className="font-semibold">{player.name}</div>
+                      <div className="text-sm text-slate-400">
+                        {isSelected ? 'Puede registrar tiempos' : 'Solo espectador'}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="text-green-400">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 p-3 bg-blue-900/20 border border-blue-600 rounded-lg">
+              <p className="text-sm text-blue-300">
+                <strong>Info:</strong> Los registradores pueden alternar el control durante las carreras. 
+                Otros jugadores aparecerán como espectadores y solo podrán ver el progreso.
+              </p>
+            </div>
+          </div>
+        );
+      case 4: // Select & Order Circuits
         const availableCircuits = allCircuits.filter(c => !selectedCircuits.find(sc => sc.id === c.id));
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">3. Selecciona & Ordenar Circuitos</h2>
+                <h2 className="text-2xl font-bold mb-4">4. Selecciona & Ordenar Circuitos</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 className="font-semibold mb-2">Circuitos</h3>
@@ -165,10 +222,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                 </div>
             </div>
         );
-      case 4: // Race Parameters
+      case 5: // Race Parameters
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">4. Configuración</h2>
+            <h2 className="text-2xl font-bold mb-6">5. Configuración</h2>
             <div className="space-y-6">
               <div>
                 <label className="block text-slate-400 mb-2">Vueltas por Turno</label>
@@ -193,10 +250,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-      case 5: // Points System
+      case 6: // Points System
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">5. Puntaje</h2>
+            <h2 className="text-2xl font-bold mb-6">6. Puntaje</h2>
             <div className="space-y-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
                 <h3 className="font-semibold text-lg text-[#FF1801]">Puntaje Principal por Turno</h3>
                 <p className="text-sm text-slate-400">Elija como asignar  (1ro: 3, 2do: 2, 3ro: 1) puntos</p>
@@ -250,19 +307,27 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-       case 6: // Review
+       case 7: // Review
         const { scoringMultiplier } = (scoringMethod === 'both' && useMultiplier) 
             ? { scoringMultiplier: { appliesTo: multiplierTarget, factor: multiplierFactor } } 
             : { scoringMultiplier: null };
 
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">6. Revisión e Inicio</h2>
+                <h2 className="text-2xl font-bold mb-4">7. Revisión e Inicio</h2>
                 <div className="bg-slate-800 p-4 rounded-lg space-y-4 text-slate-300">
                     <div><strong>Orden de Jugadores:</strong>
                         <ol className="list-decimal list-inside pl-4">
                             {orderedPlayers.map(p => <li key={p.id}>{p.name}</li>)}
                         </ol>
+                    </div>
+                    <div><strong>Registradores de Tiempos:</strong>
+                        <ul className="list-disc list-inside pl-4">
+                            {controllerIds.map(id => {
+                              const player = orderedPlayers.find(p => p.id === id);
+                              return <li key={id}>{player?.name}</li>;
+                            })}
+                        </ul>
                     </div>
                     <div><strong>Circuit Order:</strong> 
                         <ol className="list-decimal list-inside pl-4">
@@ -286,7 +351,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
     }
   };
 
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -312,7 +377,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
               Regresar
             </button>
             {step < totalSteps ? (
-              <button onClick={handleNext} disabled={(step === 1 || step === 2) && selectedPlayers.length < 2 || step === 3 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <button onClick={handleNext} disabled={(step === 1 || step === 2) && selectedPlayers.length < 2 || step === 3 && controllerIds.length < 1 || step === 4 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 Siguiente
               </button>
             ) : (
