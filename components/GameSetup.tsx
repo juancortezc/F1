@@ -18,7 +18,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
   const [controllerIds, setControllerIds] = useState<string[]>([]);
   
   const [lapsPerTurn, setLapsPerTurn] = useState<3 | 5>(3);
-  const [turnsPerCircuit, setTurnsPerCircuit] = useState(3);
+  const [turnsPerCircuit, setTurnsPerCircuit] = useState(2);
   const [pointsForBestLap, setPointsForBestLap] = useState(1);
   const [pointsForBestAverage, setPointsForBestAverage] = useState(1);
   const [awardBestTimeFor, setAwardBestTimeFor] = useState<'turn' | 'circuit' | 'both'>('turn');
@@ -396,8 +396,22 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                  </div>
               )}
                <div>
-                <label className="block text-slate-400 mb-2">Turnos por Circuito ({turnsPerCircuit})</label>
-                <input type="range" min="1" max="10" value={turnsPerCircuit} onChange={e => setTurnsPerCircuit(parseInt(e.target.value))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#FF1801]" />
+                <label className="block text-slate-400 mb-3">Turnos por Circuito</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map(turns => (
+                    <button
+                      key={turns}
+                      onClick={() => setTurnsPerCircuit(turns)}
+                      className={`px-3 py-2 rounded-lg font-semibold transition-colors ${
+                        turnsPerCircuit === turns 
+                          ? 'bg-[#FF1801] text-white' 
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {turns}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
