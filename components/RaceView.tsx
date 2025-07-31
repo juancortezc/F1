@@ -235,47 +235,24 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   return (
     <div className="max-w-4xl mx-auto p-3 md:p-4 space-y-4 md:space-y-6">
         {/* Header Info */}
-        <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700 shadow-lg">
-            <SectionHeader
-              title={currentCircuit.name}
-              subtitle={`Turno ${currentTurn} de ${settings.turnsPerCircuit}`}
-              variant="large"
-              action={
-                <div className="text-right">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="font-semibold text-lg text-slate-100">{currentPlayer.name}</span>
-                  </div>
-                  {nextPlayer && (
-                    <p className="text-sm text-slate-400">Siguiente: {nextPlayer.name}</p>
-                  )}
+        <div className="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl border border-slate-700 shadow-lg">
+            {/* Compact layout */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-bold text-[#FF1801]">{currentCircuit.name}</h1>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${isCurrentController ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                  <span className="font-semibold text-lg text-white">{currentPlayer.name}</span>
                 </div>
-              }
-            />
-            
-            {/* Control Status */}
-            <div className={`mt-4 p-3 md:p-4 rounded-lg ${isCurrentController ? 'bg-green-900/30 border border-green-600' : 'bg-yellow-900/30 border border-yellow-600'}`}>
-              <div className="flex items-center gap-3">
-                {isCurrentController ? (
-                  <>
-                    <svg className="w-6 h-6 md:w-5 md:h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-green-400 font-medium text-sm md:text-base">
-                      <span className="hidden sm:inline">Tienes el control - Puedes registrar resultados</span>
-                      <span className="sm:hidden">Tienes el control</span>
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-6 h-6 md:w-5 md:h-5 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.866-.833-2.636 0L3.178 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                    <span className="text-yellow-400 font-medium text-sm md:text-base">{controllerName} tiene el control</span>
-                  </>
-                )}
               </div>
-            </div>"
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400">Turno {currentTurn} de {settings.turnsPerCircuit}</span>
+              {nextPlayer && (
+                <span className="text-white font-medium">Siguiente: {nextPlayer.name}</span>
+              )}
+            </div>
         </div>
 
         {/* Best Times */}

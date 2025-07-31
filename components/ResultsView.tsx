@@ -393,45 +393,93 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
                 </div>
             );
         case 'nightly':
+            // Group results by circuit
+            const resultsByCircuit = nightlyView === 'lap' ? 
+                sortedLapResults.reduce((acc, result) => {
+                    if (!acc[result.circuitName]) acc[result.circuitName] = [];
+                    acc[result.circuitName].push(result);
+                    return acc;
+                }, {} as Record<string, typeof sortedLapResults>) :
+                sortedAverageResults.reduce((acc, result) => {
+                    if (!acc[result.circuitName]) acc[result.circuitName] = [];
+                    acc[result.circuitName].push(result);
+                    return acc;
+                }, {} as Record<string, typeof sortedAverageResults>);
+            
             return (
                 <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                    <div className="mb-4 flex border-b border-slate-600">
-                        <button onClick={() => setNightlyView('lap')} className={`py-2 px-4 font-semibold ${nightlyView === 'lap' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>By Lap</button>
-                        <button onClick={() => setNightlyView('average')} className={`py-2 px-4 font-semibold ${nightlyView === 'average' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>By Average</button>
+                    <div className="mb-6">
+                        <div className="bg-slate-700/50 backdrop-blur-sm border border-slate-600 rounded-lg p-1 inline-flex">
+                            <button 
+                                onClick={() => setNightlyView('lap')} 
+                                className={`py-2 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
+                                    nightlyView === 'lap' 
+                                        ? 'bg-[#FF1801] text-white shadow-md' 
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-600/50'
+                                }`}
+                            >
+                                By Lap
+                            </button>
+                            <button 
+                                onClick={() => setNightlyView('average')} 
+                                className={`py-2 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
+                                    nightlyView === 'average' 
+                                        ? 'bg-[#FF1801] text-white shadow-md' 
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-600/50'
+                                }`}
+                            >
+                                By Average
+                            </button>
+                        </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left text-slate-300">
-                            <thead className="text-xs text-slate-400 uppercase bg-slate-700/50">
-                                <tr>
-                                    <th scope="col" className="px-4 py-3">#</th>
-                                    <th scope="col" className="px-4 py-3">Circuito</th>
-                                    <th scope="col" className="px-4 py-3">Jugador</th>
-                                    <th scope="col" className="px-4 py-3">Turno</th>
-                                    {nightlyView === 'lap' && <th scope="col" className="px-4 py-3">Vuelta</th>}
-                                    <th scope="col" className="px-4 py-3 text-right">Tiempo</th>
-                                    <th scope="col" className="px-4 py-3 text-right">Delta</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(nightlyView === 'lap' ? sortedLapResults : sortedAverageResults).map((result, index) => {
-                                    const player = players.find(p => p.id === result.playerId);
-                                    const delta = result.time - (nightlyView === 'lap' ? bestLapTime : bestAverageTime);
-                                    return (
-                                        <tr key={index} className="border-b border-slate-700 hover:bg-slate-800/50">
-                                            <td className="px-4 py-3 font-medium">{index + 1}</td>
-                                            <td className="px-4 py-3">{result.circuitName}</td>
-                                            <td className="px-4 py-3 font-semibold whitespace-nowrap">{player?.name}</td>
-                                            <td className="px-4 py-3">{result.turn}</td>
-                                            {nightlyView === 'lap' && <td className="px-4 py-3">{'lap' in result ? (result as NightlyResult).lap : '-'}</td>}
-                                            <td className="px-4 py-3 text-right font-mono">{formatTime(result.time)}</td>
-                                            <td className="px-4 py-3 text-right font-mono text-slate-400">
-                                                {delta > 0 ? `+${formatTime(delta)}` : '-'}
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
+                    
+                    <div className="space-y-6">
+                        {Object.entries(resultsByCircuit).map(([circuitName, results]) => {
+                            const bestTimeInCircuit = Math.min(...results.map(r => r.time));
+                            return (
+                                <div key={circuitName} className="bg-slate-700/30 rounded-lg overflow-hidden">
+                                    {/* Circuit Header */}
+                                    <div className="bg-slate-700/50 p-3 border-b border-slate-600">
+                                        <h3 className="text-lg font-semibold text-[#FF1801]">{circuitName}</h3>
+                                    </div>
+                                    
+                                    {/* Circuit Table */}
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm text-left text-slate-300">
+                                            <thead className="text-xs text-slate-400 uppercase bg-slate-700/30">
+                                                <tr>
+                                                    <th scope="col" className="px-3 py-2">#</th>
+                                                    <th scope="col" className="px-3 py-2">Jugador</th>
+                                                    <th scope="col" className="px-3 py-2">Tiempo</th>
+                                                    <th scope="col" className="px-3 py-2">Delta</th>
+                                                    <th scope="col" className="px-3 py-2">Turno</th>
+                                                    {nightlyView === 'lap' && <th scope="col" className="px-3 py-2">Vuelta</th>}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {results.sort((a, b) => a.time - b.time).map((result, index) => {
+                                                    const player = players.find(p => p.id === result.playerId);
+                                                    const delta = result.time - bestTimeInCircuit;
+                                                    const isCircuitBest = result.time === bestTimeInCircuit;
+                                                    return (
+                                                        <tr key={`${result.playerId}-${result.turn}`} className={`border-b border-slate-600/50 hover:bg-slate-700/30 ${isCircuitBest ? 'bg-green-900/20' : ''}`}>
+                                                            <td className="px-3 py-2 font-medium">{index + 1}</td>
+                                                            <td className="px-3 py-2 font-semibold whitespace-nowrap">{player?.name}</td>
+                                                            <td className="px-3 py-2 font-mono text-cyan-400">{formatTime(result.time)}</td>
+                                                            <td className="px-3 py-2 font-mono text-slate-400">
+                                                                {delta > 0 ? `+${formatTime(delta)}` : '-'}
+                                                            </td>
+                                                            <td className="px-3 py-2">{result.turn}</td>
+                                                            {nightlyView === 'lap' && <td className="px-3 py-2">{'lap' in result ? (result as NightlyResult).lap : '-'}</td>}
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -442,11 +490,44 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
 
   return (
     <div className="max-w-4xl mx-auto p-4">
-        <div className="mb-4 flex border-b border-slate-700">
-             <button onClick={() => setActiveTab('standings')} className={`py-2 px-4 font-semibold ${activeTab === 'standings' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Posiciones</button>
-             <button onClick={() => setActiveTab('nightly')} className={`py-2 px-4 font-semibold ${activeTab === 'nightly' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Resultados Campeonato</button>
-             <button onClick={() => setActiveTab('top')} className={`py-2 px-4 font-semibold ${activeTab === 'top' ? 'border-b-2 border-[#FF1801] text-[#FF1801]' : 'text-slate-400'}`}>Top </button>
+        {/* Elegant Tab Navigation */}
+        <div className="mb-6">
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-1">
+                <div className="flex">
+                    <button 
+                        onClick={() => setActiveTab('standings')} 
+                        className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
+                            activeTab === 'standings' 
+                                ? 'bg-[#FF1801] text-white shadow-lg' 
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        }`}
+                    >
+                        Posiciones
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('nightly')} 
+                        className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
+                            activeTab === 'nightly' 
+                                ? 'bg-[#FF1801] text-white shadow-lg' 
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        }`}
+                    >
+                        Resultados
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('top')} 
+                        className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
+                            activeTab === 'top' 
+                                ? 'bg-[#FF1801] text-white shadow-lg' 
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        }`}
+                    >
+                        Top Stats
+                    </button>
+                </div>
+            </div>
         </div>
+        
         <div>
             {renderTabContent()}
         </div>

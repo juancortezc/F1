@@ -4,30 +4,8 @@ import { Player } from '../types';
 
 const playersFilePath = path.join(process.cwd(), 'data', 'players.json');
 
-// Datos por defecto
-const defaultPlayers: Player[] = [
-  { 
-    id: '1', 
-    name: 'Lewis Hamilton', 
-    imageUrl: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png.transform/1col/image.png',
-    pin: '4400',
-    isActive: true
-  },
-  { 
-    id: '2', 
-    name: 'Max Verstappen', 
-    imageUrl: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png.transform/1col/image.png',
-    pin: '3300',
-    isActive: true
-  },
-  { 
-    id: '3', 
-    name: 'Charles Leclerc', 
-    imageUrl: 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png.transform/1col/image.png',
-    pin: '1600',
-    isActive: true
-  }
-];
+// Datos por defecto - sin jugadores fake
+const defaultPlayers: Player[] = [];
 
 // Función para leer jugadores
 export function getPlayers(): Player[] {
