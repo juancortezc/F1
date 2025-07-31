@@ -79,14 +79,16 @@ function App() {
     
     // Si hay un juego activo, agregar el usuario como espectador
     if (activeGame) {
-      const existingUser = activeGame.state.participantUsers.find(u => u.name === user.name);
-      if (!existingUser) {
-        const updatedParticipants = [...activeGame.state.participantUsers, { userId: user.id, name: user.name, role: 'spectator' as const }];
-        const updatedState = {
-          ...activeGame.state,
-          participantUsers: updatedParticipants
-        };
-        await updateGameState(updatedState);
+      if (activeGame.state?.participantUsers) {
+        const existingUser = activeGame.state.participantUsers.find(u => u.name === user.name);
+        if (!existingUser) {
+          const updatedParticipants = [...activeGame.state.participantUsers, { userId: user.id, name: user.name, role: 'spectator' as const }];
+          const updatedState = {
+            ...activeGame.state,
+            participantUsers: updatedParticipants
+          };
+          await updateGameState(updatedState);
+        }
       }
       
       const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;

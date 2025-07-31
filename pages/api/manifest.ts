@@ -1,0 +1,54 @@
+import { NextApiRequest, NextApiResponse } from 'next';
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  const manifest = {
+    "name": "F1 Night - Race Tracker",
+    "short_name": "F1 Night",
+    "description": "Professional F1 racing session tracker and championship manager",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#FF1801",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "categories": ["sports", "racing", "entertainment"],
+    "icons": [
+      {
+        "src": "/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/icon-512.png", 
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "/apple-touch-icon.png",
+        "sizes": "180x180",
+        "type": "image/png",
+        "purpose": "any"
+      }
+    ],
+    "prefer_related_applications": false,
+    "related_applications": [],
+    "lang": "es"
+  };
+
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.status(200).json(manifest);
+}

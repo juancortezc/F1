@@ -1,9 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-
-// Importar la misma lista de usuarios (en producción sería una DB)
-let users: { id: string; name: string; pin: string; isActive: boolean }[] = [
-  { id: '1', name: 'Admin', pin: '1234', isActive: true }
-];
+import { getUsers } from '../../../lib/users-db';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -16,6 +12,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(400).json({ error: 'PIN is required' });
   }
   
+  const users = getUsers();
   const user = users.find(u => u.pin === pin && u.isActive);
   
   if (!user) {

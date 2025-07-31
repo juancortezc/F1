@@ -1,12 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-
-// Simulamos una base de datos en memoria para usuarios (en producción sería una DB real)
-let users: { id: string; name: string; pin: string; isActive: boolean }[] = [
-  { id: '1', name: 'Admin', pin: '1234', isActive: true }
-];
+import { getUsers, saveUsers } from '../../lib/users-db';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
+    const users = getUsers();
     return res.status(200).json(users.filter(u => u.isActive));
   }
   
@@ -16,6 +13,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     if (!name || !pin) {
       return res.status(400).json({ error: 'Name and PIN are required' });
     }
+    
+    const users = getUsers();
     
     // Verificar que el PIN no esté duplicado
     const existingUser = users.find(u => u.pin === pin && u.isActive);
@@ -31,12 +30,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     };
     
     users.push(newUser);
+    saveUsers(users);
     return res.status(201).json(newUser);
   }
   
   if (req.method === 'PUT') {
     const { id, name, pin, isActive } = req.body;
     
+    const users = getUsers();
     const userIndex = users.findIndex(u => u.id === id);
     if (userIndex === -1) {
       return res.status(404).json({ error: 'User not found' });
@@ -51,18 +52,21 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     }
     
     users[userIndex] = { ...users[userIndex], name, pin, isActive };
+    saveUsers(users);
     return res.status(200).json(users[userIndex]);
   }
   
   if (req.method === 'DELETE') {
     const { id } = req.query;
     
+    const users = getUsers();
     const userIndex = users.findIndex(u => u.id === id);
     if (userIndex === -1) {
       return res.status(404).json({ error: 'User not found' });
     }
     
     users[userIndex].isActive = false;
+    saveUsers(users);
     return res.status(200).json({ message: 'User deactivated' });
   }
   
