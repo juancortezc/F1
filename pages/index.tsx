@@ -10,6 +10,7 @@ import ResultsView from '../components/ResultsView';
 import HubScreen from '../components/HubScreen';
 import AdminView from '../components/AdminView';
 import RaceProgress from '../components/RaceProgress';
+import SpectatorDashboard from '../components/SpectatorDashboard';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry } from '../types';
 
 type GamePhase = 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading';
@@ -31,7 +32,7 @@ function useApiData() {
 
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('login');
-  const [activeTab, setActiveTab] = useState<'race' | 'progress' | 'results'>('race');
+  const [activeTab, setActiveTab] = useState<'race' | 'progress' | 'results' | 'spectator'>('race');
   const [currentUser, setCurrentUser] = useState<{userId: string, name: string} | null>(null);
   
   const { mutate } = useSWRConfig();
@@ -538,29 +539,35 @@ function App() {
                         
                         {/* Mobile Tab Navigation */}
                         <div className="flex md:hidden justify-center py-2 border-b border-slate-700">
-                            <div className="flex border border-slate-600 rounded-lg p-1">
+                            <div className="flex border border-slate-600 rounded-lg p-1 overflow-x-auto">
                                 <button 
                                     onClick={() => setActiveTab('race')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
                                     disabled={isFinished}
                                 >
                                     Carrera
                                 </button>
                                 <button 
+                                    onClick={() => setActiveTab('spectator')} 
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'spectator' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    Dashboard
+                                </button>
+                                <button 
                                     onClick={() => setActiveTab('progress')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'progress' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'progress' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
                                     Progreso
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('results')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
                                     Resultados
                                 </button>
                                 <button
                                     onClick={handleAdmin}
-                                    className="px-3 py-2 text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+                                    className="px-2 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-700 rounded-md transition-colors whitespace-nowrap"
                                 >
                                     Admin
                                 </button>
@@ -586,6 +593,12 @@ function App() {
                                     disabled={isFinished}
                                 >
                                     Carrera
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('spectator')} 
+                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'spectator' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    Dashboard
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('progress')} 
@@ -635,6 +648,7 @@ function App() {
                 
                 <main className="mt-4">
                     {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
+                    {activeTab === 'spectator' && <SpectatorDashboard gameState={gameStateFromDB} players={players} circuits={circuits} />}
                     {activeTab === 'progress' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                     {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                     {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}

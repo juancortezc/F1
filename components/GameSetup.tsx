@@ -107,7 +107,31 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
       case 1: // Select Players
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-4">1. Seleccionar Jugadores</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">1. Seleccionar Jugadores</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
+                    const randomSelection = shuffled.slice(0, Math.min(4, shuffled.length));
+                    setSelectedPlayers(randomSelection);
+                    setOrderedPlayers(randomSelection);
+                  }}
+                  className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  🎲 Aleatorio
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedPlayers([]);
+                    setOrderedPlayers([]);
+                  }}
+                  className="px-3 py-1 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                >
+                  Limpiar
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {allPlayers.map(player => (
                 <div key={player.id} onClick={() => handlePlayerToggle(player)} className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlayers.find(p => p.id === player.id) ? 'border-[#FF1801] bg-red-900/50' : 'border-slate-600 bg-slate-800 hover:bg-slate-700'}`}>
@@ -193,7 +217,27 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         const availableCircuits = allCircuits.filter(c => !selectedCircuits.find(sc => sc.id === c.id));
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">4. Selecciona & Ordenar Circuitos</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold">4. Selecciona & Ordenar Circuitos</h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const shuffled = [...allCircuits].sort(() => Math.random() - 0.5);
+                        const randomSelection = shuffled.slice(0, Math.min(3, shuffled.length));
+                        setSelectedCircuits(randomSelection);
+                      }}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      🎲 Aleatorio
+                    </button>
+                    <button
+                      onClick={() => setSelectedCircuits([])}
+                      className="px-3 py-1 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+                </div>
                 <div className="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 className="font-semibold mb-2">Circuitos</h3>
