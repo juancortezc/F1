@@ -5,14 +5,20 @@ import NavigationBar from './NavigationBar';
 interface HubScreenProps {
     onNewGame: () => void;
     onAdmin: () => void;
+    currentUser: { userId: string; name: string } | null;
+    onLogout: () => void;
 }
 
-const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin }) => {
+const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, onLogout }) => {
     return (
         <div className="min-h-screen bg-slate-900">
             <NavigationBar 
                 title="F1 Night"
                 subtitle="Gestión de carreras F1"
+                currentUser={currentUser}
+                onLogout={onLogout}
+                showAdmin={true}
+                onAdmin={onAdmin}
             />
             
             <div className="flex items-center justify-center min-h-[calc(100vh-80px)] p-4">

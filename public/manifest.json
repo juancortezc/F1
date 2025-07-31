@@ -6,35 +6,42 @@
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#FF1801",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "/",
   "categories": ["sports", "racing", "entertainment"],
   "icons": [
     {
-      "src": "https://storage.googleapis.com/poker-enfermos/f1-logo.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://storage.googleapis.com/poker-enfermos/f1-logo.png", 
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png", 
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
+      "purpose": "any"
+    },
     {
-      "src": "https://storage.googleapis.com/poker-enfermos/f1-logo.png",
-      "sizes": "540x720",
+      "src": "/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow"
+      "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "features": [
-    "offline-support",
-    "real-time-updates", 
-    "data-sync"
-  ],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "lang": "es"
 }

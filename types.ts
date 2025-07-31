@@ -3,6 +3,14 @@
 import type { Player, Circuit, Game } from '@prisma/client';
 export type { Player, Circuit, Game };
 
+// Extender Player con PIN individual
+export interface UserWithPin {
+  id: string;
+  name: string;
+  pin: string;
+  isActive: boolean;
+}
+
 export type LapTime = {
   min: string;
   sec: string;
@@ -67,6 +75,9 @@ export interface GameState {
   sessionBestLap: number;
   sessionBestAverage: number;
   lapTimesLog: NightlyResult[];
+  // Control de turnos
+  currentController: string; // ID del usuario que puede registrar resultados
+  participantUsers: { userId: string; name: string; role: 'controller' | 'spectator' }[];
 }
 
 export interface GameHistoryEntry {

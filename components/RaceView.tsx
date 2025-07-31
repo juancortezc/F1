@@ -6,13 +6,15 @@ import DataCard from './DataCard';
 import StatsGrid from './StatsGrid';
 import SectionHeader from './SectionHeader';
 import KeyboardShortcuts, { KeyboardHelp } from './KeyboardShortcuts';
+import TransferControlDialog from './TransferControlDialog';
 
 interface RaceViewProps {
   gameState: GameState;
   players: Player[];
-  onTurnComplete: (playerId: string, lapTimes: number[]) => void;
+  onTurnComplete: (playerId: string, lapTimes: number[], newControllerId?: string) => void;
   onNextCircuit: () => void;
   onGameEnd: () => void;
+  currentUser: { userId: string; name: string };
 }
 
 const formatTime = (ms: number | null | undefined): string => {
@@ -61,8 +63,8 @@ const TimeInput: React.FC<{
     );
 };
 
-const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete, onNextCircuit, onGameEnd }) => {
-  const { settings, circuits, currentCircuitIndex, currentTurn, currentPlayerIndex, sessionBestLap, sessionBestAverage, playerOrder } = gameState;
+const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete, onNextCircuit, onGameEnd, currentUser }) => {
+  const { settings, circuits, currentCircuitIndex, currentTurn, currentPlayerIndex, sessionBestLap, sessionBestAverage, playerOrder, currentController, participantUsers } = gameState;
   const currentCircuit = circuits[currentCircuitIndex];
   const currentPlayerId = playerOrder[currentPlayerIndex];
   const currentPlayer = players.find(p => p.id === currentPlayerId) as Player;
@@ -71,6 +73,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const [currentAverage, setCurrentAverage] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
 
   const handleLapTimeChange = (index: number, field: keyof LapTimeType, value: string) => {
     const newLapTimes = [...lapTimes];
@@ -122,9 +125,18 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     setIsSubmitting(true);
     try {
       await onTurnComplete(currentPlayerId, timesInMs);
+      // Después de guardar exitosamente, mostrar el diálogo de transferencia
+      if (participantUsers.length > 1) {
+        setShowTransferDialog(true);
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleTransferControl = (newControllerId: string) => {
+    // Actualizar inmediatamente el estado local para la próxima función onTurnComplete
+    onTurnComplete(currentPlayerId, [], newControllerId);
   };
 
   const handleClear = () => {
@@ -170,6 +182,8 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
   const isLastPlayerOfTurn = currentPlayerIndex === settings.players.length - 1;
   const nextPlayer = !isLastPlayerOfTurn ? players.find(p => p.id === playerOrder[currentPlayerIndex + 1]) : null;
+  const isCurrentController = currentUser.userId === currentController;
+  const controllerName = participantUsers.find(u => u.userId === currentController)?.name || 'Desconocido';
 
   // Keyboard shortcuts
   const shortcuts = [
@@ -218,6 +232,27 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                 </div>
               }
             />
+            
+            {/* Control Status */}
+            <div className={`mt-4 p-3 rounded-lg ${isCurrentController ? 'bg-green-900/30 border border-green-600' : 'bg-yellow-900/30 border border-yellow-600'}`}>
+              <div className="flex items-center gap-2">
+                {isCurrentController ? (
+                  <>
+                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-green-400 font-medium">Tienes el control - Puedes registrar resultados</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.866-.833-2.636 0L3.178 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <span className="text-yellow-400 font-medium">{controllerName} tiene el control</span>
+                  </>
+                )}
+              </div>
+            </div>
         </div>
 
         {/* Best Times */}
@@ -254,7 +289,15 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
       {/* Time Input Form */}
       <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700 space-y-4">
-        <h2 className="text-xl font-bold text-center">Ingresa los Tiempos de Vuelta de {currentPlayer.name}</h2>
+        <h2 className="text-xl font-bold text-center">
+          {isCurrentController ? `Ingresa los Tiempos de Vuelta de ${currentPlayer.name}` : `Esperando tiempos de ${currentPlayer.name}`}
+        </h2>
+        
+        {!isCurrentController && (
+          <div className="text-center text-slate-400 mb-4">
+            <p>Solo {controllerName} puede registrar resultados en este momento</p>
+          </div>
+        )}
         {lapTimes.map((lapTime, i) => {
             const timeInMs = timeToMs(lapTime);
             
@@ -341,40 +384,51 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         })()}
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button 
-            onClick={handleClear} 
-            disabled={isSubmitting}
-            className="bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-          >
-            <span className="text-lg">↻</span> Limpiar Tiempos
-          </button>
-          <button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting}
-            className="bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <LoadingSpinner size="sm" className="text-white" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <CheckCircleIcon className="w-6 h-6" /> 
-                Grabar Tiempos y Terminar Turno
-              </>
-            )}
-          </button>
-        </div>
+        {isCurrentController && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button 
+              onClick={handleClear} 
+              disabled={isSubmitting}
+              className="bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              <span className="text-lg">↻</span> Limpiar Tiempos
+            </button>
+            <button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting}
+              className="bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <LoadingSpinner size="sm" className="text-white" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <CheckCircleIcon className="w-6 h-6" /> 
+                  Grabar Tiempos y Terminar Turno
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
       
       {/* Keyboard Shortcuts */}
-      <KeyboardShortcuts shortcuts={shortcuts} enabled={!isSubmitting} />
+      <KeyboardShortcuts shortcuts={shortcuts} enabled={!isSubmitting && isCurrentController} />
       <KeyboardHelp 
         shortcuts={shortcuts} 
         isOpen={showKeyboardHelp} 
         onClose={() => setShowKeyboardHelp(false)} 
+      />
+      
+      {/* Transfer Control Dialog */}
+      <TransferControlDialog
+        isOpen={showTransferDialog}
+        onClose={() => setShowTransferDialog(false)}
+        onTransfer={handleTransferControl}
+        participantUsers={participantUsers}
+        currentControllerId={currentController}
       />
     </div>
   );

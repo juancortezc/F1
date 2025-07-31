@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useToast } from '../components/Toast';
 
@@ -32,19 +32,75 @@ function useApiData() {
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('login');
   const [activeTab, setActiveTab] = useState<'race' | 'progress' | 'results'>('race');
+  const [currentUser, setCurrentUser] = useState<{userId: string, name: string} | null>(null);
   
   const { mutate } = useSWRConfig();
   const { addToast } = useToast();
   const { players, circuits, activeGame, pinCode, gameHistory, isLoading, error } = useApiData();
 
-  const handleLoginSuccess = () => {
+  // Verificar sesión guardada al cargar
+  useEffect(() => {
+    const savedUser = localStorage.getItem('f1-user');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        
+        if (activeGame) {
+          const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
+          setGamePhase(isFinished ? 'results' : 'race');
+          setActiveTab(isFinished ? 'results' : 'race');
+        } else {
+          setGamePhase('hub');
+        }
+      } catch (e) {
+        localStorage.removeItem('f1-user');
+      }
+    }
+  }, [activeGame]);
+
+  // Polling para actualizaciones en tiempo real (cada 3 segundos)
+  useEffect(() => {
+    if (gamePhase === 'race' || gamePhase === 'results') {
+      const interval = setInterval(() => {
+        mutate('/api/game/active');
+      }, 3000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [gamePhase, mutate]);
+
+  const handleLoginSuccess = async (user: { id: string; name: string }) => {
+    const userSession = { userId: user.id, name: user.name };
+    setCurrentUser(userSession);
+    
+    // Guardar sesión en localStorage
+    localStorage.setItem('f1-user', JSON.stringify(userSession));
+    
+    // Si hay un juego activo, agregar el usuario como espectador
     if (activeGame) {
+      const existingUser = activeGame.state.participantUsers.find(u => u.name === user.name);
+      if (!existingUser) {
+        const updatedParticipants = [...activeGame.state.participantUsers, { userId: user.id, name: user.name, role: 'spectator' as const }];
+        const updatedState = {
+          ...activeGame.state,
+          participantUsers: updatedParticipants
+        };
+        await updateGameState(updatedState);
+      }
+      
       const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
       setGamePhase(isFinished ? 'results' : 'race');
       setActiveTab(isFinished ? 'results' : 'race');
     } else {
       setGamePhase('hub');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('f1-user');
+    setCurrentUser(null);
+    setGamePhase('login');
   };
 
   const handleSetupComplete = async (settings: GameSettings) => {
@@ -72,6 +128,8 @@ function App() {
         sessionBestLap: Infinity,
         sessionBestAverage: Infinity,
         lapTimesLog: [],
+        currentController: currentUser!.userId, // El creador del juego tiene el control inicial
+        participantUsers: [{ userId: currentUser!.userId, name: currentUser!.name, role: 'controller' }],
       };
       
       const response = await fetch('/api/game/create', {
@@ -179,9 +237,19 @@ function App() {
       }
   };
 
-  const handleTurnComplete = useCallback(async (playerId: string, lapTimes: number[]) => {
+  const handleTurnComplete = useCallback(async (playerId: string, lapTimes: number[], newControllerId?: string) => {
     if (!activeGame) return;
     const gameState = activeGame.state;
+    
+    // Si solo es para transferir control (sin nuevos lap times)
+    if (lapTimes.length === 0 && newControllerId) {
+      const updatedState = {
+        ...gameState,
+        currentController: newControllerId
+      };
+      await updateGameState(updatedState);
+      return;
+    }
     
     let newSessionBestLap = gameState.sessionBestLap;
     lapTimes.forEach(time => {
@@ -300,6 +368,7 @@ function App() {
       currentTurn: nextTurn,
       playerOrder: newPlayerOrder,
       lapTimesLog: newLapTimesLog,
+      currentController: newControllerId || gameState.currentController,
     };
     await updateGameState(newGameState);
     
@@ -397,11 +466,11 @@ function App() {
   const renderContent = () => {
     switch (gamePhase) {
       case 'login':
-        return <LoginScreen onLoginSuccess={handleLoginSuccess} pinCode={pinCode!} />;
+        return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
       case 'hub':
-        return <HubScreen onNewGame={handleNewGame} onAdmin={handleAdmin} />;
+        return <HubScreen onNewGame={handleNewGame} onAdmin={handleAdmin} currentUser={currentUser} onLogout={handleLogout} />;
       case 'admin':
-        return <AdminView players={players!} circuits={circuits!} onBack={handleExitAdmin} pinCode={pinCode!} />;
+        return <AdminView players={players!} circuits={circuits!} onBack={handleExitAdmin} />;
       case 'setup':
         return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
       case 'race':
@@ -549,7 +618,7 @@ function App() {
                 </div>
                 
                 <main className="mt-4">
-                    {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} />}
+                    {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
                     {activeTab === 'progress' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                     {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                     {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}
