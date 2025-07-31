@@ -102,16 +102,30 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
     onSetupComplete(settings);
   };
   
+  // Initialize with all players if none selected - moved outside of renderStep
+  React.useEffect(() => {
+    if (allPlayers && allPlayers.length > 0 && selectedPlayers.length === 0) {
+      setSelectedPlayers([...allPlayers]);
+      setOrderedPlayers([...allPlayers]);
+    }
+  }, [allPlayers]);
+
   const renderStep = () => {
     switch (step) {
       case 1: // Select Players
-        // Initialize with all players if none selected
-        React.useEffect(() => {
-          if (selectedPlayers.length === 0) {
-            setSelectedPlayers([...allPlayers]);
-            setOrderedPlayers([...allPlayers]);
-          }
-        }, []);
+        // Verificar que hay jugadores disponibles
+        if (!allPlayers || allPlayers.length === 0) {
+          return (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">1. Orden de Inicio</h2>
+              <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-4">
+                <p className="text-yellow-300">
+                  <strong>Cargando:</strong> Esperando a que se carguen los jugadores... Si el problema persiste, verifica que haya jugadores registrados en el sistema.
+                </p>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div>
@@ -160,6 +174,20 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
           </div>
         );
       case 2: // Select Controllers
+        // Verificar que hay jugadores disponibles
+        if (!orderedPlayers || orderedPlayers.length === 0) {
+          return (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">2. Registradores de Tiempos</h2>
+              <div className="bg-red-900/20 border border-red-600 rounded-lg p-4">
+                <p className="text-red-300">
+                  <strong>Error:</strong> No hay jugadores disponibles. Por favor regresa al paso anterior y verifica que haya jugadores seleccionados.
+                </p>
+              </div>
+            </div>
+          );
+        }
+        
         return (
           <div>
             <h2 className="text-2xl font-bold mb-4">2. Registradores de Tiempos</h2>
