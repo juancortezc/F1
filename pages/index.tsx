@@ -40,13 +40,15 @@ function App() {
 
   // Verificar sesión guardada al cargar
   useEffect(() => {
+    if (isLoading) return; // Esperar a que termine de cargar
+    
     const savedUser = localStorage.getItem('f1-user');
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
         setCurrentUser(user);
         
-        if (activeGame) {
+        if (activeGame && activeGame.state) {
           const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
           setGamePhase(isFinished ? 'results' : 'race');
           setActiveTab(isFinished ? 'results' : 'race');
@@ -57,7 +59,7 @@ function App() {
         localStorage.removeItem('f1-user');
       }
     }
-  }, [activeGame]);
+  }, [activeGame, isLoading]);
 
   // Polling para actualizaciones en tiempo real (cada 3 segundos)
   useEffect(() => {
@@ -477,7 +479,7 @@ function App() {
         return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
       case 'race':
       case 'results':
-        if (activeGame && players && circuits) {
+        if (activeGame && activeGame.state && players && circuits) {
           const gameStateFromDB = activeGame.state;
           const isFinished = gameStateFromDB.currentCircuitIndex >= gameStateFromDB.settings.circuits.length;
 

@@ -64,10 +64,30 @@ const TimeInput: React.FC<{
 };
 
 const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete, onNextCircuit, onGameEnd, currentUser }) => {
-  const { settings, circuits, currentCircuitIndex, currentTurn, currentPlayerIndex, sessionBestLap, sessionBestAverage, playerOrder, currentController, participantUsers } = gameState;
+  const { 
+    settings, 
+    circuits, 
+    currentCircuitIndex, 
+    currentTurn, 
+    currentPlayerIndex, 
+    sessionBestLap, 
+    sessionBestAverage, 
+    playerOrder, 
+    currentController, 
+    participantUsers = [] 
+  } = gameState || {};
+  // Verificaciones de seguridad
+  if (!gameState || !settings || !circuits || !playerOrder || !players) {
+    return <div className="text-center p-8">Cargando datos del juego...</div>;
+  }
+
   const currentCircuit = circuits[currentCircuitIndex];
   const currentPlayerId = playerOrder[currentPlayerIndex];
-  const currentPlayer = players.find(p => p.id === currentPlayerId) as Player;
+  const currentPlayer = players.find(p => p.id === currentPlayerId);
+
+  if (!currentCircuit || !currentPlayerId || !currentPlayer) {
+    return <div className="text-center p-8">Error: Datos del juego incompletos</div>;
+  }
 
   const [lapTimes, setLapTimes] = useState<LapTimeType[]>(() => Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' }));
   const [currentAverage, setCurrentAverage] = useState<number | null>(null);

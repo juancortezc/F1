@@ -32,7 +32,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="description" content="Professional F1 racing session tracker and championship manager" />
         
         {/* PWA meta tags */}
-        <link rel="manifest" href="/api/manifest" />
+        <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
