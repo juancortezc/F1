@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getPlayers, validatePlayerPin } from '../../../lib/players-db';
+import prisma from '../../../lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -13,6 +14,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   
   try {
+    // First, check if it's the admin PIN
+    const settings = await prisma.settings.findUnique({
+      where: { id: 'singleton' }
+    });
+    
+    if (settings && settings.pin === pin) {
+      // Admin login
+      return res.status(200).json({
+        user: {
+          id: 'admin',
+          name: 'Administrador'
+        }
+      });
+    }
+    
+    // Then check registered players
     const players = await getPlayers();
     
     // Find player by checking PIN against memory
@@ -28,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Invalid PIN' });
     }
     
-    // En producción aquí generarías un JWT o session token
+    // Player login
     return res.status(200).json({
       user: {
         id: authenticatedPlayer.id,
