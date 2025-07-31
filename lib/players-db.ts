@@ -1,58 +1,89 @@
-import fs from 'fs';
-import path from 'path';
+// Librería para manejo de jugadores usando Prisma/Neon Database
+import prisma from './prisma';
 import { Player } from '../types';
 
-const playersFilePath = path.join(process.cwd(), 'data', 'players.json');
-
-// Datos por defecto - sistema limpio sin datos fake
-const defaultPlayers: Player[] = [];
-
-// Function to ensure data directory exists
-function ensureDataDirectory() {
-  const dataDir = path.dirname(playersFilePath);
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-}
-
-// Función para leer jugadores
-export function getPlayers(): Player[] {
+// Función para leer jugadores desde la base de datos
+export async function getPlayers(): Promise<Player[]> {
   try {
-    ensureDataDirectory();
+    const players = await prisma.player.findMany({
+      orderBy: { createdAt: 'asc' }
+    });
     
-    // Si el archivo no existe, crear vacío (sin datos fake)
-    if (!fs.existsSync(playersFilePath)) {
-      fs.writeFileSync(playersFilePath, JSON.stringify(defaultPlayers, null, 2));
-      return defaultPlayers;
-    }
-    
-    const data = fs.readFileSync(playersFilePath, 'utf8');
-    const players = JSON.parse(data);
-    
-    // Filter out any fake players that might still exist
-    const realPlayers = players.filter((player: Player) => 
-      !['Lewis Hamilton', 'Max Verstappen', 'Charles Leclerc'].includes(player.name)
-    );
-    
-    return realPlayers;
+    // Convert Prisma Player to our Player type
+    return players.map(player => ({
+      id: player.id,
+      name: player.name,
+      imageUrl: player.imageUrl,
+      pin: '', // PIN no se devuelve por seguridad
+      isActive: true
+    }));
   } catch (error) {
     console.error('Error reading players:', error);
     return [];
   }
 }
 
-// Función para guardar jugadores
-export function savePlayers(players: Player[]): void {
+// Función para crear un nuevo jugador
+export async function createPlayer(playerData: Omit<Player, 'id' | 'isActive'>): Promise<Player> {
   try {
-    ensureDataDirectory();
+    const newPlayer = await prisma.player.create({
+      data: {
+        name: playerData.name,
+        imageUrl: playerData.imageUrl,
+      }
+    });
     
-    // Filter out fake players before saving
-    const realPlayers = players.filter(player => 
-      !['Lewis Hamilton', 'Max Verstappen', 'Charles Leclerc'].includes(player.name)
-    );
-    
-    fs.writeFileSync(playersFilePath, JSON.stringify(realPlayers, null, 2));
+    return {
+      id: newPlayer.id,
+      name: newPlayer.name,
+      imageUrl: newPlayer.imageUrl,
+      pin: playerData.pin,
+      isActive: true
+    };
   } catch (error) {
-    console.error('Error saving players:', error);
+    console.error('Error creating player:', error);
+    throw error;
   }
+}
+
+// Función para verificar si un PIN ya existe (mantener en memoria temporal)
+const playerPins = new Map<string, string>(); // playerId -> pin
+
+export function setPinForPlayer(playerId: string, pin: string): void {
+  playerPins.set(playerId, pin);
+}
+
+export function validatePlayerPin(playerId: string, pin: string): boolean {
+  return playerPins.get(playerId) === pin;
+}
+
+export function isPinTaken(pin: string): boolean {
+  return Array.from(playerPins.values()).includes(pin);
+}
+
+// Función para obtener un jugador por ID
+export async function getPlayerById(playerId: string): Promise<Player | null> {
+  try {
+    const player = await prisma.player.findUnique({
+      where: { id: playerId }
+    });
+    
+    if (!player) return null;
+    
+    return {
+      id: player.id,
+      name: player.name,
+      imageUrl: player.imageUrl,
+      pin: playerPins.get(player.id) || '',
+      isActive: true
+    };
+  } catch (error) {
+    console.error('Error getting player by ID:', error);
+    return null;
+  }
+}
+
+// Backward compatibility - deprecated functions
+export function savePlayers(_players: Player[]): void {
+  console.warn('savePlayers is deprecated. Use createPlayer instead.');
 }

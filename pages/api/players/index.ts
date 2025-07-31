@@ -1,12 +1,12 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getPlayers, savePlayers } from '../../../lib/players-db';
+import { getPlayers, createPlayer, setPinForPlayer, isPinTaken } from '../../../lib/players-db';
 import { Player } from '../../../types';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
-      const players = getPlayers();
+      const players = await getPlayers();
       res.status(200).json(players);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch players' });
@@ -37,27 +37,19 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         return res.status(400).json({ error: 'Invalid image URL format' });
       }
       
-      const players = getPlayers();
-      
       // Check for duplicate PIN
-      if (players.some(p => p.pin === pin)) {
+      if (isPinTaken(pin)) {
         return res.status(400).json({ error: 'PIN already exists. Please choose a different PIN.' });
       }
       
-      // Generate new ID
-      const maxId = players.length > 0 ? Math.max(...players.map(p => parseInt(p.id))) : 0;
-      const newId = (maxId + 1).toString();
-      
-      const newPlayer: Player = {
-        id: newId,
+      const newPlayer = await createPlayer({
         name: name.trim(),
         imageUrl,
-        pin,
-        isActive: true
-      };
+        pin
+      });
       
-      players.push(newPlayer);
-      savePlayers(players);
+      // Store PIN in memory for authentication
+      setPinForPlayer(newPlayer.id, pin);
       
       res.status(201).json(newPlayer);
     } catch (error) {

@@ -1,9 +1,9 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getPlayers, savePlayers } from '../../../lib/players-db';
-import { Player } from '../../../types';
+import { getPlayerById, setPinForPlayer, isPinTaken } from '../../../lib/players-db';
+import prisma from '../../../lib/prisma';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
   if (typeof id !== 'string') {
@@ -36,44 +36,54 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         return res.status(400).json({ error: 'Invalid image URL format' });
       }
       
-      const players = getPlayers();
-      const playerIndex = players.findIndex(p => p.id === id);
-      
-      if (playerIndex === -1) {
+      // Check if player exists
+      const existingPlayer = await getPlayerById(id);
+      if (!existingPlayer) {
         return res.status(404).json({ error: 'Player not found' });
       }
       
       // Check for duplicate PIN (excluding current player)
-      if (players.some(p => p.pin === pin && p.id !== id)) {
+      if (isPinTaken(pin) && existingPlayer.pin !== pin) {
         return res.status(400).json({ error: 'PIN already exists. Please choose a different PIN.' });
       }
       
-      const updatedPlayer: Player = {
-        ...players[playerIndex],
-        name: name.trim(),
-        imageUrl,
-        pin
+      // Update player in database
+      const updatedPlayer = await prisma.player.update({
+        where: { id },
+        data: {
+          name: name.trim(),
+          imageUrl
+        }
+      });
+      
+      // Update PIN in memory
+      setPinForPlayer(id, pin);
+      
+      const response = {
+        id: updatedPlayer.id,
+        name: updatedPlayer.name,
+        imageUrl: updatedPlayer.imageUrl,
+        pin,
+        isActive: true
       };
       
-      players[playerIndex] = updatedPlayer;
-      savePlayers(players);
-      
-      res.status(200).json(updatedPlayer);
+      res.status(200).json(response);
     } catch (error) {
       console.error('Failed to update player:', error);
       res.status(500).json({ error: 'Failed to update player' });
     }
   } else if (req.method === 'DELETE') {
     try {
-      const players = getPlayers();
-      const playerIndex = players.findIndex(p => p.id === id);
-      
-      if (playerIndex === -1) {
+      // Check if player exists
+      const existingPlayer = await getPlayerById(id);
+      if (!existingPlayer) {
         return res.status(404).json({ error: 'Player not found' });
       }
       
-      players.splice(playerIndex, 1);
-      savePlayers(players);
+      // Delete player from database
+      await prisma.player.delete({
+        where: { id }
+      });
       
       res.status(204).end();
     } catch (error) {
