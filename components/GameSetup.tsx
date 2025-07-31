@@ -76,12 +76,12 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
     }
     if (controllerIds.length < 1) {
       alert("Seleccionar al menos 1 registrador de tiempos");
-      setStep(3);
+      setStep(2);
       return;
     }
     if (selectedCircuits.length < 1) {
       alert("Seleccionar al menos 1 circuito");
-      setStep(4);
+      setStep(3);
       return;
     }
     const settings: GameSettings = {
@@ -105,68 +105,64 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
   const renderStep = () => {
     switch (step) {
       case 1: // Select Players
+        // Initialize with all players if none selected
+        React.useEffect(() => {
+          if (selectedPlayers.length === 0) {
+            setSelectedPlayers([...allPlayers]);
+            setOrderedPlayers([...allPlayers]);
+          }
+        }, []);
+
         return (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">1. Seleccionar Jugadores</h2>
+              <h2 className="text-2xl font-bold">1. Orden de Inicio</h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => {
                     const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
-                    const randomSelection = shuffled.slice(0, Math.min(4, shuffled.length));
-                    setSelectedPlayers(randomSelection);
-                    setOrderedPlayers(randomSelection);
+                    setSelectedPlayers(shuffled);
+                    setOrderedPlayers(shuffled);
                   }}
                   className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   🎲 Aleatorio
                 </button>
-                <button
-                  onClick={() => {
-                    setSelectedPlayers([]);
-                    setOrderedPlayers([]);
-                  }}
-                  className="px-3 py-1 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
-                >
-                  Limpiar
-                </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {allPlayers.map(player => (
-                <div key={player.id} onClick={() => handlePlayerToggle(player)} className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlayers.find(p => p.id === player.id) ? 'border-[#FF1801] bg-red-900/50' : 'border-slate-600 bg-slate-800 hover:bg-slate-700'}`}>
-                  <img src={player.imageUrl} alt={player.name} className="w-20 h-20 rounded-full mx-auto" />
-                  <p className="text-center font-semibold mt-2">{player.name}</p>
+            <div className="space-y-2">
+              {orderedPlayers.map((player, index) => (
+                <div key={player.id} className="flex items-center justify-between bg-slate-700 p-3 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-lg w-6">{index + 1}.</span>
+                    <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full" />
+                    <span className="font-semibold">{player.name}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => movePlayer(index, 'up')} 
+                      disabled={index === 0} 
+                      className="p-2 rounded-md bg-slate-600 hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ArrowUpIcon className="w-5 h-5"/>
+                    </button>
+                    <button 
+                      onClick={() => movePlayer(index, 'down')} 
+                      disabled={index === orderedPlayers.length-1} 
+                      className="p-2 rounded-md bg-slate-600 hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ArrowDownIcon className="w-5 h-5"/>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         );
-      case 2: // Order Players
-        return (
-            <div>
-                <h2 className="text-2xl font-bold mb-4">2. Orden de Inicio</h2>
-                <div className="space-y-2">
-                    {orderedPlayers.map((player, index) => (
-                        <div key={player.id} className="flex items-center justify-between bg-slate-700 p-2 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <span className="font-bold text-lg w-6">{index + 1}.</span>
-                                <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full" />
-                                <span className="font-semibold">{player.name}</span>
-                            </div>
-                            <div className="flex gap-1">
-                                <button onClick={() => movePlayer(index, 'up')} disabled={index===0} className="p-2 rounded-md bg-slate-600 hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"><ArrowUpIcon className="w-5 h-5"/></button>
-                                <button onClick={() => movePlayer(index, 'down')} disabled={index===orderedPlayers.length-1} className="p-2 rounded-md bg-slate-600 hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"><ArrowDownIcon className="w-5 h-5"/></button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )
-      case 3: // Select Controllers
+      case 2: // Select Controllers
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-4">3. Registradores de Tiempos</h2>
+            <h2 className="text-2xl font-bold mb-4">2. Registradores de Tiempos</h2>
             <p className="text-slate-400 mb-4">Selecciona quiénes pueden registrar tiempos durante las carreras:</p>
             <div className="space-y-2">
               {orderedPlayers.map(player => {
@@ -213,12 +209,12 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-      case 4: // Select & Order Circuits
+      case 3: // Select & Order Circuits
         const availableCircuits = allCircuits.filter(c => !selectedCircuits.find(sc => sc.id === c.id));
         return (
             <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-bold">4. Selecciona & Ordenar Circuitos</h2>
+                  <h2 className="text-2xl font-bold">3. Selecciona Circuitos</h2>
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
@@ -226,15 +222,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                         const randomSelection = shuffled.slice(0, Math.min(3, shuffled.length));
                         setSelectedCircuits(randomSelection);
                       }}
-                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      className="px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
                     >
-                      🎲 Aleatorio
+                      🎲 RANDOM
                     </button>
                     <button
                       onClick={() => setSelectedCircuits([])}
-                      className="px-3 py-1 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                      className="px-3 py-2 text-sm bg-[#FF1801] text-white rounded-lg hover:bg-[#E61601] transition-colors font-semibold"
                     >
-                      Limpiar
+                      ⚙️ MANUAL
                     </button>
                   </div>
                 </div>
@@ -266,10 +262,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                 </div>
             </div>
         );
-      case 5: // Race Parameters
+      case 4: // Race Parameters
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">5. Configuración</h2>
+            <h2 className="text-2xl font-bold mb-6">4. Configuración</h2>
             <div className="space-y-6">
               <div>
                 <label className="block text-slate-400 mb-2">Vueltas por Turno</label>
@@ -294,10 +290,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-      case 6: // Points System
+      case 5: // Points System
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">6. Puntaje</h2>
+            <h2 className="text-2xl font-bold mb-6">5. Puntaje</h2>
             <div className="space-y-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
                 <h3 className="font-semibold text-lg text-[#FF1801]">Puntaje Principal por Turno</h3>
                 <p className="text-sm text-slate-400">Elija como asignar  (1ro: 3, 2do: 2, 3ro: 1) puntos</p>
@@ -333,12 +329,40 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             <div className="space-y-4 mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
                 <h3 className="font-semibold text-lg text-[#FF1801]">Puntos Extra</h3>
                 <div>
-                    <label className="block text-slate-400 mb-2">Puntos extra por Vuelta Rápida ({pointsForBestLap})</label>
-                    <input type="range" min="0" max="5" value={pointsForBestLap} onChange={e => setPointsForBestLap(parseInt(e.target.value))} className="w-full accent-[#FF1801]" />
+                    <label className="block text-slate-400 mb-3">Puntos extra por Vuelta Rápida</label>
+                    <div className="flex gap-2">
+                      {[0, 1, 2, 3, 4, 5].map(points => (
+                        <button
+                          key={points}
+                          onClick={() => setPointsForBestLap(points)}
+                          className={`px-3 py-2 rounded-lg font-semibold transition-colors ${
+                            pointsForBestLap === points 
+                              ? 'bg-[#FF1801] text-white' 
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                        >
+                          {points}
+                        </button>
+                      ))}
+                    </div>
                 </div>
                 <div>
-                    <label className="block text-slate-400 mb-2">Puntos Extra por Mejor Promedio ({pointsForBestAverage})</label>
-                    <input type="range" min="0" max="5" value={pointsForBestAverage} onChange={e => setPointsForBestAverage(parseInt(e.target.value))} className="w-full accent-[#FF1801]" />
+                    <label className="block text-slate-400 mb-3">Puntos Extra por Mejor Promedio</label>
+                    <div className="flex gap-2">
+                      {[0, 1, 2, 3, 4, 5].map(points => (
+                        <button
+                          key={points}
+                          onClick={() => setPointsForBestAverage(points)}
+                          className={`px-3 py-2 rounded-lg font-semibold transition-colors ${
+                            pointsForBestAverage === points 
+                              ? 'bg-[#FF1801] text-white' 
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          }`}
+                        >
+                          {points}
+                        </button>
+                      ))}
+                    </div>
                 </div>
                 <div>
                     <label className="block text-slate-400 mb-2">Entregar puntos extra por:</label>
@@ -351,14 +375,14 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             </div>
           </div>
         );
-       case 7: // Review
+       case 6: // Review
         const { scoringMultiplier } = (scoringMethod === 'both' && useMultiplier) 
             ? { scoringMultiplier: { appliesTo: multiplierTarget, factor: multiplierFactor } } 
             : { scoringMultiplier: null };
 
         return (
             <div>
-                <h2 className="text-2xl font-bold mb-4">7. Revisión e Inicio</h2>
+                <h2 className="text-2xl font-bold mb-4">6. Revisión e Inicio</h2>
                 <div className="bg-slate-800 p-4 rounded-lg space-y-4 text-slate-300">
                     <div><strong>Orden de Jugadores:</strong>
                         <ol className="list-decimal list-inside pl-4">
@@ -395,7 +419,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
     }
   };
 
-  const totalSteps = 7;
+  const totalSteps = 6;
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -421,7 +445,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
               Regresar
             </button>
             {step < totalSteps ? (
-              <button onClick={handleNext} disabled={(step === 1 || step === 2) && selectedPlayers.length < 2 || step === 3 && controllerIds.length < 1 || step === 4 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <button onClick={handleNext} disabled={step === 2 && controllerIds.length < 1 || step === 3 && selectedCircuits.length < 1} className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 Siguiente
               </button>
             ) : (

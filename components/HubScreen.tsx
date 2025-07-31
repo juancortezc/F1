@@ -42,13 +42,6 @@ const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, 
                             </svg>
                             Nuevo Campeonato
                         </button>
-                        <button
-                            onClick={onAdmin}
-                            className="w-full flex items-center justify-center gap-4 bg-slate-700 text-white font-bold py-6 px-4 rounded-lg hover:bg-slate-600 transition-all text-xl shadow-lg"
-                        >
-                            <PencilIcon className="w-8 h-8" />
-                            Administración
-                        </button>
                      </div>
                 </div>
             </div>

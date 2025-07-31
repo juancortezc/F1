@@ -57,7 +57,7 @@ const TimeInput: React.FC<{
             }}
             maxLength={maxLength}
             placeholder={placeholder}
-            className={`w-full text-center text-3xl md:text-4xl font-mono p-3 md:p-4 rounded-lg border-2 focus:outline-none focus:border-[#FF1801] transition-colors touch-manipulation ${colorClass}`}
+            className={`w-full text-center text-2xl md:text-3xl font-mono p-2 md:p-3 rounded-md border-2 focus:outline-none focus:border-[#FF1801] transition-colors touch-manipulation ${colorClass}`}
             {...dataProps}
         />
     );
@@ -311,7 +311,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         </div>
 
       {/* Time Input Form */}
-      <div className="bg-slate-800/50 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-slate-700 space-y-6">
+      <div className="bg-slate-800/50 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-slate-700 space-y-4">
         <h2 className="text-lg md:text-xl font-bold text-center leading-tight">
           {isCurrentController ? `Ingresa los Tiempos de Vuelta de ${currentPlayer.name}` : `Esperando tiempos de ${currentPlayer.name}`}
         </h2>
@@ -346,23 +346,12 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                 const bestType = isHistoricalBest ? 'historical' : isSessionBest ? 'session' : undefined;
                 
                 return (
-                  <div key={i} className="space-y-3">
-                    <div className="text-center">
-                      <span className="inline-block bg-slate-700 px-4 py-2 rounded-full font-bold text-slate-200 text-lg">Vuelta {i + 1}</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3 md:gap-4">
-                        <div className="text-center">
-                          <label className="block text-xs text-slate-400 mb-1 font-medium">MIN</label>
-                          <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="0" isBest={bestType} />
-                        </div>
-                        <div className="text-center">
-                          <label className="block text-xs text-slate-400 mb-1 font-medium">SEC</label>
-                          <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="00" isBest={bestType}/>
-                        </div>
-                        <div className="text-center">
-                          <label className="block text-xs text-slate-400 mb-1 font-medium">MS</label>
-                          <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="000" isBest={bestType}/>
-                        </div>
+                  <div key={i} className="flex items-center gap-2 md:gap-4">
+                    <span className="font-bold text-slate-400 w-16 text-sm">Vuelta {i + 1}</span>
+                    <div className="flex-1 grid grid-cols-3 gap-2">
+                        <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" isBest={bestType} />
+                        <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" isBest={bestType}/>
+                        <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" isBest={bestType}/>
                     </div>
                   </div>
                 );
@@ -370,23 +359,12 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             
             // If no valid time yet, show normal inputs
             return (
-              <div key={i} className="space-y-3">
-                <div className="text-center">
-                  <span className="inline-block bg-slate-700 px-4 py-2 rounded-full font-bold text-slate-200 text-lg">Vuelta {i + 1}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-3 md:gap-4">
-                    <div className="text-center">
-                      <label className="block text-xs text-slate-400 mb-1 font-medium">MIN</label>
-                      <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="0" />
-                    </div>
-                    <div className="text-center">
-                      <label className="block text-xs text-slate-400 mb-1 font-medium">SEC</label>
-                      <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="00" />
-                    </div>
-                    <div className="text-center">
-                      <label className="block text-xs text-slate-400 mb-1 font-medium">MS</label>
-                      <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="000" />
-                    </div>
+              <div key={i} className="flex items-center gap-2 md:gap-4">
+                <span className="font-bold text-slate-400 w-16 text-sm">Vuelta {i + 1}</span>
+                <div className="flex-1 grid grid-cols-3 gap-2">
+                    <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" />
+                    <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" />
+                    <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" />
                 </div>
               </div>
             );
@@ -434,18 +412,11 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
         {/* Action Buttons */}
         {isCurrentController && (
-          <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
-            <button 
-              onClick={handleClear} 
-              disabled={isSubmitting}
-              className="w-full bg-slate-600 text-white font-bold py-4 md:py-3 px-4 rounded-xl md:rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-lg md:text-base touch-manipulation"
-            >
-              <span className="text-xl md:text-lg">↻</span> Limpiar Tiempos
-            </button>
+          <div className="flex justify-center">
             <button 
               onClick={handleSubmit} 
               disabled={isSubmitting}
-              className="w-full bg-green-600 text-white font-bold py-4 md:py-3 px-4 rounded-xl md:rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-lg md:text-base touch-manipulation"
+              className="w-full max-w-md bg-green-600 text-white font-bold py-4 md:py-3 px-6 rounded-xl hover:bg-green-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 text-lg md:text-base touch-manipulation"
             >
               {isSubmitting ? (
                 <>

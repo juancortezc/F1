@@ -387,6 +387,28 @@ function App() {
       lapTimesLog: newLapTimesLog,
       currentController: newControllerId || gameState.currentController,
     };
+    
+    // Update historical records if new records were set
+    const currentCircuit = gameState.circuits[gameState.currentCircuitIndex];
+    const fastestLap = Math.min(...lapTimes);
+    
+    try {
+      await fetch('/api/circuits/update-records', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuitId: currentCircuit.id,
+          bestLap: fastestLap,
+          bestAverage: averageTime
+        })
+      });
+      
+      // Refresh circuits data to get updated historical records
+      mutate('/api/circuits');
+    } catch (error) {
+      console.error('Failed to update historical records:', error);
+    }
+    
     await updateGameState(newGameState);
     
     // Show success toast
