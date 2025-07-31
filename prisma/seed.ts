@@ -2,12 +2,6 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const defaultPlayers = [
-  { id: '1', name: 'Juan', imageUrl: 'https://picsum.photos/seed/juan/100' },
-  { id: '2', name: 'Berna', imageUrl: 'https://picsum.photos/seed/berna/100' },
-  { id: '3', name: 'Borja', imageUrl: 'https://picsum.photos/seed/borja/100' },
-];
-
 const defaultCircuits = [
   { name: 'Australia', imageUrl: 'https://picsum.photos/seed/australia/400/200' },
   { name: 'Canada', imageUrl: 'https://picsum.photos/seed/canada/400/200' },
@@ -29,6 +23,7 @@ const defaultCircuits = [
 async function main() {
   console.log('Start seeding...');
 
+  // Initialize settings with default PIN
   await prisma.settings.upsert({
     where: { id: 'singleton' },
     update: {},
@@ -38,21 +33,18 @@ async function main() {
   });
   console.log('Default PIN set.');
 
-  for (const player of defaultPlayers) {
-    await prisma.player.upsert({
-      where: { id: player.id },
-      update: {},
-      create: player,
-    });
+  // Only seed circuits - players are created through registration
+  const existingCircuits = await prisma.circuit.count();
+  if (existingCircuits === 0) {
+    for (const circuit of defaultCircuits) {
+      await prisma.circuit.create({
+        data: circuit,
+      });
+    }
+    console.log('Default circuits seeded.');
+  } else {
+    console.log('Circuits already exist, skipping seeding.');
   }
-  console.log('Default players seeded.');
-  
-  for (const circuit of defaultCircuits) {
-    await prisma.circuit.create({
-      data: circuit,
-    });
-  }
-  console.log('Default circuits seeded.');
 
   console.log('Seeding finished.');
 }
