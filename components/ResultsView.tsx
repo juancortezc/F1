@@ -156,91 +156,291 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
         return `${diffDays} days`;
     };
 
+    // Sort players by total performance for podium
+    const sortedPlayers = players.map(player => {
+        const records = playerRecordStats[player.id];
+        const career = playerCareerStats[player.id];
+        const totalScore = (career?.wins ?? 0) * 3 + (records?.lapRecords ?? 0) + (records?.avgRecords ?? 0);
+        return { player, records, career, totalScore };
+    }).sort((a, b) => b.totalScore - a.totalScore);
+
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Player Career Stats</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {players.map(player => {
-                    const records = playerRecordStats[player.id];
-                    const career = playerCareerStats[player.id];
-                    return (
-                       <div key={player.id} className="bg-slate-800/50 p-4 rounded-lg text-center border border-slate-700">
-                            <img src={player.imageUrl} alt={player.name} className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-slate-600" />
-                            <h4 className="font-bold text-lg">{player.name}</h4>
-                            
-                            <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-                                <div>
-                                    <p className="text-slate-400 text-xs font-semibold">GANA</p>
-                                    <p className="font-bold text-xl text-[#FF1801]">{career?.wins ?? 0}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-400 text-xs font-semibold">M VLTA</p>
-                                    <p className="font-bold text-xl text-[#FF1801]">{records?.lapRecords ?? 0}</p>
-                                </div>
-                                <div>
-                                    <p className="text-slate-400 text-xs font-semibold">M PROM</p>
-                                    <p className="font-bold text-xl text-[#FF1801]">{records?.avgRecords ?? 0}</p>
+        <div className="space-y-8">
+            {/* Header with Podium */}
+            <div className="text-center mb-8">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                        <span className="text-lg">🏆</span>
+                    </div>
+                    <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">
+                        Hall of Fame
+                    </h2>
+                    <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                        <span className="text-lg">🏆</span>
+                    </div>
+                </div>
+                <p className="text-slate-400 text-lg">Las leyendas de la pista • Los campeones eternos</p>
+            </div>
+
+            {/* Podium Section */}
+            {sortedPlayers.length >= 3 && (
+                <div className="relative mb-12">
+                    <div className="flex items-end justify-center gap-8 mb-6">
+                        {/* 2nd Place */}
+                        <div className="flex flex-col items-center">
+                            <div className="relative mb-4">
+                                <img 
+                                    src={sortedPlayers[1].player.imageUrl} 
+                                    alt={sortedPlayers[1].player.name}
+                                    className="w-20 h-20 rounded-full border-4 border-slate-400 shadow-lg"
+                                />
+                                <div className="absolute -top-2 -right-2 w-8 h-8 bg-slate-400 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    2
                                 </div>
                             </div>
+                            <div className="bg-gradient-to-t from-slate-400 to-slate-300 h-24 w-20 rounded-t-lg flex items-end justify-center pb-2">
+                                <span className="text-white font-bold text-lg">🥈</span>
+                            </div>
+                            <h3 className="font-bold text-lg mt-2">{sortedPlayers[1].player.name}</h3>
+                            <p className="text-slate-400 text-sm">{sortedPlayers[1].totalScore} puntos</p>
+                        </div>
 
-                            <div className="mt-3 pt-2 border-t border-slate-700/50">
-                                <p className="text-slate-400 text-xs font-semibold">GANA MAS EN</p>
-                                <p className="font-semibold text-[#FF1801] truncate" title={career?.mostWonCircuit || 'N/A'}>
-                                    {career?.mostWonCircuit || 'N/A'}
+                        {/* 1st Place */}
+                        <div className="flex flex-col items-center">
+                            <div className="relative mb-4">
+                                <img 
+                                    src={sortedPlayers[0].player.imageUrl} 
+                                    alt={sortedPlayers[0].player.name}
+                                    className="w-24 h-24 rounded-full border-4 border-yellow-400 shadow-xl"
+                                />
+                                <div className="absolute -top-3 -right-3 w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold">
+                                    1
+                                </div>
+                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                                    <span className="text-2xl">👑</span>
+                                </div>
+                            </div>
+                            <div className="bg-gradient-to-t from-yellow-600 to-yellow-400 h-32 w-20 rounded-t-lg flex items-end justify-center pb-3">
+                                <span className="text-white font-bold text-xl">🥇</span>
+                            </div>
+                            <h3 className="font-bold text-xl mt-2 text-yellow-400">{sortedPlayers[0].player.name}</h3>
+                            <p className="text-yellow-300 text-sm font-semibold">{sortedPlayers[0].totalScore} puntos</p>
+                        </div>
+
+                        {/* 3rd Place */}
+                        <div className="flex flex-col items-center">
+                            <div className="relative mb-4">
+                                <img 
+                                    src={sortedPlayers[2].player.imageUrl} 
+                                    alt={sortedPlayers[2].player.name}
+                                    className="w-20 h-20 rounded-full border-4 border-amber-600 shadow-lg"
+                                />
+                                <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    3
+                                </div>
+                            </div>
+                            <div className="bg-gradient-to-t from-amber-700 to-amber-600 h-16 w-20 rounded-t-lg flex items-end justify-center pb-2">
+                                <span className="text-white font-bold text-lg">🥉</span>
+                            </div>
+                            <h3 className="font-bold text-lg mt-2">{sortedPlayers[2].player.name}</h3>
+                            <p className="text-slate-400 text-sm">{sortedPlayers[2].totalScore} puntos</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Player Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sortedPlayers.map(({player, records, career}, index) => (
+                    <div 
+                        key={player.id} 
+                        className={`relative overflow-hidden rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-2xl ${
+                            index === 0 ? 'bg-gradient-to-br from-yellow-600/20 to-yellow-800/20 border-2 border-yellow-400/50' :
+                            index === 1 ? 'bg-gradient-to-br from-slate-600/20 to-slate-800/20 border-2 border-slate-400/50' :
+                            index === 2 ? 'bg-gradient-to-br from-amber-600/20 to-amber-800/20 border-2 border-amber-600/50' :
+                            'bg-gradient-to-br from-slate-700/50 to-slate-900/50 border border-slate-600'
+                        }`}
+                    >
+                        {/* Position Badge */}
+                        <div className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                            index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                            index === 1 ? 'bg-gradient-to-r from-slate-400 to-slate-600' :
+                            index === 2 ? 'bg-gradient-to-r from-amber-600 to-amber-700' :
+                            'bg-slate-600'
+                        }`}>
+                            #{index + 1}
+                        </div>
+
+                        {/* Player Avatar */}
+                        <div className="flex flex-col items-center mb-4">
+                            <div className={`relative mb-3 ${index < 3 ? 'animate-pulse' : ''}`}>
+                                <img 
+                                    src={player.imageUrl} 
+                                    alt={player.name} 
+                                    className={`w-20 h-20 rounded-full shadow-lg ${
+                                        index === 0 ? 'border-4 border-yellow-400' :
+                                        index === 1 ? 'border-4 border-slate-400' :
+                                        index === 2 ? 'border-4 border-amber-600' :
+                                        'border-2 border-slate-500'
+                                    }`}
+                                />
+                                {index < 3 && (
+                                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                                        <span className="text-xl">
+                                            {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            <h4 className={`font-bold text-xl text-center ${
+                                index === 0 ? 'text-yellow-400' : 'text-white'
+                            }`}>
+                                {player.name}
+                            </h4>
+                        </div>
+
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div className="text-center">
+                                <div className="w-12 h-12 mx-auto mb-2 bg-[#FF1801]/20 rounded-full flex items-center justify-center">
+                                    <span className="text-2xl">🏆</span>
+                                </div>
+                                <p className="text-3xl font-bold text-[#FF1801]">{career?.wins ?? 0}</p>
+                                <p className="text-xs text-slate-400 font-medium">VICTORIAS</p>
+                            </div>
+                            <div className="text-center">
+                                <div className="w-12 h-12 mx-auto mb-2 bg-purple-500/20 rounded-full flex items-center justify-center">
+                                    <span className="text-2xl">⚡</span>
+                                </div>
+                                <p className="text-3xl font-bold text-purple-400">{records?.lapRecords ?? 0}</p>
+                                <p className="text-xs text-slate-400 font-medium">V. RÁPIDAS</p>
+                            </div>
+                            <div className="text-center">
+                                <div className="w-12 h-12 mx-auto mb-2 bg-green-500/20 rounded-full flex items-center justify-center">
+                                    <span className="text-2xl">📊</span>
+                                </div>
+                                <p className="text-3xl font-bold text-green-400">{records?.avgRecords ?? 0}</p>
+                                <p className="text-xs text-slate-400 font-medium">PROMEDIOS</p>
+                            </div>
+                        </div>
+
+                        {/* Specialty Circuit */}
+                        <div className="text-center pt-4 border-t border-slate-600/50">
+                            <p className="text-slate-400 text-xs font-medium mb-1">ESPECIALISTA EN</p>
+                            <div className="flex items-center justify-center gap-2">
+                                <span className="text-lg">🏁</span>
+                                <p className="font-bold text-[#FF1801] text-sm">
+                                    {career?.mostWonCircuit || 'Pendiente'}
                                 </p>
                             </div>
                         </div>
-                    );
-                })}
+                    </div>
+                ))}
             </div>
 
-            <h2 className="text-2xl font-bold mt-4">Records Históricos</h2>
-            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-                <label htmlFor="circuit-select" className="sr-only">Seleccionar Circuito</label>
-                <select 
-                    id="circuit-select"
-                    value={selectedCircuitId} 
-                    onChange={e => setSelectedCircuitId(e.target.value)}
-                    className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg mb-4 focus:ring-2 focus:ring-[#FF1801] focus:border-[#FF1801]"
-                >
-                    <option value="" disabled>-- Circuito --</option>
-                    {circuits.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
-
-                {selectedCircuit && (
-                    <div className="space-y-4">
-                        {/* Best Lap Card */}
-                        <div className="bg-slate-900/50 p-4 rounded-lg">
-                            <h4 className="font-semibold text-lg">Vuelta Rápida</h4>
-                            <div className="flex justify-between items-center mt-2">
-                                <p className="font-mono text-2xl text-[#FF1801] font-bold">{formatTime(selectedCircuit.historicalBestLap)}</p>
-                                <div className="text-right">
-                                    <p className="font-semibold">{players.find(p=>p.id === selectedCircuit.bestLapHolderId)?.name || 'N/A'}</p>
-                                    <p className="text-sm text-slate-400">{selectedCircuit.historicalBestLapDate ? new Date(selectedCircuit.historicalBestLapDate).toLocaleDateString() : 'No date'}</p>
-                                </div>
-                            </div>
-                            <p className="text-xs text-slate-500 mt-2 text-right">
-                                Record desde hace {calculateDaysHeld(selectedCircuit.historicalBestLapDate)}
-                            </p>
-                        </div>
-                        {/* Best Average Card */}
-                        <div className="bg-slate-900/50 p-4 rounded-lg">
-                            <h4 className="font-semibold text-lg">Best Average</h4>
-                             <div className="flex justify-between items-center mt-2">
-                                <p className="font-mono text-2xl text-green-400 font-bold">{formatTime(selectedCircuit.historicalBestAverage)}</p>
-                                <div className="text-right">
-                                    <p className="font-semibold">{players.find(p=>p.id === selectedCircuit.bestAverageHolderId)?.name || 'N/A'}</p>
-                                    <p className="text-sm text-slate-400">{selectedCircuit.historicalBestAverageDate ? new Date(selectedCircuit.historicalBestAverageDate).toLocaleDateString() : 'No date'}</p>
-                                </div>
-                            </div>
-                            <p className="text-xs text-slate-500 mt-2 text-right">
-                                Record desde hace {calculateDaysHeld(selectedCircuit.historicalBestAverageDate)}
-                            </p>
-                        </div>
+            {/* Circuit Records Section */}
+            <div className="mt-12">
+                <div className="text-center mb-8">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <span className="text-2xl">🏁</span>
+                        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                            Récords de Circuito
+                        </h2>
+                        <span className="text-2xl">🏁</span>
                     </div>
-                )}
+                    <p className="text-slate-400">Los tiempos más rápidos de cada pista</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-700/50">
+                    <select 
+                        value={selectedCircuitId} 
+                        onChange={e => setSelectedCircuitId(e.target.value)}
+                        className="w-full p-4 bg-slate-700/50 border border-slate-600 rounded-xl mb-6 focus:ring-2 focus:ring-[#FF1801] focus:border-[#FF1801] text-lg font-medium"
+                    >
+                        <option value="" disabled>🏁 Selecciona un Circuito</option>
+                        {circuits.map(c => (
+                            <option key={c.id} value={c.id}>🏁 {c.name}</option>
+                        ))}
+                    </select>
+
+                    {selectedCircuit && (
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {/* Best Lap Record */}
+                            <div className="relative overflow-hidden bg-gradient-to-br from-[#FF1801]/10 to-red-900/10 p-6 rounded-xl border border-[#FF1801]/30">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-[#FF1801]/10 rounded-full -translate-y-4 translate-x-4"></div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-[#FF1801]/20 rounded-full flex items-center justify-center">
+                                        <span className="text-2xl">⚡</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-[#FF1801]">Vuelta Más Rápida</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    <p className="font-mono text-4xl text-[#FF1801] font-bold">
+                                        {formatTime(selectedCircuit.historicalBestLap)}
+                                    </p>
+                                    <div className="flex items-center gap-3">
+                                        <img 
+                                            src={players.find(p=>p.id === selectedCircuit.bestLapHolderId)?.imageUrl || '/default-avatar.png'} 
+                                            alt="Record holder" 
+                                            className="w-10 h-10 rounded-full border-2 border-[#FF1801]/50"
+                                        />
+                                        <div>
+                                            <p className="font-bold text-lg">
+                                                {players.find(p=>p.id === selectedCircuit.bestLapHolderId)?.name || 'Sin récord'}
+                                            </p>
+                                            <p className="text-sm text-slate-400">
+                                                {selectedCircuit.historicalBestLapDate ? new Date(selectedCircuit.historicalBestLapDate).toLocaleDateString() : 'Sin fecha'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-2 border-t border-[#FF1801]/20">
+                                        <span className="text-lg">⏰</span>
+                                        <p className="text-sm text-slate-400">
+                                            Récord mantenido por <strong>{calculateDaysHeld(selectedCircuit.historicalBestLapDate)}</strong>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Best Average Record */}
+                            <div className="relative overflow-hidden bg-gradient-to-br from-green-500/10 to-emerald-900/10 p-6 rounded-xl border border-green-500/30">
+                                <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -translate-y-4 translate-x-4"></div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                                        <span className="text-2xl">📊</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-green-400">Mejor Promedio</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    <p className="font-mono text-4xl text-green-400 font-bold">
+                                        {formatTime(selectedCircuit.historicalBestAverage)}
+                                    </p>
+                                    <div className="flex items-center gap-3">
+                                        <img 
+                                            src={players.find(p=>p.id === selectedCircuit.bestAverageHolderId)?.imageUrl || '/default-avatar.png'} 
+                                            alt="Record holder" 
+                                            className="w-10 h-10 rounded-full border-2 border-green-500/50"
+                                        />
+                                        <div>
+                                            <p className="font-bold text-lg">
+                                                {players.find(p=>p.id === selectedCircuit.bestAverageHolderId)?.name || 'Sin récord'}
+                                            </p>
+                                            <p className="text-sm text-slate-400">
+                                                {selectedCircuit.historicalBestAverageDate ? new Date(selectedCircuit.historicalBestAverageDate).toLocaleDateString() : 'Sin fecha'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-2 border-t border-green-500/20">
+                                        <span className="text-lg">⏰</span>
+                                        <p className="text-sm text-slate-400">
+                                            Récord mantenido por <strong>{calculateDaysHeld(selectedCircuit.historicalBestAverageDate)}</strong>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
