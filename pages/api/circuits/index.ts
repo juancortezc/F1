@@ -7,7 +7,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const circuits = await prisma.circuit.findMany({
         orderBy: { name: 'asc' },
       });
-      res.status(200).json(circuits);
+
+      // Enhance circuits with player names for record holders
+      const enhancedCircuits = await Promise.all(circuits.map(async (circuit) => {
+        let bestLapHolder = null;
+        let bestAverageHolder = null;
+
+        if (circuit.bestLapHolderId) {
+          const lapHolder = await prisma.player.findUnique({
+            where: { id: circuit.bestLapHolderId },
+            select: { id: true, name: true }
+          });
+          bestLapHolder = lapHolder;
+        }
+
+        if (circuit.bestAverageHolderId) {
+          const averageHolder = await prisma.player.findUnique({
+            where: { id: circuit.bestAverageHolderId },
+            select: { id: true, name: true }
+          });
+          bestAverageHolder = averageHolder;
+        }
+
+        return {
+          ...circuit,
+          bestLapHolder,
+          bestAverageHolder
+        };
+      }));
+      res.status(200).json(enhancedCircuits);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch circuits' });
     }

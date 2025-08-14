@@ -144,6 +144,16 @@ function App() {
         playerStats,
         sessionBestLap: null,
         sessionBestAverage: null,
+        // Initialize per-circuit session tracking
+        sessionBestTimes: settings.circuits.reduce((acc, circuit) => {
+          acc[circuit.id] = {
+            bestLap: null,
+            bestLapPlayerId: null,
+            bestAverage: null,
+            bestAveragePlayerId: null
+          };
+          return acc;
+        }, {} as Record<string, { bestLap: number | null; bestLapPlayerId: string | null; bestAverage: number | null; bestAveragePlayerId: string | null; }>),
         lapTimesLog: [],
         currentController: initialController,
         participantUsers,
@@ -268,6 +278,7 @@ function App() {
       return;
     }
     
+    // Update global session bests (for backward compatibility)
     let newSessionBestLap = gameState.sessionBestLap;
     lapTimes.forEach(time => {
         if(newSessionBestLap === null || time < newSessionBestLap) newSessionBestLap = time;
@@ -282,6 +293,34 @@ function App() {
     let newSessionBestAverage = gameState.sessionBestAverage;
     if (newSessionBestAverage === null || averageTime < newSessionBestAverage) {
         newSessionBestAverage = averageTime;
+    }
+
+    // Update per-circuit session bests
+    const currentCircuitId = gameState.circuits[gameState.currentCircuitIndex].id;
+    const newSessionBestTimes = { ...gameState.sessionBestTimes };
+    
+    if (!newSessionBestTimes[currentCircuitId]) {
+        newSessionBestTimes[currentCircuitId] = {
+            bestLap: null,
+            bestLapPlayerId: null,
+            bestAverage: null,
+            bestAveragePlayerId: null
+        };
+    }
+    
+    // Check if this is a new circuit-specific session best lap
+    const currentCircuitBests = newSessionBestTimes[currentCircuitId];
+    const fastestLapThisTurn = Math.min(...lapTimes);
+    
+    if (currentCircuitBests.bestLap === null || fastestLapThisTurn < currentCircuitBests.bestLap) {
+        currentCircuitBests.bestLap = fastestLapThisTurn;
+        currentCircuitBests.bestLapPlayerId = playerId;
+    }
+    
+    // Check if this is a new circuit-specific session best average
+    if (currentCircuitBests.bestAverage === null || averageTime < currentCircuitBests.bestAverage) {
+        currentCircuitBests.bestAverage = averageTime;
+        currentCircuitBests.bestAveragePlayerId = playerId;
     }
     
     const newCircuitResults = [...gameState.circuitResults];
@@ -437,6 +476,7 @@ function App() {
       circuitResults: newCircuitResults,
       sessionBestLap: newSessionBestLap,
       sessionBestAverage: newSessionBestAverage,
+      sessionBestTimes: newSessionBestTimes,
       playerStats: finalPlayerStats,
       currentPlayerIndex: nextPlayerIndex,
       currentTurn: nextTurn,
@@ -456,7 +496,9 @@ function App() {
         body: JSON.stringify({
           circuitId: currentCircuit.id,
           bestLap: fastestLap,
-          bestAverage: averageTime
+          bestAverage: averageTime,
+          bestLapPlayerId: playerId,
+          bestAveragePlayerId: playerId
         })
       });
       

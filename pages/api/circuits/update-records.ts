@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { circuitId, bestLap, bestAverage } = req.body;
+    const { circuitId, bestLap, bestAverage, bestLapPlayerId, bestAveragePlayerId } = req.body;
     
     if (!circuitId) {
       return res.status(400).json({ error: 'Circuit ID is required' });
@@ -28,11 +28,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Update historical best lap if new record
     if (bestLap && (currentCircuit.historicalBestLap === null || bestLap < currentCircuit.historicalBestLap)) {
       updates.historicalBestLap = bestLap;
+      updates.historicalBestLapDate = new Date();
+      if (bestLapPlayerId) {
+        updates.bestLapHolderId = bestLapPlayerId;
+      }
     }
 
     // Update historical best average if new record
     if (bestAverage && (currentCircuit.historicalBestAverage === null || bestAverage < currentCircuit.historicalBestAverage)) {
       updates.historicalBestAverage = bestAverage;
+      updates.historicalBestAverageDate = new Date();
+      if (bestAveragePlayerId) {
+        updates.bestAverageHolderId = bestAveragePlayerId;
+      }
     }
 
     // Only update if there are changes

@@ -1,7 +1,13 @@
 
 // Re-export Prisma types for use in components
-import type { Circuit, Game } from '@prisma/client';
-export type { Circuit, Game };
+import type { Circuit as PrismaCircuit, Game } from '@prisma/client';
+export type { Game };
+
+// Enhanced Circuit type with player holder information
+export interface Circuit extends PrismaCircuit {
+  bestLapHolder?: { id: string; name: string } | null;
+  bestAverageHolder?: { id: string; name: string } | null;
+}
 
 // Player interface with PIN integration
 export interface Player {
@@ -74,8 +80,15 @@ export interface GameState {
   currentPlayerIndex: number;
   circuitResults: CircuitResult[];
   playerStats: Record<string, PlayerStats>;
-  sessionBestLap: number | null;
-  sessionBestAverage: number | null;
+  sessionBestLap: number | null; // Global session best (deprecated, kept for compatibility)
+  sessionBestAverage: number | null; // Global session best (deprecated, kept for compatibility)
+  // Per-circuit session tracking
+  sessionBestTimes: Record<string, {
+    bestLap: number | null;
+    bestLapPlayerId: string | null;
+    bestAverage: number | null;
+    bestAveragePlayerId: string | null;
+  }>;
   lapTimesLog: NightlyResult[];
   // Control de turnos
   currentController: string; // ID del usuario que puede registrar resultados

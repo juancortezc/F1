@@ -2,9 +2,10 @@
 
 ## ✅ Deployment Status
 **App successfully deployed to Vercel!**
-- 🚀 **Production URL**: https://f1-3vqbp1ewv-juans-projects-e94adfd3.vercel.app
+- 🚀 **Latest Production URL**: https://f1-1hf7acn8v-juans-projects-e94adfd3.vercel.app
 - 📊 **Build**: Successful (23s build time)
 - 📦 **Bundle size**: 124 kB optimized
+- ✅ **Resource warnings**: Fixed (no more preload warnings)
 
 ## 🔧 Required Setup Steps
 
@@ -21,7 +22,7 @@ DATABASE_URL="postgresql://[user]:[password]@[neon-hostname]/[database]?sslmode=
 
 # Authentication
 NEXTAUTH_SECRET="your-secret-key-here-must-be-at-least-32-characters-long"
-NEXTAUTH_URL="https://f1-3vqbp1ewv-juans-projects-e94adfd3.vercel.app"
+NEXTAUTH_URL="https://f1-1hf7acn8v-juans-projects-e94adfd3.vercel.app"
 ```
 
 ### 2. Set Up Neon Database
@@ -50,7 +51,7 @@ Once environment variables are set:
 3. **Check logs**: Monitor deployment logs for any issues
 
 ## 🔗 Quick Links
-- **Live App**: https://f1-3vqbp1ewv-juans-projects-e94adfd3.vercel.app
+- **Live App**: https://f1-1hf7acn8v-juans-projects-e94adfd3.vercel.app
 - **Vercel Dashboard**: https://vercel.com/dashboard
 - **Neon Console**: https://console.neon.tech/
 
