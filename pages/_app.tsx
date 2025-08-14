@@ -51,8 +51,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="apple-touch-startup-image" href="/apple-touch-icon.png" />
         
-        {/* Preload critical resources */}
-        <link rel="preload" href="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" as="image" />
+        {/* Note: F1 logo loads naturally, preload removed to avoid unused preload warning */}
       </Head>
       
       <ErrorBoundary>

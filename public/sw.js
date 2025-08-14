@@ -4,9 +4,8 @@ const urlsToCache = [
   '/manifest.json',
   // Cache core pages
   '/_next/static/css/',
-  '/_next/static/chunks/',
-  // Cache external resources
-  'https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg'
+  '/_next/static/chunks/'
+  // External resources loaded on demand
 ];
 
 // Install event - cache resources
