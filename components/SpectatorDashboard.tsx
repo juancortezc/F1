@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { GameState, Player, Circuit } from '../types';
 import { TrophyIcon, StopwatchIcon } from './icons';
+import LoadingSpinner from './LoadingSpinner';
+import TurnProgressTracker from './TurnProgressTracker';
 
 interface SpectatorDashboardProps {
   gameState: GameState;
@@ -21,20 +24,84 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
   const currentCircuit = circuits[gameState.currentCircuitIndex];
   const currentPlayer = players.find(p => p.id === gameState.playerOrder[gameState.currentPlayerIndex]);
 
+  // Fetch live lap times with polling
+  const { data: liveData, error: liveError } = useSWR(
+    `/api/lap-times/live?gameId=active-game&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`,
+    {
+      refreshInterval: 2000, // Poll every 2 seconds
+      revalidateOnFocus: true,
+      errorRetryCount: 3
+    }
+  );
+
+  const [recentLaps, setRecentLaps] = useState<any[]>([]);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
+  const [newLapIds, setNewLapIds] = useState<Set<string>>(new Set());
+
+  // Update recent laps when new data arrives with animation tracking
+  useEffect(() => {
+    if (liveData?.success && liveData.data?.liveLapTimes) {
+      const newLaps = liveData.data.liveLapTimes
+        .filter((lap: any) => lap.turnNumber === gameState.currentTurn)
+        .slice(0, 5) // Show last 5 laps
+        .reverse(); // Most recent first
+      
+      // Track new lap IDs for animation
+      const currentLapIds = new Set(recentLaps.map(lap => lap.id));
+      const incomingLapIds = new Set(newLaps.map((lap: any) => lap.id));
+      const newIds = new Set([...incomingLapIds].filter(id => !currentLapIds.has(id)) as string[]);
+      
+      setRecentLaps(newLaps);
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      
+      if (newIds.size > 0) {
+        setNewLapIds(newIds);
+        // Clear animation after 2 seconds
+        setTimeout(() => setNewLapIds(new Set()), 2000);
+      }
+    }
+  }, [liveData, gameState.currentTurn, recentLaps]);
+
   // Get current circuit session times
   const currentCircuitTimes = gameState.lapTimesLog.filter(lap => lap.circuitName === currentCircuit.name);
   
-  // Calculate best lap times (overall session)
-  const bestLapTimes = currentCircuitTimes
+  // Combine traditional session times with live lap times
+  const allLapTimes = [...currentCircuitTimes];
+  
+  // Add live lap times if available
+  if (liveData?.success && liveData.data?.liveLapTimes) {
+    const liveLaps = liveData.data.liveLapTimes
+      .filter((lap: any) => lap.circuitId === currentCircuit.id)
+      .map((lap: any) => ({
+        playerId: lap.playerId,
+        circuitName: currentCircuit.name,
+        time: lap.timeMs,
+        turn: lap.turnNumber,
+        lap: lap.lapNumber,
+        isLive: true
+      }));
+    allLapTimes.push(...liveLaps);
+  }
+
+  // Calculate best lap times (overall session including live)
+  const bestLapTimes = allLapTimes
+    .filter(lap => lap.time > 0)
     .sort((a, b) => a.time - b.time)
     .slice(0, 5)
-    .map((lap, index) => ({
-      position: index + 1,
-      player: players.find(p => p.id === lap.playerId),
-      time: lap.time,
-      turn: lap.turn,
-      lap: lap.lap
-    }));
+    .map((lap, index) => {
+      const fastestTime = allLapTimes.filter(l => l.time > 0).sort((a, b) => a.time - b.time)[0]?.time;
+      const delta = fastestTime ? lap.time - fastestTime : 0;
+      
+      return {
+        position: index + 1,
+        player: players.find(p => p.id === lap.playerId),
+        time: lap.time,
+        turn: lap.turn,
+        lap: lap.lap,
+        delta,
+        isLive: (lap as any).isLive || false
+      };
+    });
 
   // Calculate best average times per player for current circuit
   const playerAverages = new Map<string, { times: number[], player: any }>();
@@ -70,7 +137,26 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
     }
   });
 
-  // Get best averages
+  // Add live turn completions to averages
+  if (liveData?.success && liveData.data?.turnCompletions) {
+    liveData.data.turnCompletions.forEach((completion: any) => {
+      if (completion.averageTimeMs && completion.circuitId === currentCircuit.id) {
+        const player = players.find(p => p.id === completion.playerId);
+        if (player) {
+          if (!playerAverages.has(completion.playerId)) {
+            playerAverages.set(completion.playerId, { times: [], player });
+          }
+          // Add live average (but don't duplicate)
+          const existing = playerAverages.get(completion.playerId)!;
+          if (!existing.times.includes(completion.averageTimeMs)) {
+            existing.times.push(completion.averageTimeMs);
+          }
+        }
+      }
+    });
+  }
+
+  // Get best averages with delta calculations
   const bestAverages = Array.from(playerAverages.entries())
     .map(([playerId, data]) => ({
       playerId,
@@ -79,7 +165,19 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
       averageCount: data.times.length
     }))
     .sort((a, b) => a.bestAverage - b.bestAverage)
-    .slice(0, 5);
+    .slice(0, 5)
+    .map((avg, index) => {
+      const fastestAverage = Array.from(playerAverages.entries())
+        .map(([_, data]) => Math.min(...data.times))
+        .sort((a, b) => a - b)[0];
+      const delta = fastestAverage ? avg.bestAverage - fastestAverage : 0;
+      
+      return {
+        ...avg,
+        delta,
+        position: index + 1
+      };
+    });
 
   // Find current session records holders
   const sessionBestLapHolder = bestLapTimes[0];
@@ -109,14 +207,32 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
         {/* Header with Live Status */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              liveError ? 'bg-red-500' : 'bg-green-500'
+            }`}></div>
             <img 
               src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
               alt="F1 Logo" 
               className="w-8 h-6 object-contain"
             />
             <h1 className="text-xl md:text-2xl font-bold text-white">F1 LIVE</h1>
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              liveError ? 'bg-red-500' : 'bg-green-500'
+            }`}></div>
+          </div>
+          
+          {/* Live Status Indicator */}
+          <div className="flex items-center justify-center gap-2 text-xs">
+            {liveError ? (
+              <span className="text-red-400 animate-pulse">⚠ Conexión perdida - Reintentando...</span>
+            ) : (
+              <>
+                <span className="text-green-400">🔴 EN VIVO</span>
+                {lastUpdateTime && (
+                  <span className="text-slate-500">• Actualizado {lastUpdateTime}</span>
+                )}
+              </>
+            )}
           </div>
           
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-4">
@@ -155,7 +271,7 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
                   </div>
                   <div>
                     <span className="text-slate-400">Delta vs mejor:</span>
-                    <span className={`ml-2 font-mono ${currentPlayerDelta !== null ? (currentPlayerDelta <= 0 ? 'text-green-400' : 'text-red-400') : 'text-slate-500'}`}>
+                    <span className={`ml-2 font-mono ${currentPlayerDelta !== null ? (currentPlayerDelta <= 0 ? 'text-green-400' : 'text-red-400 animate-pulse') : 'text-slate-500'}`}>
                       {currentPlayerDelta !== null 
                         ? (currentPlayerDelta <= 0 
                           ? `${formatTime(Math.abs(currentPlayerDelta))}` 
@@ -170,10 +286,89 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          
+          {/* Turn Progress Tracker */}
+          <TurnProgressTracker 
+            players={gameState.settings.players}
+            currentTurn={gameState.currentTurn}
+            lapsPerTurn={gameState.settings.lapsPerTurn}
+            turnProgressData={liveData?.data?.currentTurnProgress || []}
+            isLoading={!liveData && !liveError}
+          />
+          
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          
+          {/* Live Lap Updates */}
+          <div className="lg:col-span-1">
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 border-b border-slate-600">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  ⚡ Última Actividad
+                </h2>
+                <p className="text-blue-200 text-sm">Tiempos en tiempo real</p>
+              </div>
+              
+              <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                {recentLaps.length === 0 ? (
+                  <div className="text-center text-slate-400 py-8">
+                    {liveError ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-red-400 animate-pulse">Error de conexión</span>
+                        <LoadingSpinner size="sm" className="text-red-400 animate-pulse" />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <LoadingSpinner size="sm" className="text-blue-400" />
+                        <span>Esperando nuevos tiempos...</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  recentLaps.map((lap: any, index: number) => {
+                    const player = players.find(p => p.id === lap.playerId);
+                    const timeAgo = new Date(lap.timestamp).toLocaleTimeString();
+                    
+                    const isNewLap = newLapIds.has(lap.id);
+                    
+                    return (
+                      <div key={`${lap.id}-${index}`} className={`bg-slate-700/30 border rounded-lg p-3 transition-all duration-500 hover:bg-slate-700/50 ${
+                        isNewLap ? 'border-yellow-400 bg-yellow-900/20 animate-pulse' : 'border-slate-600'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                              {player?.name?.charAt(0) || '?'}
+                            </div>
+                            <div>
+                              <div className="text-white font-medium text-sm">{player?.name || 'Desconocido'}</div>
+                              <div className="text-slate-400 text-xs">Vuelta {lap.lapNumber} • T{lap.turnNumber}</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-mono font-bold transition-colors duration-500 ${
+                              isNewLap ? 'text-yellow-400' : 'text-cyan-400'
+                            }`}>
+                              {formatTime(lap.timeMs)}
+                            </div>
+                            <div className="text-xs text-slate-500 flex items-center gap-1">
+                              {timeAgo}
+                              {isNewLap && <span className="text-yellow-400 animate-bounce">🆕</span>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
           
           {/* Live Records & Champions */}
-          <div className="space-y-6">
+          <div className="lg:col-span-1 space-y-6">
             
             {/* Current Session Champions */}
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden">
@@ -245,7 +440,7 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
           </div>
 
           {/* Live Leaderboards */}
-          <div className="space-y-6">
+          <div className="lg:col-span-1 space-y-6">
             
             {/* Top 5 Fastest Laps */}
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl overflow-hidden">
@@ -262,8 +457,10 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
                     <div className="animate-pulse">Esperando primer registro...</div>
                   </div>
                 ) : (
-                  bestLapTimes.map(({ position, player, time, turn, lap }) => (
-                    <div key={`${player?.id}-${turn}-${lap}`} className="p-3 flex items-center gap-3 hover:bg-slate-700/30 transition-colors">
+                  bestLapTimes.map(({ position, player, time, turn, lap, delta, isLive }) => (
+                    <div key={`${player?.id}-${turn}-${lap}`} className={`p-3 flex items-center gap-3 transition-all duration-300 hover:bg-slate-700/30 ${
+                      isLive ? 'bg-yellow-900/10 border-l-2 border-yellow-400' : ''
+                    }`}>
                       <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${
                         position === 1 ? 'bg-slate-600 text-white' :
                         position <= 3 ? 'bg-slate-700 text-slate-300' :
@@ -282,10 +479,21 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
                       </div>
                       
                       <div className="text-right">
-                        <div className="font-mono text-cyan-400 text-sm font-semibold">
+                        <div className={`font-mono text-sm font-semibold ${
+                          isLive ? 'text-yellow-400' : 'text-cyan-400'
+                        }`}>
                           {formatTime(time)}
                         </div>
-                        {position === 1 && <div className="text-xs text-slate-400">Mejor</div>}
+                        <div className="text-xs">
+                          {position === 1 ? (
+                            <span className="text-green-400">🏆 Mejor</span>
+                          ) : (
+                            <span className={`${delta < 1000 ? 'text-green-300' : delta < 2000 ? 'text-yellow-300' : 'text-red-300'}`}>
+                              +{formatTime(delta)}
+                            </span>
+                          )}
+                          {isLive && <span className="text-yellow-400 ml-1">• LIVE</span>}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -308,15 +516,15 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
                     <div className="animate-pulse">Calculando promedios...</div>
                   </div>
                 ) : (
-                  bestAverages.map(({ player, bestAverage, averageCount }, index) => (
+                  bestAverages.map(({ player, bestAverage, averageCount, delta, position }) => (
                     <div key={player?.id} className="p-3 flex items-center gap-3 hover:bg-slate-700/30 transition-colors">
                       <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                        index === 0 ? 'bg-blue-500 text-white' :
-                        index === 1 ? 'bg-blue-600 text-blue-100' :
-                        index === 2 ? 'bg-blue-700 text-blue-200' :
+                        position === 1 ? 'bg-blue-500 text-white' :
+                        position === 2 ? 'bg-blue-600 text-blue-100' :
+                        position === 3 ? 'bg-blue-700 text-blue-200' :
                         'bg-slate-700 text-slate-300'
                       }`}>
-                        {index + 1}
+                        {position}
                       </div>
                       
                       <img 
@@ -332,12 +540,20 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
                       
                       <div className="text-right">
                         <div className={`font-mono font-bold ${
-                          index === 0 ? 'text-blue-400 text-lg' : 
-                          index <= 2 ? 'text-blue-300' : 'text-slate-300'
+                          position === 1 ? 'text-blue-400 text-lg' : 
+                          position <= 3 ? 'text-blue-300' : 'text-slate-300'
                         }`}>
                           {formatTime(bestAverage)}
                         </div>
-                        {index === 0 && <div className="text-xs text-blue-300">⭐ CONSISTENT</div>}
+                        <div className="text-xs">
+                          {position === 1 ? (
+                            <span className="text-blue-300">⭐ CONSISTENT</span>
+                          ) : (
+                            <span className={`${delta < 1000 ? 'text-green-300' : delta < 3000 ? 'text-yellow-300' : 'text-red-300'}`}>
+                              +{formatTime(delta)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
