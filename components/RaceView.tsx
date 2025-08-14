@@ -363,44 +363,29 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         })}
 
         {/* Average Display */}
-        {isCurrentController && currentAverage !== null && (() => {
-            // Check if this is a historical best average (or first time if no historical record)
-            const isHistoricalBestAvg = currentCircuit.historicalBestAverage === null || 
-                                      currentCircuit.historicalBestAverage === undefined || 
-                                      currentAverage < currentCircuit.historicalBestAverage;
-            
-            // Check if this is a session best average (or first time if no session record)
-            const isSessionBestAvg = sessionBestAverage === null || 
-                                   sessionBestAverage === undefined || 
-                                   currentAverage < sessionBestAverage;
-            
-            // Historical takes priority over session
-            const avgBestType = isHistoricalBestAvg ? 'historical' : isSessionBestAvg ? 'session' : 'normal';
-            
-            return (
+        {isCurrentController && currentAverage !== null && (
                 <div className={`pt-4 border-t text-center rounded-lg p-3 ${
-                    avgBestType === 'historical' ? 'border-purple-500 bg-purple-900/20' : 
-                    avgBestType === 'session' ? 'border-green-500 bg-green-900/20' : 
+                    (currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) ? 'border-purple-500 bg-purple-900/20' : 
+                    (sessionBestAverage === null || sessionBestAverage === undefined || currentAverage < sessionBestAverage) ? 'border-green-500 bg-green-900/20' : 
                     'border-slate-700'
                 }`}>
                     <p className="text-slate-400">Tiempo Promedio</p>
                     <p className={`text-3xl font-mono font-bold ${
-                        avgBestType === 'historical' ? 'text-purple-400' : 
-                        avgBestType === 'session' ? 'text-green-400' : 
+                        (currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) ? 'text-purple-400' : 
+                        (sessionBestAverage === null || sessionBestAverage === undefined || currentAverage < sessionBestAverage) ? 'text-green-400' : 
                         'text-slate-200'
                     }`}>
                         {formatTime(currentAverage)}
                     </p>
-                    {avgBestType === 'historical' && (
+                    {(currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) && (
                         <p className="text-xs text-purple-300 mt-1">🏆 NEW HISTORICAL RECORD!</p>
                     )}
-                    {avgBestType === 'session' && (
+                    {!(currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) && (sessionBestAverage === null || sessionBestAverage === undefined || currentAverage < sessionBestAverage) && (
                         <p className="text-xs text-green-300 mt-1">⭐ NEW SESSION BEST!</p>
                     )}
                     {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && <p className="text-xs text-slate-500 mt-1">Based on best 4 laps</p>}
                 </div>
-            );
-        })}
+        )}
 
         {/* Action Buttons */}
         {isCurrentController && (
