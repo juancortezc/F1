@@ -363,7 +363,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         })}
 
         {/* Average Display */}
-        {currentAverage !== null && (() => {
+        {isCurrentController && currentAverage !== null && (() => {
             // Check if this is a historical best average (or first time if no historical record)
             const isHistoricalBestAvg = currentCircuit.historicalBestAverage === null || 
                                       currentCircuit.historicalBestAverage === undefined || 
