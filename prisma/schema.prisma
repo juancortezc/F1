@@ -11,7 +11,7 @@ model Player {
   id       String @id @default(cuid())
   name     String
   imageUrl String
-  pin      String // Store PIN securely in database
+  pin      String @default("0000") // Store PIN securely in database
   isActive Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
