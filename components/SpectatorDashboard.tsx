@@ -111,7 +111,7 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
           <div className="flex items-center justify-center gap-2">
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
             <img 
-              src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+              src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
               alt="F1 Logo" 
               className="w-8 h-6 object-contain"
             />

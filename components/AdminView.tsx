@@ -4,6 +4,7 @@ import { Player, Circuit } from '../types';
 import { PlusIcon, PencilIcon, TrashIcon } from './icons';
 import { useSWRConfig } from 'swr';
 import NavigationBar from './NavigationBar';
+import Modal from './Modal';
 
 interface AdminViewProps {
     players: Player[];
@@ -131,13 +132,19 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
                 </div>
             </div>
 
-            {editingItem && <EditModal item={editingItem} onSave={handleSave} onCancel={() => setEditingItem(null)} />}
+            <Modal 
+                isOpen={!!editingItem} 
+                onClose={() => setEditingItem(null)}
+                title={editingItem === 'new-player' ? 'Crear Jugador' : editingItem === 'new-circuit' ? 'Crear Circuito' : editingItem ? `Editar ${editingItem.name}` : ''}
+            >
+                {editingItem && <EditForm item={editingItem} onSave={handleSave} onCancel={() => setEditingItem(null)} />}
+            </Modal>
             </div>
         </div>
     );
 };
 
-const EditModal: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Circuit>, type: 'player' | 'circuit') => void, onCancel: () => void}> = ({ item, onSave, onCancel }) => {
+const EditForm: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Circuit>, type: 'player' | 'circuit') => void, onCancel: () => void}> = ({ item, onSave, onCancel }) => {
     const isNewPlayer = item === 'new-player';
     const isNewCircuit = item === 'new-circuit';
     const isPlayer = isNewPlayer || (typeof item === 'object' && item && 'id' in item && 'imageUrl' in item && !isNewCircuit);
@@ -211,12 +218,7 @@ const EditModal: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Ci
     }
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md">
-                <h2 className="text-xl font-bold mb-4">
-                    {isNewPlayer ? 'Crear Jugador' : isNewCircuit ? 'Crear Circuito' : `Editar ${formData.name}`}
-                </h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
                     <input 
                         type="text" 
                         name="name" 
@@ -264,13 +266,11 @@ const EditModal: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Ci
                         />
                     )}
                     
-                    <div className="flex justify-end gap-4 mt-6">
-                        <button type="button" onClick={onCancel} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700">Cancelar</button>
-                        <button type="submit" className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601]">Guardar</button>
-                    </div>
-                </form>
+            <div className="flex justify-end gap-4 mt-6">
+                <button type="button" onClick={onCancel} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700">Cancelar</button>
+                <button type="submit" className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601]">Guardar</button>
             </div>
-        </div>
+        </form>
     );
 }
 

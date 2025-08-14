@@ -3,21 +3,21 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const defaultCircuits = [
-  { name: 'Australia', imageUrl: 'https://picsum.photos/seed/australia/400/200' },
-  { name: 'Canada', imageUrl: 'https://picsum.photos/seed/canada/400/200' },
-  { name: 'Spa', imageUrl: 'https://picsum.photos/seed/spa/400/200' },
-  { name: 'Monaco', imageUrl: 'https://picsum.photos/seed/monaco/400/200' },
-  { name: 'Austria', imageUrl: 'https://picsum.photos/seed/austria/400/200' },
-  { name: 'Silverstone', imageUrl: 'https://picsum.photos/seed/silverstone/400/200' },
-  { name: 'COTA', imageUrl: 'https://picsum.photos/seed/cota/400/200' },
-  { name: 'Suzuka', imageUrl: 'https://picsum.photos/seed/suzuka/400/200' },
-  { name: 'Hungria', imageUrl: 'https://picsum.photos/seed/hungary/400/200' },
-  { name: 'Barcelona', imageUrl: 'https://picsum.photos/seed/barcelona/400/200' },
-  { name: 'Baharain', imageUrl: 'https://picsum.photos/seed/bahrain/400/200' },
-  { name: 'Baku', imageUrl: 'https://picsum.photos/seed/baku/400/200' },
-  { name: 'Mexico', imageUrl: 'https://picsum.photos/seed/mexico/400/200' },
-  { name: 'Brasil', imageUrl: 'https://picsum.photos/seed/brazil/400/200' },
-  { name: 'China', imageUrl: 'https://picsum.photos/seed/china/400/200' },
+  { name: 'Australia', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Australia%20carbon.png.transform/4col/image.png' },
+  { name: 'Canada', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Canada%20carbon.png.transform/4col/image.png' },
+  { name: 'Spa', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Belgium%20carbon.png.transform/4col/image.png' },
+  { name: 'Monaco', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Monaco%20carbon.png.transform/4col/image.png' },
+  { name: 'Austria', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Austria%20carbon.png.transform/4col/image.png' },
+  { name: 'Silverstone', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Great%20Britain%20carbon.png.transform/4col/image.png' },
+  { name: 'COTA', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/United%20States%20carbon.png.transform/4col/image.png' },
+  { name: 'Suzuka', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Japan%20carbon.png.transform/4col/image.png' },
+  { name: 'Hungria', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Hungary%20carbon.png.transform/4col/image.png' },
+  { name: 'Barcelona', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Spain%20carbon.png.transform/4col/image.png' },
+  { name: 'Baharain', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Bahrain%20carbon.png.transform/4col/image.png' },
+  { name: 'Baku', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Azerbaijan%20carbon.png.transform/4col/image.png' },
+  { name: 'Mexico', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Mexico%20carbon.png.transform/4col/image.png' },
+  { name: 'Brasil', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/Brazil%20carbon.png.transform/4col/image.png' },
+  { name: 'China', imageUrl: 'https://www.formula1.com/content/dam/fom-website/2018-redesign-assets/Track%20icons%204x3/China%20carbon.png.transform/4col/image.png' },
 ];
 
 async function main() {

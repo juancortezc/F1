@@ -80,7 +80,7 @@ const PWAInstallPrompt: React.FC = () => {
       <div className="bg-slate-800 border border-slate-600 rounded-lg p-4 shadow-lg">
         <div className="flex items-start gap-3">
           <img 
-            src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+            src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
             alt="F1 Logo" 
             className="w-8 h-6 object-contain flex-shrink-0 mt-1"
           />

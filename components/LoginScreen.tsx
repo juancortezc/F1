@@ -54,7 +54,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <div className="w-full max-w-sm text-center">
         <img 
-          src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+          src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
           alt="F1 Logo" 
           className="w-32 h-24 mx-auto object-contain"
         />

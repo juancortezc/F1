@@ -8,6 +8,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import { ToastProvider } from '../components/Toast';
 import OfflineIndicator from '../components/OfflineIndicator';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
+import { swrConfig } from '../lib/fetcher';
 
 function MyApp({ Component, pageProps }: AppProps) {
   useEffect(() => {
@@ -27,7 +28,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <meta name="theme-color" content="#FF1801" />
         <meta name="description" content="Professional F1 racing session tracker and championship manager" />
         
@@ -51,26 +52,12 @@ function MyApp({ Component, pageProps }: AppProps) {
         <link rel="apple-touch-startup-image" href="/apple-touch-icon.png" />
         
         {/* Preload critical resources */}
-        <link rel="preload" href="https://storage.googleapis.com/poker-enfermos/f1-logo.png" as="image" />
+        <link rel="preload" href="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" as="image" />
       </Head>
       
       <ErrorBoundary>
         <ToastProvider>
-          <SWRConfig
-            value={{
-              fetcher: (resource, init) => fetch(resource, init).then(res => res.json()),
-              onError: (error) => {
-                console.error('SWR Error:', error);
-              },
-              // Add offline support to SWR
-              revalidateOnFocus: false,
-              revalidateOnReconnect: true,
-              shouldRetryOnError: (error) => {
-                // Don't retry on offline errors
-                return error.status !== 503;
-              }
-            }}
-          >
+          <SWRConfig value={swrConfig}>
             <Component {...pageProps} />
             <OfflineIndicator />
             <PWAInstallPrompt />

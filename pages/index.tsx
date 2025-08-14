@@ -526,7 +526,7 @@ function App() {
                         <div className="flex md:hidden justify-between items-center py-3 border-b border-slate-700">
                             <div className="flex items-center gap-2">
                                 <img 
-                                    src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+                                    src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
                                     alt="F1 Logo" 
                                     className="w-8 h-6 object-contain"
                                 />
@@ -600,7 +600,7 @@ function App() {
                         <div className="hidden md:flex justify-between items-center py-3 border-b border-slate-700">
                              <div className="flex items-center gap-2">
                                 <img 
-                                    src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+                                    src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
                                     alt="F1 Logo" 
                                     className="w-10 h-8 object-contain"
                                 />

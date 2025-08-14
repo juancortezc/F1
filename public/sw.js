@@ -6,7 +6,7 @@ const urlsToCache = [
   '/_next/static/css/',
   '/_next/static/chunks/',
   // Cache external resources
-  'https://storage.googleapis.com/poker-enfermos/f1-logo.png'
+  'https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg'
 ];
 
 // Install event - cache resources

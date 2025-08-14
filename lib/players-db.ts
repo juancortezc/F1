@@ -1,21 +1,20 @@
-// Librería para manejo de jugadores usando Prisma/Neon Database
+// Player management using Prisma/Neon Database exclusively
 import prisma from './prisma';
 import { Player } from '../types';
 
-// Función para leer jugadores desde la base de datos
+// Get all players from database
 export async function getPlayers(): Promise<Player[]> {
   try {
     const players = await prisma.player.findMany({
       orderBy: { createdAt: 'asc' }
     });
     
-    // Convert Prisma Player to our Player type
     return players.map(player => ({
       id: player.id,
       name: player.name,
       imageUrl: player.imageUrl,
-      pin: '', // PIN no se devuelve por seguridad
-      isActive: true
+      pin: '', // PIN not returned for security
+      isActive: player.isActive
     }));
   } catch (error) {
     console.error('Error reading players:', error);
@@ -23,13 +22,15 @@ export async function getPlayers(): Promise<Player[]> {
   }
 }
 
-// Función para crear un nuevo jugador
+// Create a new player in database
 export async function createPlayer(playerData: Omit<Player, 'id' | 'isActive'>): Promise<Player> {
   try {
     const newPlayer = await prisma.player.create({
       data: {
         name: playerData.name,
         imageUrl: playerData.imageUrl,
+        pin: playerData.pin,
+        isActive: true
       }
     });
     
@@ -37,8 +38,8 @@ export async function createPlayer(playerData: Omit<Player, 'id' | 'isActive'>):
       id: newPlayer.id,
       name: newPlayer.name,
       imageUrl: newPlayer.imageUrl,
-      pin: playerData.pin,
-      isActive: true
+      pin: '', // Don't return PIN for security
+      isActive: newPlayer.isActive
     };
   } catch (error) {
     console.error('Error creating player:', error);
@@ -46,22 +47,74 @@ export async function createPlayer(playerData: Omit<Player, 'id' | 'isActive'>):
   }
 }
 
-// Función para verificar si un PIN ya existe (mantener en memoria temporal)
-const playerPins = new Map<string, string>(); // playerId -> pin
-
-export function setPinForPlayer(playerId: string, pin: string): void {
-  playerPins.set(playerId, pin);
+// Update player in database
+export async function updatePlayer(id: string, playerData: Partial<Omit<Player, 'id'>>): Promise<Player | null> {
+  try {
+    const updatedPlayer = await prisma.player.update({
+      where: { id },
+      data: {
+        ...(playerData.name && { name: playerData.name }),
+        ...(playerData.imageUrl && { imageUrl: playerData.imageUrl }),
+        ...(playerData.pin && { pin: playerData.pin }),
+        ...(playerData.isActive !== undefined && { isActive: playerData.isActive })
+      }
+    });
+    
+    return {
+      id: updatedPlayer.id,
+      name: updatedPlayer.name,
+      imageUrl: updatedPlayer.imageUrl,
+      pin: '', // Don't return PIN for security
+      isActive: updatedPlayer.isActive
+    };
+  } catch (error) {
+    console.error('Error updating player:', error);
+    return null;
+  }
 }
 
-export function validatePlayerPin(playerId: string, pin: string): boolean {
-  return playerPins.get(playerId) === pin;
+// Delete player from database
+export async function deletePlayer(id: string): Promise<boolean> {
+  try {
+    await prisma.player.delete({
+      where: { id }
+    });
+    return true;
+  } catch (error) {
+    console.error('Error deleting player:', error);
+    return false;
+  }
 }
 
-export function isPinTaken(pin: string): boolean {
-  return Array.from(playerPins.values()).includes(pin);
+// Validate player PIN against database
+export async function validatePlayerPin(playerId: string, pin: string): Promise<boolean> {
+  try {
+    const player = await prisma.player.findUnique({
+      where: { id: playerId }
+    });
+    
+    return player?.pin === pin;
+  } catch (error) {
+    console.error('Error validating player PIN:', error);
+    return false;
+  }
 }
 
-// Función para obtener un jugador por ID
+// Check if PIN is already taken in database
+export async function isPinTaken(pin: string): Promise<boolean> {
+  try {
+    const existingPlayer = await prisma.player.findFirst({
+      where: { pin }
+    });
+    
+    return !!existingPlayer;
+  } catch (error) {
+    console.error('Error checking PIN availability:', error);
+    return true; // Assume taken if error occurs
+  }
+}
+
+// Get player by ID from database
 export async function getPlayerById(playerId: string): Promise<Player | null> {
   try {
     const player = await prisma.player.findUnique({
@@ -74,8 +127,8 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
       id: player.id,
       name: player.name,
       imageUrl: player.imageUrl,
-      pin: playerPins.get(player.id) || '',
-      isActive: true
+      pin: '', // Don't return PIN for security
+      isActive: player.isActive
     };
   } catch (error) {
     console.error('Error getting player by ID:', error);
@@ -83,7 +136,11 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
   }
 }
 
-// Backward compatibility - deprecated functions
+// Deprecated functions for backward compatibility
+export function setPinForPlayer(_playerId: string, _pin: string): void {
+  console.warn('setPinForPlayer is deprecated. PINs are now stored in database.');
+}
+
 export function savePlayers(_players: Player[]): void {
   console.warn('savePlayers is deprecated. Use createPlayer instead.');
 }

@@ -25,7 +25,7 @@ const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, 
                 <div className="w-full max-w-md text-center">
                      <div className="mb-8">
                         <img 
-                            src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+                            src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
                             alt="F1 Logo" 
                             className="w-24 h-18 mx-auto object-contain mb-4"
                         />

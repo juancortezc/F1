@@ -2,6 +2,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '../../../lib/prisma';
 import { GameState } from '../../../types';
+import { sendError, sendPrismaError, validateRequired } from '../../../lib/errors';
+import { withSecurity } from '../../../lib/security';
 
 // Helper function to check and update historical records
 async function checkAndUpdateRecords(gameState: GameState) {
@@ -99,13 +101,19 @@ async function checkAndUpdateRecords(gameState: GameState) {
     }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'PUT') {
         try {
             const { id, state, status } = req.body as {id: string, state?: GameState, status?: 'ACTIVE' | 'COMPLETED'};
             
-            if (!id) {
-                return res.status(400).json({ error: 'Game ID is required.' });
+            const validationError = validateRequired(req.body, ['id']);
+            if (validationError) {
+                return sendError(res, 400, validationError);
+            }
+
+            // Validate status if provided
+            if (status && !['ACTIVE', 'COMPLETED'].includes(status)) {
+                return sendError(res, 400, 'Invalid status. Must be ACTIVE or COMPLETED');
             }
 
             // If we have a new game state, check for historical records
@@ -122,11 +130,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
             res.status(200).json(game);
         } catch (error) {
-            console.error("Game update error:", error);
-            res.status(500).json({ error: 'Failed to update game' });
+            sendPrismaError(res, error);
         }
     } else {
         res.setHeader('Allow', ['PUT']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
+
+export default withSecurity(handler);

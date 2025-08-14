@@ -1,97 +1,93 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getPlayerById, setPinForPlayer, isPinTaken } from '../../../lib/players-db';
-import prisma from '../../../lib/prisma';
+import { getPlayerById, updatePlayer, deletePlayer, isPinTaken } from '../../../lib/players-db';
+import { withSecurity } from '../../../lib/security';
+import { sendError, sendPrismaError, validateRequired } from '../../../lib/errors';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
   if (typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid ID' });
+    return sendError(res, 400, 'Invalid ID');
   }
 
   if (req.method === 'PUT') {
     try {
       const { name, imageUrl, pin } = req.body;
       
-      // Validate required fields
-      if (!name || !imageUrl || !pin) {
-        return res.status(400).json({ error: 'Name, imageUrl, and pin are required' });
+      const validationError = validateRequired(req.body, ['name', 'imageUrl', 'pin']);
+      if (validationError) {
+        return sendError(res, 400, validationError);
       }
       
       // Validate name length
       if (name.trim().length < 1 || name.trim().length > 50) {
-        return res.status(400).json({ error: 'Name must be between 1 and 50 characters' });
+        return sendError(res, 400, 'Name must be between 1 and 50 characters');
       }
       
       // Validate PIN format
       if (!/^\d{4}$/.test(pin)) {
-        return res.status(400).json({ error: 'PIN must be exactly 4 digits' });
+        return sendError(res, 400, 'PIN must be exactly 4 digits');
       }
       
       // Validate URL format
       try {
         new URL(imageUrl);
       } catch {
-        return res.status(400).json({ error: 'Invalid image URL format' });
+        return sendError(res, 400, 'Invalid image URL format');
       }
       
       // Check if player exists
       const existingPlayer = await getPlayerById(id);
       if (!existingPlayer) {
-        return res.status(404).json({ error: 'Player not found' });
+        return sendError(res, 404, 'Player not found');
       }
       
       // Check for duplicate PIN (excluding current player)
-      if (isPinTaken(pin) && existingPlayer.pin !== pin) {
-        return res.status(400).json({ error: 'PIN already exists. Please choose a different PIN.' });
+      const pinTaken = await isPinTaken(pin);
+      if (pinTaken) {
+        // Check if the PIN belongs to the current player
+        const currentPlayerWithPin = await getPlayerById(id);
+        if (!currentPlayerWithPin || currentPlayerWithPin.pin !== pin) {
+          return sendError(res, 400, 'PIN already exists. Please choose a different PIN.');
+        }
       }
       
-      // Update player in database
-      const updatedPlayer = await prisma.player.update({
-        where: { id },
-        data: {
-          name: name.trim(),
-          imageUrl
-        }
+      const updatedPlayer = await updatePlayer(id, {
+        name: name.trim(),
+        imageUrl,
+        pin
       });
       
-      // Update PIN in memory
-      setPinForPlayer(id, pin);
+      if (!updatedPlayer) {
+        return sendError(res, 500, 'Failed to update player');
+      }
       
-      const response = {
-        id: updatedPlayer.id,
-        name: updatedPlayer.name,
-        imageUrl: updatedPlayer.imageUrl,
-        pin,
-        isActive: true
-      };
-      
-      res.status(200).json(response);
+      res.status(200).json(updatedPlayer);
     } catch (error) {
-      console.error('Failed to update player:', error);
-      res.status(500).json({ error: 'Failed to update player' });
+      sendPrismaError(res, error);
     }
   } else if (req.method === 'DELETE') {
     try {
       // Check if player exists
       const existingPlayer = await getPlayerById(id);
       if (!existingPlayer) {
-        return res.status(404).json({ error: 'Player not found' });
+        return sendError(res, 404, 'Player not found');
       }
       
-      // Delete player from database
-      await prisma.player.delete({
-        where: { id }
-      });
+      const success = await deletePlayer(id);
+      if (!success) {
+        return sendError(res, 500, 'Failed to delete player');
+      }
       
       res.status(204).end();
     } catch (error) {
-      console.error('Failed to delete player:', error);
-      res.status(500).json({ error: 'Failed to delete player' });
+      sendPrismaError(res, error);
     }
   } else {
     res.setHeader('Allow', ['PUT', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withSecurity(handler);

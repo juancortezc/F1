@@ -1,9 +1,10 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getPlayers, createPlayer, setPinForPlayer, isPinTaken } from '../../../lib/players-db';
+import { getPlayers, createPlayer, isPinTaken } from '../../../lib/players-db';
 import { Player } from '../../../types';
+import { withSecurity } from '../../../lib/security';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
       const players = await getPlayers();
@@ -38,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       
       // Check for duplicate PIN
-      if (isPinTaken(pin)) {
+      if (await isPinTaken(pin)) {
         return res.status(400).json({ error: 'PIN already exists. Please choose a different PIN.' });
       }
       
@@ -47,9 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         imageUrl,
         pin
       });
-      
-      // Store PIN in memory for authentication
-      setPinForPlayer(newPlayer.id, pin);
       
       res.status(201).json(newPlayer);
     } catch (error) {
@@ -61,3 +59,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withSecurity(handler);

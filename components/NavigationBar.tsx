@@ -41,7 +41,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
               </button>
             ) : (
               <img 
-                src="https://storage.googleapis.com/poker-enfermos/f1-logo.png" 
+                src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
                 alt="F1 Logo" 
                 className="w-8 h-6 md:w-10 md:h-8 object-contain"
               />

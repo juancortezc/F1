@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getPlayers, validatePlayerPin } from '../../../lib/players-db';
 import prisma from '../../../lib/prisma';
+import { withSecurity } from '../../../lib/security';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -29,17 +29,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     
-    // Then check registered players
-    const players = await getPlayers();
-    
-    // Find player by checking PIN against memory
-    let authenticatedPlayer = null;
-    for (const player of players) {
-      if (validatePlayerPin(player.id, pin)) {
-        authenticatedPlayer = player;
-        break;
-      }
-    }
+    // Then check registered players by PIN directly from database
+    const authenticatedPlayer = await prisma.player.findFirst({
+      where: { pin }
+    });
     
     if (!authenticatedPlayer) {
       return res.status(401).json({ error: 'Invalid PIN' });
@@ -57,3 +50,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
+export default withSecurity(handler);
