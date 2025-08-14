@@ -671,7 +671,13 @@ function App() {
           onBack={handleBackToLanding}
         />;
       case 'hub':
-        return <HubScreen onNewGame={handleNewGame} onAdmin={handleAdmin} currentUser={currentUser} onLogout={handleLogout} />;
+        return <HubScreen 
+          onNewGame={handleNewGame} 
+          onAdmin={handleAdmin} 
+          currentUser={currentUser} 
+          onLogout={handleLogout}
+          onViewStats={handleBackToLanding}
+        />;
       case 'admin':
         return <AdminView players={players!} circuits={circuits!} onBack={handleExitAdmin} />;
       case 'setup':

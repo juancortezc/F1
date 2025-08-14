@@ -9,11 +9,12 @@ interface HubScreenProps {
     onAdmin: () => void;
     currentUser: UserSession | null;
     onLogout: () => void;
+    onViewStats?: () => void;
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, onLogout }) => {
+const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, onLogout, onViewStats }) => {
     const { data: activeGame } = useSWR('/api/game/active', fetcher);
     const isOrganizer = currentUser?.role === 'organizer';
     
@@ -133,7 +134,7 @@ const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, 
                                     Consulta tus récords, estadísticas y el ranking general.
                                 </p>
                                 <button
-                                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                    onClick={onViewStats || (() => onLogout())}
                                     className="w-full bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-yellow-700 transition-all"
                                 >
                                     Ver Estadísticas
