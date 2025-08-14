@@ -72,6 +72,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     currentPlayerIndex, 
     sessionBestLap, 
     sessionBestAverage, 
+    sessionBestTimes,
     playerOrder, 
     currentController, 
     participantUsers = [] 
@@ -84,6 +85,22 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const currentCircuit = circuits[currentCircuitIndex];
   const currentPlayerId = playerOrder[currentPlayerIndex];
   const currentPlayer = players.find(p => p.id === currentPlayerId);
+
+  // Get circuit-specific session best times
+  const circuitSessionBests = sessionBestTimes?.[currentCircuit?.id] || {
+    bestLap: null,
+    bestLapPlayerId: null,
+    bestAverage: null,
+    bestAveragePlayerId: null
+  };
+
+  // Get player names for session record holders
+  const sessionBestLapHolder = circuitSessionBests.bestLapPlayerId 
+    ? players.find(p => p.id === circuitSessionBests.bestLapPlayerId)?.name 
+    : null;
+  const sessionBestAverageHolder = circuitSessionBests.bestAveragePlayerId 
+    ? players.find(p => p.id === circuitSessionBests.bestAveragePlayerId)?.name 
+    : null;
 
   if (!currentCircuit || !currentPlayerId || !currentPlayer) {
     return <div className="text-center p-8">Error: Datos del juego incompletos</div>;
@@ -274,6 +291,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
           <DataCard
             title="Mejor Vuelta Histórica"
             value={formatTime(currentCircuit.historicalBestLap)}
+            subtitle={currentCircuit.bestLapHolder?.name || undefined}
             icon={<TrophyIcon className="w-4 h-4" />}
             variant="info"
             size="sm"
@@ -281,20 +299,23 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
           <DataCard
             title="Mejor Promedio Histórico"
             value={formatTime(currentCircuit.historicalBestAverage)}
+            subtitle={currentCircuit.bestAverageHolder?.name || undefined}
             icon={<TrophyIcon className="w-4 h-4" />}
             variant="info"
             size="sm"
           />
           <DataCard
             title="Mejor Vuelta Sesión"
-            value={formatTime(sessionBestLap)}
+            value={formatTime(circuitSessionBests.bestLap)}
+            subtitle={sessionBestLapHolder || undefined}
             icon={<StopwatchIcon className="w-4 h-4" />}
             variant="success"
             size="sm"
           />
           <DataCard
             title="Mejor Promedio Sesión"
-            value={formatTime(sessionBestAverage)}
+            value={formatTime(circuitSessionBests.bestAverage)}
+            subtitle={sessionBestAverageHolder || undefined}
             icon={<StopwatchIcon className="w-4 h-4" />}
             variant="success"
             size="sm"
@@ -330,9 +351,9 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                                        timeInMs < currentCircuit.historicalBestLap;
                 
                 // Check if this is a session best (or first time if no session record)
-                const isSessionBest = sessionBestLap === null || 
-                                    sessionBestLap === undefined || 
-                                    timeInMs < sessionBestLap;
+                const isSessionBest = circuitSessionBests.bestLap === null || 
+                                    circuitSessionBests.bestLap === undefined || 
+                                    timeInMs < circuitSessionBests.bestLap;
                 
                 // Historical takes priority over session
                 const bestType = isHistoricalBest ? 'historical' : isSessionBest ? 'session' : undefined;
@@ -366,13 +387,13 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         {isCurrentController && currentAverage !== null && (
                 <div className={`pt-4 border-t text-center rounded-lg p-3 ${
                     (currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) ? 'border-purple-500 bg-purple-900/20' : 
-                    (sessionBestAverage === null || sessionBestAverage === undefined || currentAverage < sessionBestAverage) ? 'border-green-500 bg-green-900/20' : 
+                    (circuitSessionBests.bestAverage === null || circuitSessionBests.bestAverage === undefined || currentAverage < circuitSessionBests.bestAverage) ? 'border-green-500 bg-green-900/20' : 
                     'border-slate-700'
                 }`}>
                     <p className="text-slate-400">Tiempo Promedio</p>
                     <p className={`text-3xl font-mono font-bold ${
                         (currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) ? 'text-purple-400' : 
-                        (sessionBestAverage === null || sessionBestAverage === undefined || currentAverage < sessionBestAverage) ? 'text-green-400' : 
+                        (circuitSessionBests.bestAverage === null || circuitSessionBests.bestAverage === undefined || currentAverage < circuitSessionBests.bestAverage) ? 'text-green-400' : 
                         'text-slate-200'
                     }`}>
                         {formatTime(currentAverage)}
@@ -380,7 +401,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                     {(currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) && (
                         <p className="text-xs text-purple-300 mt-1">🏆 NEW HISTORICAL RECORD!</p>
                     )}
-                    {!(currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) && (sessionBestAverage === null || sessionBestAverage === undefined || currentAverage < sessionBestAverage) && (
+                    {!(currentCircuit.historicalBestAverage === null || currentCircuit.historicalBestAverage === undefined || currentAverage < currentCircuit.historicalBestAverage) && (circuitSessionBests.bestAverage === null || circuitSessionBests.bestAverage === undefined || currentAverage < circuitSessionBests.bestAverage) && (
                         <p className="text-xs text-green-300 mt-1">⭐ NEW SESSION BEST!</p>
                     )}
                     {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && <p className="text-xs text-slate-500 mt-1">Based on best 4 laps</p>}
