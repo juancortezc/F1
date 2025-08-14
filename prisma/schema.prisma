@@ -57,3 +57,41 @@ model Settings {
 
   @@map("settings")
 }
+
+// Individual lap times for real-time registration
+model IndividualLapTime {
+  id          String @id @default(cuid())
+  gameId      String
+  playerId    String
+  circuitId   String
+  turnNumber  Int
+  lapNumber   Int    // 1, 2, 3, 4, 5
+  timeMs      Int    // Time in milliseconds
+  isSaved     Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Indexes for fast queries
+  @@index([gameId, circuitId, turnNumber])
+  @@index([gameId, playerId, circuitId, turnNumber])
+  @@unique([gameId, playerId, circuitId, turnNumber, lapNumber])
+  @@map("individual_lap_times")
+}
+
+// Turn completion tracking
+model TurnCompletion {
+  id              String @id @default(cuid())
+  gameId          String
+  playerId        String
+  circuitId       String
+  turnNumber      Int
+  averageTimeMs   Int?   // Calculated average time
+  turnScore       Int?   // Points scored for this turn
+  isCompleted     Boolean @default(false)
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([gameId, playerId, circuitId, turnNumber])
+  @@map("turn_completions")
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameState, LapTime as LapTimeType, Player } from '../types';
 import { StopwatchIcon, TrophyIcon, CheckCircleIcon } from './icons';
 import LoadingSpinner from './LoadingSpinner';
@@ -111,11 +111,64 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [savedLapTimes, setSavedLapTimes] = useState<Record<number, boolean>>({});
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isCurrentController = currentUser.userId === currentController;
+
+  // Auto-save individual lap time when complete
+  const autoSaveLapTime = useCallback(async (lapIndex: number, timeMs: number) => {
+    if (!gameState?.settings || timeMs <= 0) return;
+    
+    try {
+      setIsAutoSaving(true);
+      const response = await fetch('/api/lap-times/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: 'active-game', // We'll use a consistent game ID for active games
+          playerId: currentPlayerId,
+          circuitId: currentCircuit.id,
+          turnNumber: currentTurn,
+          lapNumber: lapIndex + 1, // Convert 0-based to 1-based
+          timeMs
+        })
+      });
+      
+      if (response.ok) {
+        setSavedLapTimes(prev => ({ ...prev, [lapIndex]: true }));
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [gameState, currentPlayerId, currentCircuit?.id, currentTurn]);
 
   const handleLapTimeChange = (index: number, field: keyof LapTimeType, value: string) => {
     const newLapTimes = [...lapTimes];
     newLapTimes[index] = { ...newLapTimes[index], [field]: value };
     setLapTimes(newLapTimes);
+    
+    // Check if this lap time is now complete and trigger auto-save
+    const updatedLapTime = newLapTimes[index];
+    const timeMs = timeToMs(updatedLapTime);
+    
+    if (timeMs > 0) {
+      // Clear any existing timeout for this lap
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
+      // Set a new timeout to auto-save after 1 second of inactivity
+      autoSaveTimeoutRef.current = setTimeout(() => {
+        autoSaveLapTime(index, timeMs);
+      }, 1000);
+    } else {
+      // Mark as not saved if the time becomes invalid
+      setSavedLapTimes(prev => ({ ...prev, [index]: false }));
+    }
   };
 
   const calculateAverage = useCallback(() => {
@@ -147,10 +200,66 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     calculateAverage();
   }, [lapTimes, calculateAverage]);
   
+  // Load saved lap times when player/turn changes
+  const loadSavedLapTimes = useCallback(async () => {
+    if (!gameState || !currentPlayerId || !currentCircuit) return;
+    
+    try {
+      const response = await fetch(`/api/lap-times/get?gameId=active-game&playerId=${currentPlayerId}&circuitId=${currentCircuit.id}&turnNumber=${currentTurn}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.lapTimes) {
+          // Convert saved lap times back to input format
+          const newLapTimes = Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' });
+          const savedStatus: Record<number, boolean> = {};
+          
+          Object.entries(data.data.lapTimes).forEach(([lapNumber, lapData]: [string, any]) => {
+            const index = parseInt(lapNumber) - 1; // Convert 1-based to 0-based
+            if (index >= 0 && index < newLapTimes.length && lapData.timeMs) {
+              const timeMs = lapData.timeMs;
+              const totalSeconds = timeMs / 1000;
+              const minutes = Math.floor(totalSeconds / 60);
+              const seconds = Math.floor(totalSeconds % 60);
+              const milliseconds = timeMs % 1000;
+              
+              newLapTimes[index] = {
+                min: minutes > 0 ? minutes.toString() : '',
+                sec: seconds.toString().padStart(2, '0'),
+                ms: milliseconds.toString().padStart(3, '0')
+              };
+              savedStatus[index] = lapData.isSaved;
+            }
+          });
+          
+          setLapTimes(newLapTimes);
+          setSavedLapTimes(savedStatus);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load saved lap times:', error);
+    }
+  }, [gameState, currentPlayerId, currentCircuit, currentTurn, settings.lapsPerTurn]);
+  
   useEffect(() => {
+     // Clear current state first
      setLapTimes(Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' }));
      setCurrentAverage(null);
-  }, [currentPlayerIndex, currentTurn, currentCircuitIndex, settings.lapsPerTurn]);
+     setSavedLapTimes({});
+     
+     // Load any saved lap times for this turn
+     if (isCurrentController) {
+       loadSavedLapTimes();
+     }
+  }, [currentPlayerIndex, currentTurn, currentCircuitIndex, settings.lapsPerTurn, isCurrentController, loadSavedLapTimes]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async () => {
     const timesInMs = lapTimes.map(timeToMs).filter(ms => ms > 0);
@@ -223,7 +332,6 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
   const isLastPlayerOfTurn = currentPlayerIndex === settings.players.length - 1;
   const nextPlayer = !isLastPlayerOfTurn ? players.find(p => p.id === playerOrder[currentPlayerIndex + 1]) : null;
-  const isCurrentController = currentUser.userId === currentController;
   const controllerName = participantUsers.find(u => u.userId === currentController)?.name || 'Desconocido';
 
   // Keyboard shortcuts
@@ -324,9 +432,17 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
       {/* Time Input Form */}
       <div className="bg-slate-800/50 backdrop-blur-sm p-4 md:p-6 rounded-xl border border-slate-700 space-y-4">
-        <h2 className="text-lg md:text-xl font-bold text-center leading-tight">
-          {isCurrentController ? `Ingresa los Tiempos de Vuelta de ${currentPlayer.name}` : `Esperando tiempos de ${currentPlayer.name}`}
-        </h2>
+        <div className="flex items-center justify-center gap-3">
+          <h2 className="text-lg md:text-xl font-bold text-center leading-tight">
+            {isCurrentController ? `Ingresa los Tiempos de Vuelta de ${currentPlayer.name}` : `Esperando tiempos de ${currentPlayer.name}`}
+          </h2>
+          {isAutoSaving && (
+            <div className="flex items-center gap-1 text-blue-400">
+              <LoadingSpinner size="sm" className="text-blue-400" />
+              <span className="text-xs">Guardando...</span>
+            </div>
+          )}
+        </div>
         
         {!isCurrentController && (
           <div className="text-center text-slate-400 mb-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600">
@@ -360,11 +476,16 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                 
                 return (
                   <div key={i} className="flex items-center gap-2 md:gap-4">
-                    <span className="font-bold text-slate-400 w-16 text-sm">Vuelta {i + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-400 w-16 text-sm">Vuelta {i + 1}</span>
+                      {savedLapTimes[i] && (
+                        <div className="w-2 h-2 bg-green-400 rounded-full" title="Guardado automáticamente"></div>
+                      )}
+                    </div>
                     <div className="flex-1 grid grid-cols-3 gap-2">
-                        <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" isBest={bestType} />
-                        <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" isBest={bestType}/>
-                        <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" isBest={bestType}/>
+                        <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" isBest={bestType} data-lap={i} data-field="min" />
+                        <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" isBest={bestType} data-lap={i} data-field="sec" />
+                        <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" isBest={bestType} data-lap={i} data-field="ms" />
                     </div>
                   </div>
                 );
@@ -373,11 +494,16 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             // If no valid time yet, show normal inputs
             return (
               <div key={i} className="flex items-center gap-2 md:gap-4">
-                <span className="font-bold text-slate-400 w-16 text-sm">Vuelta {i + 1}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-400 w-16 text-sm">Vuelta {i + 1}</span>
+                  {savedLapTimes[i] && (
+                    <div className="w-2 h-2 bg-green-400 rounded-full" title="Guardado automáticamente"></div>
+                  )}
+                </div>
                 <div className="flex-1 grid grid-cols-3 gap-2">
-                    <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" />
-                    <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" />
-                    <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" />
+                    <TimeInput value={lapTime.min} onChange={v => handleLapTimeChange(i, 'min', v)} maxLength={1} placeholder="M" data-lap={i} data-field="min" />
+                    <TimeInput value={lapTime.sec} onChange={v => handleLapTimeChange(i, 'sec', v)} maxLength={2} placeholder="SS" data-lap={i} data-field="sec" />
+                    <TimeInput value={lapTime.ms} onChange={v => handleLapTimeChange(i, 'ms', v)} maxLength={3} placeholder="ms" data-lap={i} data-field="ms" />
                 </div>
               </div>
             );
