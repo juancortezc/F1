@@ -365,13 +365,70 @@ function App() {
             result.turnScore = totalTurnPoints;
             newPlayerStats[result.playerId].totalScore += totalTurnPoints;
         });
+
+        // Award bonus points for best lap and best average if configured for 'turn' or 'both'
+        const { pointsForBestLap, pointsForBestAverage, awardBestTimeFor } = gameState.settings;
+        if (awardBestTimeFor === 'turn' || awardBestTimeFor === 'both') {
+            // Best lap bonus
+            if (pointsForBestLap > 0) {
+                const playerBests = turnResults.map(tr => ({
+                    playerId: tr.playerId,
+                    bestLap: Math.min(...tr.lapTimes)
+                }));
+                const bestLapPlayer = playerBests.reduce((best, current) => 
+                    current.bestLap < best.bestLap ? current : best
+                );
+                
+                newPlayerStats[bestLapPlayer.playerId].totalScore += pointsForBestLap;
+                newPlayerStats[bestLapPlayer.playerId].bestLaps += 1;
+                
+                // Add bonus to turn score display
+                const bestLapResult = turnResults.find(r => r.playerId === bestLapPlayer.playerId);
+                if (bestLapResult) {
+                    bestLapResult.turnScore += pointsForBestLap;
+                }
+            }
+
+            // Best average bonus
+            if (pointsForBestAverage > 0) {
+                const bestAveragePlayer = turnResults.reduce((best, current) => 
+                    (current.averageTime ?? Infinity) < (best.averageTime ?? Infinity) ? current : best
+                );
+                
+                if (bestAveragePlayer.averageTime !== undefined) {
+                    newPlayerStats[bestAveragePlayer.playerId].totalScore += pointsForBestAverage;
+                    newPlayerStats[bestAveragePlayer.playerId].bestAverages += 1;
+                    bestAveragePlayer.turnScore += pointsForBestAverage;
+                }
+            }
+        }
         
         finalPlayerStats = newPlayerStats;
         nextPlayerIndex = 0;
         nextTurn = gameState.currentTurn + 1;
 
-        newPlayerOrder = Object.entries(finalPlayerStats)
-            .sort((a, b) => (b[1] as PlayerStats).totalScore - (a[1] as PlayerStats).totalScore)
+        // Calculate current circuit standings for turn order
+        const currentCircuitResults = newCircuitResults[gameState.currentCircuitIndex];
+        const circuitStandings = new Map<string, number>();
+        
+        // Initialize all players with 0 points for this circuit
+        gameState.settings.players.forEach(player => {
+            circuitStandings.set(player.id, 0);
+        });
+        
+        // Sum up points from all turns completed in current circuit
+        if (currentCircuitResults && currentCircuitResults.turns.length > 0) {
+            currentCircuitResults.turns.forEach(turn => {
+                turn.forEach(result => {
+                    const currentPoints = circuitStandings.get(result.playerId) || 0;
+                    circuitStandings.set(result.playerId, currentPoints + result.turnScore);
+                });
+            });
+        }
+        
+        // Sort players by current circuit points (for turn order)
+        newPlayerOrder = Array.from(circuitStandings.entries())
+            .sort((a, b) => b[1] - a[1]) // Sort by circuit points descending
             .map(([playerId]) => playerId);
     }
     
@@ -432,7 +489,52 @@ function App() {
       return;
     }
     
-     const newPlayerOrder = Object.entries(gameState.playerStats)
+    // Award circuit-level bonus points if configured for 'circuit' or 'both'
+    const updatedPlayerStats = { ...gameState.playerStats };
+    const { pointsForBestLap, pointsForBestAverage, awardBestTimeFor } = gameState.settings;
+    
+    if (awardBestTimeFor === 'circuit' || awardBestTimeFor === 'both') {
+        const currentCircuitResults = gameState.circuitResults[gameState.currentCircuitIndex];
+        if (currentCircuitResults) {
+            // Collect all lap times and averages from this circuit
+            const allLapTimes: { playerId: string; lapTime: number }[] = [];
+            const allAverages: { playerId: string; averageTime: number }[] = [];
+            
+            currentCircuitResults.turns.forEach(turn => {
+                turn.forEach(result => {
+                    // Add individual lap times
+                    result.lapTimes.forEach(lapTime => {
+                        allLapTimes.push({ playerId: result.playerId, lapTime });
+                    });
+                    
+                    // Add average times
+                    if (result.averageTime !== undefined) {
+                        allAverages.push({ playerId: result.playerId, averageTime: result.averageTime });
+                    }
+                });
+            });
+            
+            // Award best lap bonus for the entire circuit
+            if (pointsForBestLap > 0 && allLapTimes.length > 0) {
+                const bestLapRecord = allLapTimes.reduce((best, current) => 
+                    current.lapTime < best.lapTime ? current : best
+                );
+                updatedPlayerStats[bestLapRecord.playerId].totalScore += pointsForBestLap;
+                updatedPlayerStats[bestLapRecord.playerId].bestLaps += 1;
+            }
+            
+            // Award best average bonus for the entire circuit
+            if (pointsForBestAverage > 0 && allAverages.length > 0) {
+                const bestAverageRecord = allAverages.reduce((best, current) => 
+                    current.averageTime < best.averageTime ? current : best
+                );
+                updatedPlayerStats[bestAverageRecord.playerId].totalScore += pointsForBestAverage;
+                updatedPlayerStats[bestAverageRecord.playerId].bestAverages += 1;
+            }
+        }
+    }
+
+     const newPlayerOrder = Object.entries(updatedPlayerStats)
             .sort((a, b) => (b[1] as PlayerStats).totalScore - (a[1] as PlayerStats).totalScore)
             .map(([playerId]) => playerId);
 
@@ -441,7 +543,8 @@ function App() {
       currentCircuitIndex: nextCircuitIndex,
       currentTurn: 1,
       currentPlayerIndex: 0,
-      playerOrder: newPlayerOrder
+      playerOrder: newPlayerOrder,
+      playerStats: updatedPlayerStats
     };
     updateGameState(newGameState);
   };

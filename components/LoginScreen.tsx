@@ -6,6 +6,8 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [pin, setPin] = useState('');
+  const [adminName, setAdminName] = useState('');
+  const [showAdminName, setShowAdminName] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -14,6 +16,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     if (/^\d*$/.test(value) && value.length <= 4) {
       setPin(value);
       setError('');
+      // Check if this might be admin PIN (2024 is common default)
+      if (value === '2024' && value.length === 4) {
+        setShowAdminName(true);
+      } else {
+        setShowAdminName(false);
+        setAdminName('');
+      }
     }
   };
 
@@ -24,6 +33,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       return;
     }
     
+    if (showAdminName && !adminName.trim()) {
+      setError('Por favor ingresa tu nombre de administrador.');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
     
@@ -31,7 +45,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin }),
+        body: JSON.stringify({ 
+          pin,
+          ...(showAdminName && adminName.trim() && { adminName: adminName.trim() })
+        }),
       });
       
       const data = await response.json();
@@ -71,10 +88,27 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             placeholder="----"
             autoFocus
           />
+          
+          {showAdminName && (
+            <div className="space-y-2">
+              <label className="block text-slate-300 text-sm font-medium">
+                Nombre de administrador:
+              </label>
+              <input
+                type="text"
+                value={adminName}
+                onChange={(e) => setAdminName(e.target.value)}
+                className="w-full text-lg text-center bg-slate-800 border-2 border-slate-600 rounded-lg p-3 text-slate-100 focus:border-[#FF1801] focus:outline-none transition-colors"
+                placeholder="Ingresa tu nombre"
+                maxLength={20}
+              />
+            </div>
+          )}
+          
           {error && <p className="text-red-500 mt-4">{error}</p>}
           <button
             type="submit"
-            disabled={pin.length !== 4 || isLoading}
+            disabled={pin.length !== 4 || isLoading || (showAdminName && !adminName.trim())}
             className="w-full bg-[#FF1801] text-white font-bold py-3 px-4 rounded-lg mt-6 hover:bg-[#E61601] disabled:bg-slate-700 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? 'Verificando...' : 'INGRESAR'}

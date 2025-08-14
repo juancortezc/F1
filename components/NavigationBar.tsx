@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface NavigationBarProps {
   title: string;
@@ -23,6 +23,25 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   onLogout,
   children
 }) => {
+  const [showCancelMenu, setShowCancelMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowCancelMenu(false);
+      }
+    };
+
+    if (showCancelMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCancelMenu]);
+
   return (
     <div className="bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10 shadow-lg border-b border-slate-700">
       <div className="max-w-7xl mx-auto px-4">
@@ -94,19 +113,75 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
               </button>
             )}
             {onCancel && (
-              <button
-                onClick={() => {
-                  if (window.confirm('¿Estás seguro de que quieres cancelar? Se perderá el progreso.')) {
-                    onCancel();
-                  }
-                }}
-                className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
-                title="Cancelar"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div ref={menuRef} className="relative">
+                {/* If both cancel and logout are available, show dropdown menu */}
+                {onLogout ? (
+                  <>
+                    <button
+                      onClick={() => setShowCancelMenu(!showCancelMenu)}
+                      className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
+                      title="Menú"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                      </svg>
+                    </button>
+                    
+                    {showCancelMenu && (
+                      <div className="absolute right-0 top-10 bg-slate-800 border border-slate-600 rounded-lg shadow-lg min-w-48 z-50">
+                        <button
+                          onClick={() => {
+                            setShowCancelMenu(false);
+                            if (window.confirm('¿Estás seguro de que quieres cancelar? Se perderá el progreso.')) {
+                              onCancel();
+                            }
+                          }}
+                          className="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-red-400 transition-colors rounded-t-lg"
+                        >
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Cancelar Partida
+                          </div>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setShowCancelMenu(false);
+                            if (window.confirm('¿Cerrar sesión?')) {
+                              onLogout();
+                            }
+                          }}
+                          className="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-700 hover:text-red-400 transition-colors rounded-b-lg border-t border-slate-600"
+                        >
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Cerrar Sesión
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* Regular cancel button when no logout */
+                  <button
+                    onClick={() => {
+                      if (window.confirm('¿Estás seguro de que quieres cancelar? Se perderá el progreso.')) {
+                        onCancel();
+                      }
+                    }}
+                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
+                    title="Cancelar"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

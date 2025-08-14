@@ -145,6 +145,9 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     setIsSubmitting(true);
     try {
       await onTurnComplete(currentPlayerId, timesInMs);
+      // Clear lap times after successful submission
+      setLapTimes(Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' }));
+      setCurrentAverage(null);
       // Después de guardar exitosamente, mostrar el diálogo de transferencia
       if (participantUsers.length > 1) {
         setShowTransferDialog(true);
@@ -157,6 +160,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const handleTransferControl = (newControllerId: string) => {
     // Actualizar inmediatamente el estado local para la próxima función onTurnComplete
     onTurnComplete(currentPlayerId, [], newControllerId);
+    setShowTransferDialog(false);
   };
 
   const handleClear = () => {
@@ -241,8 +245,18 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
               <div className="flex items-center gap-4">
                 <h1 className="text-xl font-bold text-[#FF1801]">{currentCircuit.name}</h1>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${isCurrentController ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                  <div className={`relative flex items-center justify-center ${isCurrentController ? '' : ''}`}>
+                    <div className={`w-3 h-3 rounded-full ${isCurrentController ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div>
+                    {isCurrentController && (
+                      <div className="absolute w-5 h-5 rounded-full bg-green-400/30 animate-ping"></div>
+                    )}
+                  </div>
                   <span className="font-semibold text-lg text-white">{currentPlayer.name}</span>
+                  {isCurrentController && (
+                    <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">
+                      EN CONTROL
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -304,7 +318,8 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             <p className="text-sm">Solo {controllerName} puede registrar resultados en este momento</p>
           </div>
         )}
-        {lapTimes.map((lapTime, i) => {
+        
+        {isCurrentController && lapTimes.map((lapTime, i) => {
             const timeInMs = timeToMs(lapTime);
             
             // If we have a valid time entered
@@ -385,7 +400,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                     {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && <p className="text-xs text-slate-500 mt-1">Based on best 4 laps</p>}
                 </div>
             );
-        })()}
+        })}
 
         {/* Action Buttons */}
         {isCurrentController && (
