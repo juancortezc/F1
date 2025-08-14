@@ -101,3 +101,18 @@ export interface GameHistoryEntry {
   status: "COMPLETED";
   updatedAt: string;
 }
+
+// User roles and authentication
+export type UserRole = 'organizer' | 'player';
+
+export interface UserSession {
+  userId: string;
+  name: string;
+  role: UserRole;
+}
+
+export interface AuthenticationRequest {
+  pin: string;
+  role: UserRole;
+  adminName?: string; // Optional name for admin/organizer role
+}

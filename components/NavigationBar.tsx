@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { UserSession } from '../types';
 
 interface NavigationBarProps {
   title: string;
@@ -7,7 +8,7 @@ interface NavigationBarProps {
   onCancel?: () => void;
   showAdmin?: boolean;
   onAdmin?: () => void;
-  currentUser?: { name: string } | null;
+  currentUser?: UserSession | null;
   onLogout?: () => void;
   children?: React.ReactNode;
 }

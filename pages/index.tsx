@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useToast } from '../components/Toast';
 
+import LandingPage from '../components/LandingPage';
 import LoginScreen from '../components/LoginScreen';
 import GameSetup from '../components/GameSetup';
 import RaceView from '../components/RaceView';
@@ -11,9 +12,9 @@ import HubScreen from '../components/HubScreen';
 import AdminView from '../components/AdminView';
 import RaceProgress from '../components/RaceProgress';
 import SpectatorDashboard from '../components/SpectatorDashboard';
-import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry } from '../types';
+import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
 
-type GamePhase = 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading';
+type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading';
 
 // API data fetching hook
 function useApiData() {
@@ -31,9 +32,10 @@ function useApiData() {
 
 
 function App() {
-  const [gamePhase, setGamePhase] = useState<GamePhase>('login');
+  const [gamePhase, setGamePhase] = useState<GamePhase>('landing');
   const [activeTab, setActiveTab] = useState<'race' | 'progress' | 'results' | 'spectator'>('race');
-  const [currentUser, setCurrentUser] = useState<{userId: string, name: string} | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
   const { mutate } = useSWRConfig();
   const { addToast } = useToast();
@@ -46,7 +48,7 @@ function App() {
     const savedUser = localStorage.getItem('f1-user');
     if (savedUser) {
       try {
-        const user = JSON.parse(savedUser);
+        const user: UserSession = JSON.parse(savedUser);
         setCurrentUser(user);
         
         if (activeGame && activeGame.state) {
@@ -58,6 +60,7 @@ function App() {
         }
       } catch (e) {
         localStorage.removeItem('f1-user');
+        setGamePhase('landing');
       }
     }
   }, [activeGame, isLoading]);
@@ -73,19 +76,28 @@ function App() {
     }
   }, [gamePhase, mutate]);
 
-  const handleLoginSuccess = async (user: { id: string; name: string }) => {
-    const userSession = { userId: user.id, name: user.name };
-    setCurrentUser(userSession);
+  const handleRoleSelect = (role: UserRole) => {
+    setSelectedRole(role);
+    setGamePhase('login');
+  };
+
+  const handleBackToLanding = () => {
+    setSelectedRole(null);
+    setGamePhase('landing');
+  };
+
+  const handleLoginSuccess = async (user: UserSession) => {
+    setCurrentUser(user);
     
     // Guardar sesión en localStorage
-    localStorage.setItem('f1-user', JSON.stringify(userSession));
+    localStorage.setItem('f1-user', JSON.stringify(user));
     
     // Si hay un juego activo, agregar el usuario como espectador
     if (activeGame) {
       if (activeGame.state?.participantUsers) {
         const existingUser = activeGame.state.participantUsers.find(u => u.name === user.name);
         if (!existingUser) {
-          const updatedParticipants = [...activeGame.state.participantUsers, { userId: user.id, name: user.name, role: 'spectator' as const }];
+          const updatedParticipants = [...activeGame.state.participantUsers, { userId: user.userId, name: user.name, role: 'spectator' as const }];
           const updatedState = {
             ...activeGame.state,
             participantUsers: updatedParticipants
@@ -105,7 +117,8 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('f1-user');
     setCurrentUser(null);
-    setGamePhase('login');
+    setSelectedRole(null);
+    setGamePhase('landing');
   };
 
   const handleSetupComplete = async (settings: GameSettings) => {
@@ -649,8 +662,14 @@ function App() {
 
   const renderContent = () => {
     switch (gamePhase) {
+      case 'landing':
+        return <LandingPage onRoleSelect={handleRoleSelect} />;
       case 'login':
-        return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+        return selectedRole && <LoginScreen 
+          selectedRole={selectedRole} 
+          onLoginSuccess={handleLoginSuccess} 
+          onBack={handleBackToLanding}
+        />;
       case 'hub':
         return <HubScreen onNewGame={handleNewGame} onAdmin={handleAdmin} currentUser={currentUser} onLogout={handleLogout} />;
       case 'admin':

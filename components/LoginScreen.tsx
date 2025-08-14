@@ -1,28 +1,25 @@
 import React, { useState } from 'react';
+import { UserRole, UserSession } from '../types';
 
 interface LoginScreenProps {
-  onLoginSuccess: (user: { id: string; name: string }) => void;
+  selectedRole: UserRole;
+  onLoginSuccess: (user: UserSession) => void;
+  onBack: () => void;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess, onBack }) => {
   const [pin, setPin] = useState('');
   const [adminName, setAdminName] = useState('');
-  const [showAdminName, setShowAdminName] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const showAdminName = selectedRole === 'organizer';
 
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (/^\d*$/.test(value) && value.length <= 4) {
       setPin(value);
       setError('');
-      // Check if this might be admin PIN (2024 is common default)
-      if (value === '2024' && value.length === 4) {
-        setShowAdminName(true);
-      } else {
-        setShowAdminName(false);
-        setAdminName('');
-      }
     }
   };
 
@@ -47,6 +44,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           pin,
+          role: selectedRole,
           ...(showAdminName && adminName.trim() && { adminName: adminName.trim() })
         }),
       });
@@ -67,16 +65,45 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const getRoleTitle = () => {
+    return selectedRole === 'organizer' ? 'Organizador' : 'Jugador';
+  };
+
+  const getRoleDescription = () => {
+    return selectedRole === 'organizer' 
+      ? 'Ingrese el PIN de administrador para crear campeonatos.'
+      : 'Ingrese su PIN personal para unirse a la competencia.';
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <div className="w-full max-w-sm text-center">
+        <button
+          onClick={onBack}
+          className="mb-6 text-slate-400 hover:text-white transition-colors flex items-center gap-2 mx-auto"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Cambiar rol
+        </button>
+        
         <img 
           src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
           alt="F1 Logo" 
           className="w-32 h-24 mx-auto object-contain"
         />
-        <h1 className="text-4xl font-bold mt-4 text-slate-100">F1 Night </h1>
-        <p className="text-slate-400 mt-2 mb-8">Ingrese su PIN personal.</p>
+        <h1 className="text-4xl font-bold mt-4 text-slate-100">F1 Night</h1>
+        <div className="mt-2 mb-8">
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mb-2 ${
+            selectedRole === 'organizer' 
+              ? 'bg-[#FF1801]/20 text-[#FF1801]' 
+              : 'bg-blue-500/20 text-blue-400'
+          }`}>
+            {getRoleTitle()}
+          </div>
+          <p className="text-slate-400 text-sm">{getRoleDescription()}</p>
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -92,7 +119,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           {showAdminName && (
             <div className="space-y-2">
               <label className="block text-slate-300 text-sm font-medium">
-                Nombre de administrador:
+                Nombre del organizador:
               </label>
               <input
                 type="text"
