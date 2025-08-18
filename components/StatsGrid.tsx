@@ -2,31 +2,22 @@ import React from 'react';
 
 interface StatsGridProps {
   children: React.ReactNode;
-  columns?: 2 | 3 | 4;
-  gap?: 'sm' | 'md' | 'lg';
+  columns?: 1 | 2;
   className?: string;
 }
 
 const StatsGrid: React.FC<StatsGridProps> = ({ 
   children, 
-  columns = 3, 
-  gap = 'md',
+  columns = 2,
   className = '' 
 }) => {
   const gridCols = {
-    2: 'grid-cols-1 md:grid-cols-2',
-    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3', 
-    4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-  };
-
-  const gridGap = {
-    sm: 'gap-2',
-    md: 'gap-4',
-    lg: 'gap-6'
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 md:grid-cols-2'
   };
 
   return (
-    <div className={`grid ${gridCols[columns]} ${gridGap[gap]} ${className}`}>
+    <div className={`grid ${gridCols[columns]} gap-3 ${className}`}>
       {children}
     </div>
   );

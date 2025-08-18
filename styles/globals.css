@@ -3,20 +3,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* F1 Night - Design System Variables */
+:root {
+  /* Colors - Sobrio y elegante */
+  --color-background: #000000;
+  --color-surface: #0a0a0a;
+  --color-surface-light: #141414;
+  --color-border: #262626;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a3a3a3;
+  --color-text-muted: #737373;
+  --color-accent-red: #FF1801;
+  --color-accent-green: #10b981;
+  --color-accent-yellow: #fbbf24;
+  
+  /* Typography - Grande y clara */
+  --font-size-base: 18px;
+  --font-size-sm: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 40px;
+  
+  /* Spacing */
+  --spacing-touch: 48px; /* Minimum touch target */
+}
+
+@media (min-width: 768px) {
+  :root {
+    --font-size-base: 16px;
+    --font-size-sm: 14px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 28px;
+    --font-size-3xl: 36px;
+  }
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-  background-color: #0f172a; /* bg-slate-900 */
-  color: #f8fafc; /* text-slate-50 */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
   /* iOS safe area support */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   /* Prevent zoom on iOS */
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  /* Better text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -28,6 +72,65 @@ a {
   box-sizing: border-box;
 }
 
+/* Custom utility classes for F1 Night */
+@layer utilities {
+  /* Text sizes using CSS variables */
+  .text-f1-sm { font-size: var(--font-size-sm); }
+  .text-f1-base { font-size: var(--font-size-base); }
+  .text-f1-lg { font-size: var(--font-size-lg); }
+  .text-f1-xl { font-size: var(--font-size-xl); }
+  .text-f1-2xl { font-size: var(--font-size-2xl); }
+  .text-f1-3xl { font-size: var(--font-size-3xl); }
+  
+  /* Touch-friendly spacing */
+  .touch-target {
+    min-height: var(--spacing-touch);
+    min-width: var(--spacing-touch);
+  }
+  
+  /* Simplified surfaces */
+  .surface-primary { background-color: var(--color-surface); }
+  .surface-secondary { background-color: var(--color-surface-light); }
+  
+  /* Text colors */
+  .text-primary { color: var(--color-text-primary); }
+  .text-secondary { color: var(--color-text-secondary); }
+  .text-muted { color: var(--color-text-muted); }
+  
+  /* Simple borders */
+  .border-subtle { border-color: var(--color-border); }
+}
+
+/* Override Tailwind defaults for cleaner design */
+@layer base {
+  button {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    letter-spacing: 0.025em;
+  }
+  
+  input, select, textarea {
+    font-size: var(--font-size-base);
+    background-color: var(--color-surface);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+  }
+  
+  /* Remove all focus rings - we'll add custom ones */
+  *:focus {
+    outline: none;
+  }
+  
+  /* Custom focus states */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    box-shadow: 0 0 0 2px var(--color-accent-red);
+  }
+}
+
 /* iOS-specific fixes */
 @supports (-webkit-touch-callout: none) {
   .min-h-screen {
@@ -36,12 +139,13 @@ a {
   
   /* Fix for iOS input focus zoom */
   input[type="text"],
+  input[type="tel"],
   input[type="password"],
   input[type="url"],
   input[type="number"],
   select,
   textarea {
-    font-size: 16px !important;
+    font-size: 18px !important; /* Larger to prevent zoom */
   }
 }
 
