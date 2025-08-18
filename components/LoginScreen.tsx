@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserRole, UserSession } from '../types';
+import LoadingSpinner from './LoadingSpinner';
 
 interface LoginScreenProps {
   selectedRole: UserRole;
@@ -9,11 +10,8 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess, onBack }) => {
   const [pin, setPin] = useState('');
-  const [adminName, setAdminName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  const showAdminName = selectedRole === 'organizer';
 
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -26,12 +24,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pin.length !== 4) {
-      setError('Por favor ingresa un PIN de 4 dígitos.');
-      return;
-    }
-    
-    if (showAdminName && !adminName.trim()) {
-      setError('Por favor ingresa tu nombre de administrador.');
+      setError('PIN de 4 dígitos requerido');
       return;
     }
     
@@ -44,8 +37,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           pin,
-          role: selectedRole,
-          ...(showAdminName && adminName.trim() && { adminName: adminName.trim() })
+          role: selectedRole
         }),
       });
       
@@ -54,93 +46,83 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
       if (response.ok) {
         onLoginSuccess(data.user);
       } else {
-        setError(data.error || 'PIN inválido. Inténtalo de nuevo.');
+        setError(data.error || 'PIN inválido');
         setPin('');
       }
     } catch (err) {
-      setError('Error de conexión. Inténtalo de nuevo.');
+      setError('Error de conexión');
       setPin('');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getRoleTitle = () => {
-    return selectedRole === 'organizer' ? 'Organizador' : 'Jugador';
-  };
-
-  const getRoleDescription = () => {
-    return selectedRole === 'organizer' 
-      ? 'Ingrese el PIN de administrador para crear campeonatos.'
-      : 'Ingrese su PIN personal para unirse a la competencia.';
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
-      <div className="w-full max-w-sm text-center">
+    <div className="min-h-screen bg-f1-black flex items-center justify-center p-4">
+      <div className="max-w-sm w-full">
         <button
           onClick={onBack}
-          className="mb-6 text-slate-400 hover:text-white transition-colors flex items-center gap-2 mx-auto"
+          className="mb-8 text-secondary hover:text-primary transition-colors flex items-center gap-2"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Cambiar rol
+          Volver
         </button>
         
-        <img 
-          src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
-          alt="F1 Logo" 
-          className="w-32 h-24 mx-auto object-contain"
-        />
-        <h1 className="text-4xl font-bold mt-4 text-slate-100">F1 Night</h1>
-        <div className="mt-2 mb-8">
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mb-2 ${
-            selectedRole === 'organizer' 
-              ? 'bg-[#FF1801]/20 text-[#FF1801]' 
-              : 'bg-blue-500/20 text-blue-400'
-          }`}>
-            {getRoleTitle()}
-          </div>
-          <p className="text-slate-400 text-sm">{getRoleDescription()}</p>
+        <div className="text-center mb-8">
+          <img 
+            src="/F1-logo.png" 
+            alt="F1" 
+            className="h-20 mx-auto mb-4"
+          />
+          <h1 className="text-f1-3xl font-bold text-primary">F1 NIGHT</h1>
+          <p className="text-f1-lg text-secondary mt-2">
+            {selectedRole === 'organizer' ? 'Organizador' : 'Jugador'}
+          </p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            value={pin}
-            onChange={handlePinChange}
-            maxLength={4}
-            className="w-full text-4xl tracking-[1em] text-center bg-slate-800 border-2 border-slate-600 rounded-lg p-4 text-slate-100 focus:border-[#FF1801] focus:outline-none transition-colors"
-            placeholder="----"
-            autoFocus
-          />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-secondary text-f1-base mb-2">
+              Ingresa tu PIN
+            </label>
+            <input
+              type="password"
+              value={pin}
+              onChange={handlePinChange}
+              maxLength={4}
+              className="w-full text-f1-3xl tracking-[1em] text-center surface-primary border-2 border-subtle rounded-md p-4 text-primary focus:border-f1-red transition-colors"
+              placeholder="----"
+              autoFocus
+            />
+          </div>
           
-          {showAdminName && (
-            <div className="space-y-2">
-              <label className="block text-slate-300 text-sm font-medium">
-                Nombre del organizador:
-              </label>
-              <input
-                type="text"
-                value={adminName}
-                onChange={(e) => setAdminName(e.target.value)}
-                className="w-full text-lg text-center bg-slate-800 border-2 border-slate-600 rounded-lg p-3 text-slate-100 focus:border-[#FF1801] focus:outline-none transition-colors"
-                placeholder="Ingresa tu nombre"
-                maxLength={20}
-              />
-            </div>
+          {error && (
+            <p className="text-f1-red text-f1-base text-center">{error}</p>
           )}
           
-          {error && <p className="text-red-500 mt-4">{error}</p>}
           <button
             type="submit"
-            disabled={pin.length !== 4 || isLoading || (showAdminName && !adminName.trim())}
-            className="w-full bg-[#FF1801] text-white font-bold py-3 px-4 rounded-lg mt-6 hover:bg-[#E61601] disabled:bg-slate-700 disabled:cursor-not-allowed transition-all"
+            disabled={pin.length !== 4 || isLoading}
+            className="w-full touch-target bg-f1-red text-white font-bold text-f1-lg rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >
-            {isLoading ? 'Verificando...' : 'INGRESAR'}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" />
+                Verificando...
+              </span>
+            ) : (
+              'INGRESAR'
+            )}
           </button>
         </form>
+        
+        <p className="text-center text-f1-sm text-muted mt-8">
+          {selectedRole === 'organizer' 
+            ? 'PIN de administrador requerido'
+            : 'PIN personal de jugador'}
+        </p>
       </div>
     </div>
   );

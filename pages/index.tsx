@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { useToast } from '../components/Toast';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 import LandingPage from '../components/LandingPage';
 import LoginScreen from '../components/LoginScreen';
@@ -12,9 +13,10 @@ import HubScreen from '../components/HubScreen';
 import AdminView from '../components/AdminView';
 import RaceProgress from '../components/RaceProgress';
 import SpectatorDashboard from '../components/SpectatorDashboard';
+import PlayerStats from '../components/PlayerStats';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
 
-type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading';
+type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'stats';
 
 // API data fetching hook
 function useApiData() {
@@ -854,7 +856,7 @@ function App() {
     }
   };
 
-  return <div className="min-h-screen bg-slate-900 text-slate-50">{renderContent()}</div>;
+  return <div className="min-h-screen bg-f1-black text-primary">{renderContent()}</div>;
 }
 
 export default App;
