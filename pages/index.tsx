@@ -8,7 +8,7 @@ import LandingPage from '../components/LandingPage';
 import LoginScreen from '../components/LoginScreen';
 import GameSetup from '../components/GameSetup';
 import RaceView from '../components/RaceView';
-import ResultsView from '../components/ResultsView';
+import StatsView from '../components/StatsView';
 import HubScreen from '../components/HubScreen';
 import AdminView from '../components/AdminView';
 import RaceProgress from '../components/RaceProgress';
@@ -35,7 +35,7 @@ function useApiData() {
 
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('landing');
-  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'results' | 'live' | 'acumulados'>('race');
+  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'stats' | 'live' | 'acumulados'>('race');
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
@@ -57,7 +57,7 @@ function App() {
           const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
           if (isFinished) {
             setGamePhase('results');
-            setActiveTab('results');
+            setActiveTab('stats');
           } else {
             setGamePhase('race');
             setActiveTab('live');
@@ -123,7 +123,7 @@ function App() {
       if (isFinished) {
         // Game finished - both go to results
         setGamePhase('results');
-        setActiveTab('results');
+        setActiveTab('stats');
       } else {
         // Active game - direct to race view
         setGamePhase('race');
@@ -647,7 +647,7 @@ function App() {
         mutate('/api/game/active');
         mutate('/api/game/history');
         setGamePhase('results');
-        setActiveTab('results');
+        setActiveTab('stats');
       } catch (err) {
         console.error('Failed to end game:', err)
       }
@@ -778,10 +778,10 @@ function App() {
                                     Puntaje
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('results')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    onClick={() => setActiveTab('stats')} 
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'stats' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Resultados
+                                    STATS
                                 </button>
                                 <button
                                     onClick={handleAdmin}
@@ -825,10 +825,10 @@ function App() {
                                     Puntaje
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('results')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'results' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    onClick={() => setActiveTab('stats')} 
+                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'stats' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Resultados
+                                    STATS
                                 </button>
                             </div>
                             
@@ -868,8 +868,8 @@ function App() {
                     {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
                     {activeTab === 'live' && <LivePage gameState={gameStateFromDB} players={players} circuits={circuits} gameId={activeGame.id} />}
                     {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
-                    {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
-                    {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}
+                    {activeTab === 'stats' && <StatsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
+                    {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to STATS tab to see the final standings.</div>}
                 </main>
             </div>
           );
@@ -885,7 +885,7 @@ function App() {
             circuitResults: []
           };
           
-          return <ResultsView 
+          return <StatsView 
             gameState={mockGameState as any} 
             players={players} 
             circuits={circuits} 
