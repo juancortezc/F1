@@ -763,7 +763,7 @@ function App() {
                                     className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
                                     disabled={isFinished}
                                 >
-                                    Carrera
+                                    Registro
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('spectator')} 
@@ -810,7 +810,7 @@ function App() {
                                     className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
                                     disabled={isFinished}
                                 >
-                                    Carrera
+                                    Registro
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('spectator')} 

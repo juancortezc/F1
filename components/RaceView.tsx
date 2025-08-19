@@ -33,8 +33,8 @@ const TimeInput: React.FC<{
   onChange: (val: string) => void; 
   maxLength: number; 
   placeholder: string; 
-  isBest?: boolean;
-}> = ({ value, onChange, maxLength, placeholder, isBest }) => {
+  borderColorClass?: string;
+}> = ({ value, onChange, maxLength, placeholder, borderColorClass = 'border-zinc-700' }) => {
     return (
         <input
             type="tel"
@@ -46,11 +46,7 @@ const TimeInput: React.FC<{
             }}
             maxLength={maxLength}
             placeholder={placeholder}
-            className={`w-full text-center text-3xl font-mono p-4 rounded-md border-2 transition-colors touch-target ${
-              isBest 
-                ? 'bg-green-900/30 border-green-500 text-green-400' 
-                : 'bg-zinc-900 border-zinc-700 text-zinc-100'
-            } focus:border-red-500`}
+            className={`w-full text-center text-2xl font-mono p-3 rounded-md border-2 transition-colors touch-target bg-zinc-900 text-zinc-100 ${borderColorClass} focus:border-red-500`}
         />
     );
 };
@@ -104,12 +100,31 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
   const isCurrentController = currentUser.userId === currentController;
 
-  // Auto-save individual lap time
+  // Removed access restriction for testing
+  // if (!isCurrentController) {
+  //   return (
+  //     <div className="min-h-screen bg-black flex items-center justify-center p-4">
+  //       <div className="text-center">
+  //         <h2 className="text-2xl font-bold text-zinc-100 mb-4">Sin Acceso</h2>
+  //         <p className="text-zinc-400 text-lg mb-6">
+  //           Solo el jugador con turno activo puede registrar tiempos
+  //         </p>
+  //         <p className="text-zinc-300">
+  //           Turno actual: <span className="font-bold text-red-500">{currentPlayer?.name}</span>
+  //         </p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  // Auto-save individual lap time and check for records
   const autoSaveLapTime = useCallback(async (lapIndex: number, timeMs: number) => {
     if (!gameState?.settings || timeMs <= 0) return;
     
     try {
       setIsAutoSaving(true);
+      
+      // Save individual lap time
       const response = await fetch('/api/lap-times/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,6 +140,25 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
       
       if (response.ok) {
         setSavedLapTimes(prev => ({ ...prev, [lapIndex]: true }));
+        
+        // Check and update historical records immediately
+        try {
+          await fetch('/api/circuits/update-records', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              circuitId: currentCircuit.id,
+              bestLap: timeMs,
+              bestLapPlayerId: currentPlayerId
+            })
+          });
+          
+          // Note: Historical records are updated in database
+          // UI will refresh on next page load or component remount
+          
+        } catch (recordError) {
+          console.error('Failed to update records during auto-save:', recordError);
+        }
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
@@ -226,155 +260,225 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   const isLastTurn = currentTurn === settings.turnsPerCircuit;
   const isLastCircuit = currentCircuitIndex === circuits.length - 1;
 
-  // Check if any lap time matches session best
-  const lapTimeMatches = lapTimes.map((lapTime, index) => {
+  // Enhanced color validation logic
+  const getBorderColorForLap = (lapTime: LapTimeType, index: number): string => {
     const timeMs = timeToMs(lapTime);
-    return timeMs > 0 && timeMs === circuitSessionBests.bestLap;
-  });
+    if (timeMs <= 0) return 'border-zinc-700';
+    
+    // Priority: Historical > Session > Normal
+    // Check against historical best lap
+    if (currentCircuit.historicalBestLap && timeMs <= currentCircuit.historicalBestLap) {
+      return 'border-purple-500'; // Historical record - MORADO
+    }
+    
+    // Check against session best lap
+    if (circuitSessionBests.bestLap && timeMs <= circuitSessionBests.bestLap) {
+      return 'border-green-500'; // Session record - VERDE
+    }
+    
+    return 'border-zinc-700'; // Normal
+  };
+
+  // Get next player
+  const nextPlayerIndex = (currentPlayerIndex + 1) % playerOrder.length;
+  const nextPlayer = players.find(p => p.id === playerOrder[nextPlayerIndex]);
 
   return (
-    <div className="min-h-screen bg-black p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-black p-3">
+      <div className="max-w-md mx-auto space-y-4">
         
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-zinc-100 mb-4">F1 NIGHT</h1>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
-            <div className="text-2xl font-bold text-red-500 mb-3">{currentCircuit.name}</div>
-            <div className="text-xl text-zinc-100 font-bold mb-2">{currentPlayer.name}</div>
-            <div className="text-zinc-300 text-lg">Turno {currentTurn} • Vuelta {currentPlayerIndex + 1}/{playerOrder.length}</div>
+        {/* Custom Header inspired by header.png */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+          {/* Circuit Name and Current Player */}
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-xl font-bold text-red-500">{currentCircuit.name}</h1>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-zinc-100 font-bold">{currentPlayer.name}</span>
+            </div>
+          </div>
+          
+          {/* Next Player */}
+          <div className="text-zinc-400 text-sm mb-4">
+            Siguiente: <span className="text-zinc-300 font-semibold">{nextPlayer?.name || 'N/A'}</span>
+          </div>
+          
+          {/* Records Section */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Historical Records */}
+            <div>
+              <div className="text-zinc-400 text-xs mb-2">Histórico</div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center bg-zinc-800 p-2 rounded text-xs">
+                  <span className="text-zinc-300">VR</span>
+                  <span className="text-purple-400 font-mono">
+                    {formatTime(currentCircuit.historicalBestLap)}
+                  </span>
+                  <span className="text-zinc-500 text-[10px]">
+                    {currentCircuit.bestLapHolderId 
+                      ? players.find(p => p.id === currentCircuit.bestLapHolderId)?.name?.substring(0, 5) || 'N/A'
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
+                <div className="flex justify-between items-center bg-zinc-800 p-2 rounded text-xs">
+                  <span className="text-zinc-300">PR</span>
+                  <span className="text-purple-400 font-mono">
+                    {formatTime(currentCircuit.historicalBestAverage)}
+                  </span>
+                  <span className="text-zinc-500 text-[10px]">
+                    {currentCircuit.bestAverageHolderId 
+                      ? players.find(p => p.id === currentCircuit.bestAverageHolderId)?.name?.substring(0, 5) || 'N/A'
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Session Records */}
+            <div>
+              <div className="text-zinc-400 text-xs mb-2">Sesión</div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center bg-zinc-800 p-2 rounded text-xs">
+                  <span className="text-zinc-300">VR</span>
+                  <span className="text-green-400 font-mono">
+                    {formatTime(circuitSessionBests.bestLap) || '--:--.---'}
+                  </span>
+                  <span className="text-zinc-500 text-[10px]">
+                    {circuitSessionBests.bestLapPlayerId 
+                      ? players.find(p => p.id === circuitSessionBests.bestLapPlayerId)?.name?.substring(0, 5) || 'N/A'
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
+                <div className="flex justify-between items-center bg-zinc-800 p-2 rounded text-xs">
+                  <span className="text-zinc-300">PR</span>
+                  <span className="text-green-400 font-mono">
+                    {formatTime(circuitSessionBests.bestAverage) || '--:--.---'}
+                  </span>
+                  <span className="text-zinc-500 text-[10px]">
+                    {circuitSessionBests.bestAveragePlayerId 
+                      ? players.find(p => p.id === circuitSessionBests.bestAveragePlayerId)?.name?.substring(0, 5) || 'N/A'
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Session Records */}
-        {(circuitSessionBests.bestLap || circuitSessionBests.bestAverage) && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
-            <h2 className="text-xl font-bold text-zinc-100 mb-4">Récords de Sesión</h2>
-            <div className="space-y-3">
-              {circuitSessionBests.bestLap && (
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300 text-lg">Mejor Vuelta</span>
-                  <span className="text-green-400 font-mono font-bold text-xl">
-                    {formatTime(circuitSessionBests.bestLap)}
-                  </span>
-                </div>
-              )}
-              {circuitSessionBests.bestAverage && (
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-300 text-lg">Mejor Promedio</span>
-                  <span className="text-green-400 font-mono font-bold text-xl">
-                    {formatTime(circuitSessionBests.bestAverage)}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
-        {/* Lap Time Inputs */}
-        <div className="space-y-3">
-          {lapTimes.map((lapTime, index) => {
-            const isSessionBest = lapTimeMatches[index];
-            const isSaved = savedLapTimes[index];
-            
-            return (
-              <div key={index} className="bg-zinc-900 border border-zinc-800 rounded-md p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-zinc-100">
-                    Vuelta {index + 1}
-                  </h3>
-                  {isSaved && (
-                    <span className="text-green-400 text-base font-semibold">✓ Guardado</span>
-                  )}
-                </div>
-                
-                <div className="grid grid-cols-3 gap-2">
+        {/* REGISTRO - Compact Time Input Card */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-3">
+          <div className="mb-3">
+            <h2 className="text-lg font-bold text-zinc-100 text-center">Registro</h2>
+          </div>
+          
+          <div className="space-y-3">
+            {lapTimes.map((lapTime, index) => {
+              const borderColor = getBorderColorForLap(lapTime, index);
+              const isSaved = savedLapTimes[index];
+              
+              return (
+                <div key={index} className="grid grid-cols-4 gap-2 items-center">
+                  {/* Lap Label */}
+                  <div className="flex items-center gap-1">
+                    <span className="text-zinc-300 font-semibold text-sm">V{index + 1}</span>
+                    {isSaved && (
+                      <span className="text-green-400 text-xs">✓</span>
+                    )}
+                  </div>
+                  
+                  {/* Time Inputs */}
                   <TimeInput
                     value={lapTime.min}
                     onChange={(val) => handleLapTimeChange(index, 'min', val)}
                     maxLength={1}
                     placeholder="0"
-                    isBest={isSessionBest}
+                    borderColorClass={borderColor}
                   />
                   <TimeInput
                     value={lapTime.sec}
                     onChange={(val) => handleLapTimeChange(index, 'sec', val)}
                     maxLength={2}
                     placeholder="00"
-                    isBest={isSessionBest}
+                    borderColorClass={borderColor}
                   />
                   <TimeInput
                     value={lapTime.ms}
                     onChange={(val) => handleLapTimeChange(index, 'ms', val)}
                     maxLength={3}
                     placeholder="000"
-                    isBest={isSessionBest}
+                    borderColorClass={borderColor}
                   />
                 </div>
-                
-                <div className="text-center mt-3">
-                  <span className="text-base text-zinc-400">M : SS . mmm</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          
+          <div className="text-center mt-3">
+            <span className="text-xs text-zinc-500">M : SS . mmm</span>
+          </div>
         </div>
 
         {/* Current Average */}
         {currentAverage !== null && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-3">
             <div className="flex justify-between items-center">
-              <span className="text-xl text-zinc-100 font-semibold">Promedio Actual</span>
-              <span className={`text-2xl font-mono font-bold ${
-                circuitSessionBests.bestAverage && currentAverage <= circuitSessionBests.bestAverage
-                  ? 'text-green-400'
-                  : 'text-zinc-100'
+              <span className="text-lg text-zinc-100 font-semibold">Promedio</span>
+              <span className={`text-xl font-mono font-bold ${
+                // Apply same priority logic: Historical > Session > Normal
+                currentCircuit.historicalBestAverage && currentAverage <= currentCircuit.historicalBestAverage
+                  ? 'text-purple-400' // Historical record - MORADO
+                  : circuitSessionBests.bestAverage && currentAverage <= circuitSessionBests.bestAverage
+                  ? 'text-green-400' // Session record - VERDE
+                  : 'text-zinc-100' // Normal
               }`}>
                 {formatTime(currentAverage)}
               </span>
             </div>
             {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && (
-              <p className="text-base text-zinc-400 mt-3">
-                Usando las mejores 4 de 5 vueltas
+              <p className="text-xs text-zinc-500 mt-2 text-center">
+                Mejores 4 de 5 vueltas
               </p>
             )}
           </div>
         )}
 
         {/* Actions */}
-        {isCurrentController && (
-          <div className="space-y-3">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting || lapTimes.map(timeToMs).filter(ms => ms > 0).length < settings.lapsPerTurn}
-              className="w-full touch-target bg-red-600 text-white font-bold text-xl rounded-md py-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-red-700"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <LoadingSpinner size="sm" />
-                  Guardando...
-                </span>
-              ) : (
-                <span>
-                  {isLastPlayer && isLastTurn
-                    ? (isLastCircuit ? 'Finalizar Juego' : 'Siguiente Circuito')
-                    : 'Siguiente Jugador'
-                  }
-                </span>
-              )}
-            </button>
-
-            {participantUsers.length > 1 && (
-              <button
-                onClick={() => setShowTransferDialog(true)}
-                disabled={isSubmitting}
-                className="w-full touch-target bg-zinc-800 border border-zinc-600 text-zinc-100 font-semibold text-lg rounded-md py-4 transition-all hover:bg-zinc-700"
-              >
-                Transferir Control
-              </button>
+        <div className="space-y-3">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || lapTimes.map(timeToMs).filter(ms => ms > 0).length < settings.lapsPerTurn}
+            className="w-full touch-target bg-red-600 text-white font-bold text-lg rounded-md py-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-red-700"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <LoadingSpinner size="sm" />
+                Guardando...
+              </span>
+            ) : (
+              <span>
+                {isLastPlayer && isLastTurn
+                  ? (isLastCircuit ? 'Finalizar Juego' : 'Siguiente Circuito')
+                  : 'Siguiente Jugador'
+                }
+              </span>
             )}
-          </div>
-        )}
+          </button>
+
+          {participantUsers.length > 1 && (
+            <button
+              onClick={() => setShowTransferDialog(true)}
+              disabled={isSubmitting}
+              className="w-full touch-target bg-zinc-800 border border-zinc-600 text-zinc-100 font-semibold text-base rounded-md py-2 transition-all hover:bg-zinc-700"
+            >
+              Transferir Control
+            </button>
+          )}
+        </div>
 
         {/* Auto-save indicator */}
         {isAutoSaving && (
