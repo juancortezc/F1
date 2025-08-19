@@ -14,9 +14,11 @@ interface StatsViewProps {
 interface AccumulatedStats {
   player: Player;
   championships: number;
+  totalVictories: number;
   bestLaps: number;
   bestAverages: number;
   totalScore: number;
+  favoriteCircuit: string | null;
 }
 
 interface BestPerformer {
@@ -48,9 +50,11 @@ const StatsView: React.FC<StatsViewProps> = ({
       playerAccStats[player.id] = {
         player,
         championships: 0,
+        totalVictories: 0,
         bestLaps: 0,
         bestAverages: 0,
-        totalScore: 0
+        totalScore: 0,
+        favoriteCircuit: null
       };
     });
 
@@ -100,6 +104,7 @@ const StatsView: React.FC<StatsViewProps> = ({
                   
                   if (sortedByAverage.length > 0 && playerAccStats[sortedByAverage[0].playerId]) {
                     playerAccStats[sortedByAverage[0].playerId].bestAverages++;
+                    playerAccStats[sortedByAverage[0].playerId].totalVictories++;
                   }
                   
                   // Count best lap victories
@@ -113,6 +118,7 @@ const StatsView: React.FC<StatsViewProps> = ({
                   
                   if (sortedByLap.length > 0 && playerAccStats[sortedByLap[0].playerId]) {
                     playerAccStats[sortedByLap[0].playerId].bestLaps++;
+                    playerAccStats[sortedByLap[0].playerId].totalVictories++;
                   }
                 }
               });
@@ -163,6 +169,7 @@ const StatsView: React.FC<StatsViewProps> = ({
               
               if (sortedByAverage.length > 0 && playerAccStats[sortedByAverage[0].playerId]) {
                 playerAccStats[sortedByAverage[0].playerId].bestAverages++;
+                playerAccStats[sortedByAverage[0].playerId].totalVictories++;
               }
               
               // Count best lap victories
@@ -176,6 +183,7 @@ const StatsView: React.FC<StatsViewProps> = ({
               
               if (sortedByLap.length > 0 && playerAccStats[sortedByLap[0].playerId]) {
                 playerAccStats[sortedByLap[0].playerId].bestLaps++;
+                playerAccStats[sortedByLap[0].playerId].totalVictories++;
               }
             }
           });
@@ -191,6 +199,24 @@ const StatsView: React.FC<StatsViewProps> = ({
         });
       }
     }
+
+    // Calculate favorite circuit for each player
+    Object.entries(victoryCount).forEach(([playerId, playerCircuits]) => {
+      let maxVictories = 0;
+      let favoriteCircuitId: string | null = null;
+      
+      Object.entries(playerCircuits).forEach(([circuitId, count]) => {
+        if (count > maxVictories) {
+          maxVictories = count;
+          favoriteCircuitId = circuitId;
+        }
+      });
+      
+      if (favoriteCircuitId && playerAccStats[playerId]) {
+        const circuit = circuits.find(c => c.id === favoriteCircuitId);
+        playerAccStats[playerId].favoriteCircuit = circuit ? circuit.name : null;
+      }
+    });
 
     // Calculate ranking (championships * 10 + bestLaps * 2 + bestAverages)
     const rankedStats = Object.values(playerAccStats)
@@ -250,8 +276,10 @@ const StatsView: React.FC<StatsViewProps> = ({
                 <th className="px-4 py-3 text-center font-bold">POS</th>
                 <th className="px-4 py-3 text-left font-bold">JUGADOR</th>
                 <th className="px-4 py-3 text-center font-bold">CAMPEONATOS</th>
+                <th className="px-4 py-3 text-center font-bold">VICTORIAS</th>
                 <th className="px-4 py-3 text-center font-bold">VR</th>
                 <th className="px-4 py-3 text-center font-bold">PR</th>
+                <th className="px-4 py-3 text-center font-bold">CIRCUITO FAVORITO</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
@@ -277,13 +305,23 @@ const StatsView: React.FC<StatsViewProps> = ({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="font-mono font-bold text-zinc-100 text-lg">
+                    <span className="font-mono font-bold text-f1-red text-lg">
+                      {stats.totalVictories}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="font-mono font-bold text-green-400 text-lg">
                       {stats.bestLaps}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="font-mono font-bold text-zinc-100 text-lg">
+                    <span className="font-mono font-bold text-purple-400 text-lg">
                       {stats.bestAverages}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="font-semibold text-zinc-300 text-sm">
+                      {stats.favoriteCircuit || '-'}
                     </span>
                   </td>
                 </tr>
