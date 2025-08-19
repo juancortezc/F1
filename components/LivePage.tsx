@@ -161,7 +161,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       
       // Check for personal best in this session
       if (playerBestTime && timeMs === playerBestTime) {
-        return 'bg-yellow-900 text-yellow-200 border-yellow-500'; // Personal record
+        return 'bg-orange-900 text-orange-200 border-orange-500'; // Personal record
       }
       
     } else if (type === 'average') {
@@ -177,7 +177,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       
       // For averages, check if it's the player's personal best average (simplified)
       if (playerBestTime && timeMs <= playerBestTime + 1000) { // Within 1 second of best lap
-        return 'bg-yellow-900 text-yellow-200 border-yellow-500'; // Personal record
+        return 'bg-orange-900 text-orange-200 border-orange-500'; // Personal record
       }
     }
     
@@ -339,7 +339,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
             <span>Récord de Sesión</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-900 border border-yellow-500"></div>
+            <div className="w-3 h-3 bg-orange-900 border border-orange-500"></div>
             <span>Récord Personal</span>
           </div>
           <div className="flex items-center gap-2">
