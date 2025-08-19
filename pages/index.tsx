@@ -866,7 +866,7 @@ function App() {
                 
                 <main className="mt-4">
                     {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
-                    {activeTab === 'live' && <LivePage gameState={gameStateFromDB} players={players} circuits={circuits} />}
+                    {activeTab === 'live' && <LivePage gameState={gameStateFromDB} players={players} circuits={circuits} gameId={activeGame.id} />}
                     {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                     {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                     {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}

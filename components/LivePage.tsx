@@ -7,6 +7,7 @@ interface LivePageProps {
   gameState: GameState;
   players: Player[];
   circuits: Circuit[];
+  gameId?: string;
 }
 
 const formatTime = (ms: number | null | undefined): string => {
@@ -18,13 +19,13 @@ const formatTime = (ms: number | null | undefined): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 };
 
-const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits }) => {
+const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameId = 'active-game' }) => {
   const currentCircuit = circuits[gameState.currentCircuitIndex];
   const currentPlayer = players.find(p => p.id === gameState.playerOrder[gameState.currentPlayerIndex]);
 
   // Fetch live lap times with polling
   const { data: liveData, error: liveError } = useSWR(
-    `/api/lap-times/live?gameId=active-game&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`,
+    `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`,
     {
       refreshInterval: 2000,
       revalidateOnFocus: true,
