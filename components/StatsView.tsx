@@ -143,8 +143,8 @@ const StatsView: React.FC<StatsViewProps> = ({
       let best: BestPerformer | null = null;
       let maxCount = 0;
 
-      Object.entries(counts).forEach(([playerId, circuits]) => {
-        Object.entries(circuits).forEach(([circuitId, count]) => {
+      Object.entries(counts).forEach(([playerId, playerCircuits]) => {
+        Object.entries(playerCircuits).forEach(([circuitId, count]) => {
           if (count > maxCount) {
             const player = players.find(p => p.id === playerId);
             const circuit = circuits.find(c => c.id === circuitId);

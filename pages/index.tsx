@@ -267,7 +267,7 @@ function App() {
     if (activeGame) {
       const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
       setGamePhase(isFinished ? 'results' : 'race');
-      setActiveTab(isFinished ? 'results' : 'race');
+      setActiveTab(isFinished ? 'acumulados' : 'race');
     } else {
       setGamePhase('hub');
     }

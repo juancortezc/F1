@@ -74,11 +74,11 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ currentUser, onBack }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-secondary text-f1-sm">Campeonatos</p>
-                  <p className="text-primary text-f1-2xl font-bold">{stats.totalGames}</p>
+                  <p className="text-f1-yellow text-f1-2xl font-bold">{stats.totalWins}</p>
                 </div>
                 <div>
-                  <p className="text-secondary text-f1-sm">Victorias</p>
-                  <p className="text-f1-yellow text-f1-2xl font-bold">{stats.totalWins}</p>
+                  <p className="text-secondary text-f1-sm">Partidos Jugados</p>
+                  <p className="text-primary text-f1-2xl font-bold">{stats.totalGames}</p>
                 </div>
                 <div>
                   <p className="text-secondary text-f1-sm">Vueltas Rápidas</p>

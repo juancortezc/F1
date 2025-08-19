@@ -77,7 +77,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       }
 
       // Calculate average from valid lap times
-      const validLaps = lapTimes.filter(time => time !== null && time > 0);
+      const validLaps = lapTimes.filter((time): time is number => time !== null && time > 0);
       let averageTime: number | null = null;
       
       if (validLaps.length >= 3) {
