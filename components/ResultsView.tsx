@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { GameState, NightlyResult, Player, PlayerStats, Circuit, GameHistoryEntry } from '../types';
 import NavigationBar from './NavigationBar';
+import RaceProgress from './RaceProgress';
 
 interface ResultsViewProps {
   gameState: GameState;
@@ -243,30 +244,30 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                     {playerStatsArray.map(({ player, championships, fastLapVictories, avgVictories, totalVictories, circuitRecords, avgRecords }) => (
                         <div key={player!.id} className="p-4">
                             <p className="text-zinc-100 font-semibold mb-3 text-lg">{player!.name}</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <span className="text-zinc-400">Campeonatos:</span>
-                                    <span className="text-yellow-400 font-bold ml-2">{championships}</span>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-zinc-400 text-base">Campeonatos</span>
+                                    <span className="text-yellow-400 font-bold text-lg">{championships}</span>
                                 </div>
-                                <div>
-                                    <span className="text-zinc-400">Total Victorias:</span>
-                                    <span className="text-f1-red font-bold ml-2">{totalVictories}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-zinc-400 text-base">Total Victorias</span>
+                                    <span className="text-f1-red font-bold text-lg">{totalVictories}</span>
                                 </div>
-                                <div>
-                                    <span className="text-zinc-400">Victorias V.Rápidas:</span>
-                                    <span className="text-green-400 font-bold ml-2">{fastLapVictories}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-zinc-400 text-base">V. Rápidas</span>
+                                    <span className="text-green-400 font-bold text-lg">{fastLapVictories}</span>
                                 </div>
-                                <div>
-                                    <span className="text-zinc-400">Victorias Promedios:</span>
-                                    <span className="text-purple-400 font-bold ml-2">{avgVictories}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-zinc-400 text-base">V. Promedios</span>
+                                    <span className="text-purple-400 font-bold text-lg">{avgVictories}</span>
                                 </div>
-                                <div>
-                                    <span className="text-zinc-400">Récords V.Rápida:</span>
-                                    <span className="text-zinc-100 font-bold ml-2">{circuitRecords}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-zinc-400 text-base">Récords V.R.</span>
+                                    <span className="text-zinc-100 font-bold text-lg">{circuitRecords}</span>
                                 </div>
-                                <div>
-                                    <span className="text-zinc-400">Récords Promedio:</span>
-                                    <span className="text-zinc-100 font-bold ml-2">{avgRecords}</span>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-zinc-400 text-base">Récords Prom.</span>
+                                    <span className="text-zinc-100 font-bold text-lg">{avgRecords}</span>
                                 </div>
                             </div>
                         </div>
@@ -312,7 +313,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
                     <TopStats circuits={circuits} players={players} gameHistory={gameHistory} />
                 )}
                 {activeTab === 'acumulados' && (
-                    <FinalResults gameState={gameState} players={players} onNewGame={onNewGame} />
+                    <div className="space-y-6">
+                        <RaceProgress gameState={gameState} players={players} />
+                        <FinalResults gameState={gameState} players={players} onNewGame={onNewGame} />
+                    </div>
                 )}
             </div>
         </div>

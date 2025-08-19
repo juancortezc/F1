@@ -65,7 +65,126 @@ const RaceProgress: React.FC<RaceProgressProps> = ({ gameState, players }) => {
 
   return (
     <div className="space-y-6">
-      {/* Progress Header */}
+      {/* Points Section - Mobile optimized */}
+      <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-md">
+        <h3 className="text-lg font-bold text-zinc-100 mb-3">Puntuación Actual</h3>
+        <div className="space-y-2">
+          {standings.map((standing, index) => (
+            <div key={standing.player.id} className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className={`font-bold text-sm w-6 ${
+                  index === 0 ? 'text-yellow-400' :
+                  index === 1 ? 'text-zinc-300' :
+                  index === 2 ? 'text-amber-600' :
+                  'text-zinc-400'
+                }`}>
+                  {index + 1}
+                </span>
+                <span className="text-zinc-100 font-semibold">{standing.player.name}</span>
+              </div>
+              <span className="font-bold text-zinc-100 font-mono">{standing.score} pts</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Classification Table */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+        <div className="p-4 border-b border-zinc-800">
+          <h3 className="text-xl font-bold text-zinc-100">Resultados</h3>
+        </div>
+        
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm font-mono">
+            <thead className="bg-zinc-800">
+              <tr className="text-left">
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">POS</th>
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">JUGADOR</th>
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">PTS</th>
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">VR</th>
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">PR</th>
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">1º</th>
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">2º</th>
+                <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">3º</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((standing, index) => (
+                <tr key={standing.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors">
+                  <td className="px-3 py-2">
+                    <span className={`font-bold ${
+                      index === 0 ? 'text-yellow-400' :
+                      index === 1 ? 'text-zinc-300' :
+                      index === 2 ? 'text-amber-600' :
+                      'text-zinc-400'
+                    }`}>
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="font-semibold text-zinc-100">{standing.player.name}</span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="font-bold text-zinc-100">{standing.score}</span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="text-zinc-100 font-bold">{standing.bestLaps}</span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="text-zinc-100 font-bold">{standing.bestAverages}</span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="text-yellow-400 font-bold">{standing.firsts}</span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="text-zinc-300 font-bold">{standing.seconds}</span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className="text-amber-600 font-bold">{standing.thirds}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Table */}
+        <div className="md:hidden">
+          {/* Mobile Header */}
+          <div className="grid grid-cols-9 gap-1 px-3 py-2 bg-zinc-800 text-xs font-mono uppercase tracking-wide border-b border-zinc-800">
+            <div className="text-zinc-400">POS</div>
+            <div className="text-zinc-400 col-span-3">JUGADOR</div>
+            <div className="text-zinc-400 text-center">VR</div>
+            <div className="text-zinc-400 text-center">PR</div>
+            <div className="text-zinc-400 text-center">1º</div>
+            <div className="text-zinc-400 text-center">2º</div>
+            <div className="text-zinc-400 text-center">3º</div>
+          </div>
+          
+          {/* Mobile Data Rows */}
+          {standings.map((standing, index) => (
+            <div key={standing.player.id} className="grid grid-cols-9 gap-1 px-3 py-2 border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors text-sm font-mono">
+              <div className={`font-bold ${
+                index === 0 ? 'text-yellow-400' :
+                index === 1 ? 'text-zinc-300' :
+                index === 2 ? 'text-amber-600' :
+                'text-zinc-400'
+              }`}>
+                {index + 1}
+              </div>
+              <div className="text-zinc-100 font-semibold col-span-3 truncate">{standing.player.name}</div>
+              <div className="text-zinc-100 font-bold text-center">{standing.bestLaps}</div>
+              <div className="text-zinc-100 font-bold text-center">{standing.bestAverages}</div>
+              <div className="text-yellow-400 font-bold text-center">{standing.firsts}</div>
+              <div className="text-zinc-300 font-bold text-center">{standing.seconds}</div>
+              <div className="text-amber-600 font-bold text-center">{standing.thirds}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Progress Section - Now at the bottom */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-zinc-100">Progreso del Campeonato</h3>
@@ -85,109 +204,6 @@ const RaceProgress: React.FC<RaceProgressProps> = ({ gameState, players }) => {
         <div className="flex justify-between text-zinc-400">
           <span>Turno {currentTurn} de {totalTurns}</span>
           <span>{overallProgress}% Completado</span>
-        </div>
-      </div>
-
-      {/* Classification Table */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-        <div className="p-4 border-b border-zinc-800">
-          <h3 className="text-xl font-bold text-zinc-100">Clasificación General</h3>
-        </div>
-        
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-zinc-800">
-              <tr className="text-left">
-                <th className="p-4 text-zinc-300 font-semibold">POS</th>
-                <th className="p-4 text-zinc-300 font-semibold">JUGADOR</th>
-                <th className="p-4 text-zinc-300 font-semibold text-center">PTS</th>
-                <th className="p-4 text-zinc-300 font-semibold text-center">VR</th>
-                <th className="p-4 text-zinc-300 font-semibold text-center">PR</th>
-                <th className="p-4 text-zinc-300 font-semibold text-center">1°</th>
-                <th className="p-4 text-zinc-300 font-semibold text-center">2°</th>
-                <th className="p-4 text-zinc-300 font-semibold text-center">3°</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((standing, index) => (
-                <tr key={standing.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
-                  <td className="p-4">
-                    <span className={`font-bold text-lg ${
-                      index === 0 ? 'text-yellow-400' :
-                      index === 1 ? 'text-zinc-300' :
-                      index === 2 ? 'text-amber-600' :
-                      'text-zinc-400'
-                    }`}>
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span className="font-semibold text-zinc-100">{standing.player.name}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="font-bold text-zinc-100">{standing.score}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="text-zinc-300">{standing.bestLaps}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="text-zinc-300">{standing.bestAverages}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="text-yellow-400 font-semibold">{standing.firsts}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="text-zinc-300 font-semibold">{standing.seconds}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <span className="text-amber-600 font-semibold">{standing.thirds}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="md:hidden">
-          {standings.map((standing, index) => (
-            <div key={standing.player.id} className="p-4 border-b border-zinc-800 last:border-b-0">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <span className={`font-bold text-xl w-8 text-center ${
-                    index === 0 ? 'text-yellow-400' :
-                    index === 1 ? 'text-zinc-300' :
-                    index === 2 ? 'text-amber-600' :
-                    'text-zinc-400'
-                  }`}>
-                    {index + 1}
-                  </span>
-                  <span className="font-semibold text-zinc-100 text-lg">{standing.player.name}</span>
-                </div>
-                <span className="font-bold text-zinc-100 text-xl">{standing.score} pts</span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Vueltas Rápidas:</span>
-                  <span className="text-zinc-300 font-semibold">{standing.bestLaps}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Mejores Promedios:</span>
-                  <span className="text-zinc-300 font-semibold">{standing.bestAverages}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Primeros:</span>
-                  <span className="text-yellow-400 font-semibold">{standing.firsts}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Segundos:</span>
-                  <span className="text-zinc-300 font-semibold">{standing.seconds}</span>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

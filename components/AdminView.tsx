@@ -78,56 +78,92 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-black">
             <NavigationBar 
                 title="Administración"
                 subtitle="Gestionar jugadores, circuitos y configuración"
                 onBack={onBack}
             />
             
-            <div className="max-w-6xl mx-auto p-4 md:p-8">
+            <div className="max-w-2xl mx-auto p-4">
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-8">
                 {/* Players Section */}
                 <div>
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-semibold">Jugadores</h2>
-                        <button onClick={() => setEditingItem('new-player')} className="bg-[#FF1801] text-white p-2 rounded-full hover:bg-[#E61601]">
-                            <PlusIcon className="w-6 h-6"/>
-                        </button>
-                    </div>
-                    <div className="space-y-2">
-                        {players.map(player => (
-                            <div key={player.id} className="flex items-center bg-slate-800 p-3 rounded-lg">
-                                <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full mr-4"/>
-                                <div className="flex-grow">
-                                    <div className="font-semibold">{player.name}</div>
-                                    <div className="text-sm text-slate-400">PIN: ****</div>
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-md">
+                        <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-zinc-100">Jugadores</h2>
+                            <button 
+                                onClick={() => setEditingItem('new-player')} 
+                                className="bg-f1-red text-white p-3 rounded-md hover:bg-red-700 touch-target"
+                            >
+                                <PlusIcon className="w-5 h-5"/>
+                            </button>
+                        </div>
+                        <div className="divide-y divide-zinc-800">
+                            {players.map(player => (
+                                <div key={player.id} className="p-4 flex items-center gap-4">
+                                    <img src={player.imageUrl} alt={player.name} className="w-12 h-12 rounded-full"/>
+                                    <div className="flex-grow">
+                                        <div className="text-zinc-100 font-semibold text-lg">{player.name}</div>
+                                        <div className="text-zinc-400 text-base">PIN: ****</div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setEditingItem(player)} 
+                                            className="p-3 text-zinc-400 hover:text-zinc-100 touch-target"
+                                        >
+                                            <PencilIcon className="w-5 h-5"/>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeletePlayer(player.id)} 
+                                            className="p-3 text-zinc-400 hover:text-f1-red touch-target"
+                                        >
+                                            <TrashIcon className="w-5 h-5"/>
+                                        </button>
+                                    </div>
                                 </div>
-                                <button onClick={() => setEditingItem(player)} className="p-2 text-slate-400 hover:text-white"><PencilIcon className="w-5 h-5"/></button>
-                                <button onClick={() => handleDeletePlayer(player.id)} className="p-2 text-slate-400 hover:text-red-500"><TrashIcon className="w-5 h-5"/></button>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 {/* Circuits Section */}
                 <div>
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-semibold">Circuitos</h2>
-                        <button onClick={() => setEditingItem('new-circuit')} className="bg-[#FF1801] text-white p-2 rounded-full hover:bg-[#E61601]">
-                             <PlusIcon className="w-6 h-6"/>
-                        </button>
-                    </div>
-                     <div className="space-y-2">
-                        {circuits.map(circuit => (
-                            <div key={circuit.id} className="flex items-center bg-slate-800 p-2 rounded-lg">
-                                <img src={circuit.imageUrl} alt={circuit.name} className="w-20 h-10 object-cover rounded mr-4"/>
-                                <span className="flex-grow font-semibold">{circuit.name}</span>
-                                <button onClick={() => setEditingItem(circuit)} className="p-2 text-slate-400 hover:text-white"><PencilIcon className="w-5 h-5"/></button>
-                                <button onClick={() => handleDeleteCircuit(circuit.id)} className="p-2 text-slate-400 hover:text-red-500"><TrashIcon className="w-5 h-5"/></button>
-                            </div>
-                        ))}
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-md">
+                        <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-zinc-100">Circuitos</h2>
+                            <button 
+                                onClick={() => setEditingItem('new-circuit')} 
+                                className="bg-f1-red text-white p-3 rounded-md hover:bg-red-700 touch-target"
+                            >
+                                <PlusIcon className="w-5 h-5"/>
+                            </button>
+                        </div>
+                        <div className="divide-y divide-zinc-800">
+                            {circuits.map(circuit => (
+                                <div key={circuit.id} className="p-4 flex items-center gap-4">
+                                    <img src={circuit.imageUrl} alt={circuit.name} className="w-16 h-12 object-cover rounded"/>
+                                    <div className="flex-grow">
+                                        <span className="text-zinc-100 font-semibold text-lg">{circuit.name}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setEditingItem(circuit)} 
+                                            className="p-3 text-zinc-400 hover:text-zinc-100 touch-target"
+                                        >
+                                            <PencilIcon className="w-5 h-5"/>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeleteCircuit(circuit.id)} 
+                                            className="p-3 text-zinc-400 hover:text-f1-red touch-target"
+                                        >
+                                            <TrashIcon className="w-5 h-5"/>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -218,57 +254,68 @@ const EditForm: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Cir
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <input 
+                type="text" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleChange} 
+                placeholder="Nombre" 
+                required 
+                className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
+            />
+            
+            {isPlayer && (
+                <>
                     <input 
-                        type="text" 
-                        name="name" 
-                        value={formData.name} 
+                        type="password" 
+                        name="pin" 
+                        value={(formData as Player).pin || ''} 
                         onChange={handleChange} 
-                        placeholder="Nombre" 
+                        placeholder="PIN (4 dígitos)" 
+                        maxLength={4}
+                        pattern="\d{4}"
                         required 
-                        className="w-full p-2 rounded bg-slate-700 text-slate-200"
+                        className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
                     />
-                    
-                    {isPlayer && (
-                        <>
-                            <input 
-                                type="password" 
-                                name="pin" 
-                                value={(formData as Player).pin || ''} 
-                                onChange={handleChange} 
-                                placeholder="PIN (4 dígitos)" 
-                                maxLength={4}
-                                pattern="\d{4}"
-                                required 
-                                className="w-full p-2 rounded bg-slate-700 text-slate-200"
-                            />
-                            <input 
-                                type="url" 
-                                name="imageUrl" 
-                                value={(formData as Player).imageUrl || ''} 
-                                onChange={handleChange} 
-                                placeholder="URL de imagen" 
-                                required 
-                                className="w-full p-2 rounded bg-slate-700 text-slate-200"
-                            />
-                        </>
-                    )}
-                    
-                    {!isPlayer && (
-                        <input 
-                            type="url" 
-                            name="imageUrl" 
-                            value={(formData as Circuit).imageUrl || ''} 
-                            onChange={handleChange} 
-                            placeholder="URL de imagen" 
-                            required 
-                            className="w-full p-2 rounded bg-slate-700 text-slate-200"
-                        />
-                    )}
-                    
-            <div className="flex justify-end gap-4 mt-6">
-                <button type="button" onClick={onCancel} className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700">Cancelar</button>
-                <button type="submit" className="bg-[#FF1801] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#E61601]">Guardar</button>
+                    <input 
+                        type="url" 
+                        name="imageUrl" 
+                        value={(formData as Player).imageUrl || ''} 
+                        onChange={handleChange} 
+                        placeholder="URL de imagen" 
+                        required 
+                        className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
+                    />
+                </>
+            )}
+            
+            {!isPlayer && (
+                <input 
+                    type="url" 
+                    name="imageUrl" 
+                    value={(formData as Circuit).imageUrl || ''} 
+                    onChange={handleChange} 
+                    placeholder="URL de imagen" 
+                    required 
+                    className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
+                />
+            )}
+            
+            <div className="flex gap-4 pt-4">
+                <button 
+                    type="button" 
+                    onClick={onCancel} 
+                    className="flex-1 bg-zinc-700 text-zinc-100 font-bold py-4 rounded-md hover:bg-zinc-600 touch-target text-lg"
+                >
+                    Cancelar
+                </button>
+                <button 
+                    type="submit" 
+                    className="flex-1 bg-f1-red text-white font-bold py-4 rounded-md hover:bg-red-700 touch-target text-lg"
+                >
+                    Guardar
+                </button>
             </div>
         </form>
     );
