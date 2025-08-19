@@ -83,45 +83,96 @@ interface TopStatsProps {
 const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) => {
     const [selectedCircuitId, setSelectedCircuitId] = useState<string>(circuits[0]?.id || '');
 
-    const playerRecordStats = useMemo(() => {
-        const stats: Record<string, { lapRecords: number, avgRecords: number }> = {};
+    const playerStats = useMemo(() => {
+        const stats: Record<string, { 
+            championships: number; 
+            fastLapVictories: number; 
+            avgVictories: number; 
+            totalVictories: number;
+            circuitRecords: number;
+            avgRecords: number;
+        }> = {};
+        
+        // Initialize stats for all players
         players.forEach(p => {
-            stats[p.id] = { lapRecords: 0, avgRecords: 0 };
+            stats[p.id] = { 
+                championships: 0, 
+                fastLapVictories: 0, 
+                avgVictories: 0, 
+                totalVictories: 0,
+                circuitRecords: 0,
+                avgRecords: 0
+            };
         });
+
+        // Count circuit records (historical bests)
         circuits.forEach(c => {
             if (c.bestLapHolderId && stats[c.bestLapHolderId]) {
-                stats[c.bestLapHolderId].lapRecords++;
+                stats[c.bestLapHolderId].circuitRecords++;
             }
             if (c.bestAverageHolderId && stats[c.bestAverageHolderId]) {
                 stats[c.bestAverageHolderId].avgRecords++;
             }
         });
-        return stats;
-    }, [circuits, players]);
 
-    const playerCareerStats = useMemo(() => {
-        const stats: Record<string, { wins: number; circuitWinCounts: Record<string, number> }> = {};
-        players.forEach(p => {
-            stats[p.id] = { wins: 0, circuitWinCounts: {} };
-            circuits.forEach(c => {
-                stats[p.id].circuitWinCounts[c.id] = 0;
-            });
-        });
-
+        // Process game history for victories and championships
         gameHistory.forEach(game => {
-            const standings = Object.entries(game.state.playerStats || {})
+            if (!game.state || typeof game.state !== 'object') return;
+            
+            const gameState = game.state as any;
+            
+            // Count championships
+            const standings = Object.entries(gameState.playerStats || {})
                 .map(([id, stats]: [string, any]) => ({ playerId: id, totalScore: stats.totalScore || 0 }))
                 .sort((a, b) => b.totalScore - a.totalScore);
             
             if (standings.length > 0) {
                 const winnerId = standings[0].playerId;
                 if (stats[winnerId]) {
-                    stats[winnerId].wins++;
+                    stats[winnerId].championships++;
                 }
             }
 
-            // For circuit winners, we'd need to process circuitResults
-            // This is simplified for now - could be enhanced later
+            // Count turn/circuit victories from circuitResults
+            if (gameState.circuitResults && Array.isArray(gameState.circuitResults)) {
+                gameState.circuitResults.forEach((circuitResult: any) => {
+                    if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
+                        circuitResult.turns.forEach((turn: any) => {
+                            if (Array.isArray(turn)) {
+                                // Best average victory
+                                const sortedByAverage = turn
+                                    .filter((p: any) => p.averageTime && p.averageTime > 0)
+                                    .sort((a: any, b: any) => a.averageTime - b.averageTime);
+                                
+                                if (sortedByAverage.length > 0) {
+                                    const winnerId = sortedByAverage[0].playerId;
+                                    if (stats[winnerId]) {
+                                        stats[winnerId].avgVictories++;
+                                        stats[winnerId].totalVictories++;
+                                    }
+                                }
+                                
+                                // Best lap victory
+                                const sortedByLap = turn
+                                    .map((p: any) => ({
+                                        ...p,
+                                        bestLap: p.lapTimes ? Math.min(...p.lapTimes.filter((t: number) => t > 0)) : Infinity
+                                    }))
+                                    .filter((p: any) => p.bestLap !== Infinity)
+                                    .sort((a: any, b: any) => a.bestLap - b.bestLap);
+                                
+                                if (sortedByLap.length > 0) {
+                                    const winnerId = sortedByLap[0].playerId;
+                                    if (stats[winnerId]) {
+                                        stats[winnerId].fastLapVictories++;
+                                        stats[winnerId].totalVictories++;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         });
 
         return stats;
@@ -129,15 +180,13 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
 
     const selectedCircuit = circuits.find(c => c.id === selectedCircuitId);
 
-    const playerStatsArray = Object.entries(playerRecordStats)
+    const playerStatsArray = Object.entries(playerStats)
         .map(([playerId, stats]) => ({
             player: players.find(p => p.id === playerId),
-            ...stats,
-            careerWins: playerCareerStats[playerId]?.wins || 0,
-            circuitWins: playerCareerStats[playerId]?.circuitWinCounts[selectedCircuitId] || 0
+            ...stats
         }))
         .filter(s => s.player)
-        .sort((a, b) => (b.lapRecords + b.avgRecords) - (a.lapRecords + a.avgRecords));
+        .sort((a, b) => b.totalVictories - a.totalVictories);
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
@@ -191,25 +240,33 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                     <h3 className="text-xl font-bold text-zinc-100">Ranking de Jugadores</h3>
                 </div>
                 <div className="divide-y divide-zinc-800">
-                    {playerStatsArray.map(({ player, lapRecords, avgRecords, careerWins, circuitWins }) => (
+                    {playerStatsArray.map(({ player, championships, fastLapVictories, avgVictories, totalVictories, circuitRecords, avgRecords }) => (
                         <div key={player!.id} className="p-4">
                             <p className="text-zinc-100 font-semibold mb-3 text-lg">{player!.name}</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <span className="text-zinc-400">Récords vuelta:</span>
-                                    <span className="text-zinc-100 font-bold ml-2">{lapRecords}</span>
-                                </div>
-                                <div>
-                                    <span className="text-zinc-400">Récords promedio:</span>
-                                    <span className="text-zinc-100 font-bold ml-2">{avgRecords}</span>
-                                </div>
-                                <div>
                                     <span className="text-zinc-400">Campeonatos:</span>
-                                    <span className="text-zinc-100 font-bold ml-2">{careerWins}</span>
+                                    <span className="text-yellow-400 font-bold ml-2">{championships}</span>
                                 </div>
                                 <div>
-                                    <span className="text-zinc-400">Victorias en {selectedCircuit?.name}:</span>
-                                    <span className="text-zinc-100 font-bold ml-2">{circuitWins}</span>
+                                    <span className="text-zinc-400">Total Victorias:</span>
+                                    <span className="text-f1-red font-bold ml-2">{totalVictories}</span>
+                                </div>
+                                <div>
+                                    <span className="text-zinc-400">Victorias V.Rápidas:</span>
+                                    <span className="text-green-400 font-bold ml-2">{fastLapVictories}</span>
+                                </div>
+                                <div>
+                                    <span className="text-zinc-400">Victorias Promedios:</span>
+                                    <span className="text-purple-400 font-bold ml-2">{avgVictories}</span>
+                                </div>
+                                <div>
+                                    <span className="text-zinc-400">Récords V.Rápida:</span>
+                                    <span className="text-zinc-100 font-bold ml-2">{circuitRecords}</span>
+                                </div>
+                                <div>
+                                    <span className="text-zinc-400">Récords Promedio:</span>
+                                    <span className="text-zinc-100 font-bold ml-2">{avgRecords}</span>
                                 </div>
                             </div>
                         </div>
