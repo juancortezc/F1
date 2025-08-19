@@ -87,11 +87,42 @@ const StatsView: React.FC<StatsViewProps> = ({
           }
         }
 
-        // Process each player's stats
-        Object.entries(game.state.playerStats).forEach(([playerId, stats]) => {
+        // Calculate victories from circuitResults (correct approach)
+        if (game.state.circuitResults && Array.isArray(game.state.circuitResults)) {
+          game.state.circuitResults.forEach((circuitResult: any) => {
+            if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
+              circuitResult.turns.forEach((turn: any) => {
+                if (Array.isArray(turn)) {
+                  // Count best average victories
+                  const sortedByAverage = turn
+                    .filter((p: any) => p.averageTime && p.averageTime > 0)
+                    .sort((a: any, b: any) => a.averageTime - b.averageTime);
+                  
+                  if (sortedByAverage.length > 0 && playerAccStats[sortedByAverage[0].playerId]) {
+                    playerAccStats[sortedByAverage[0].playerId].bestAverages++;
+                  }
+                  
+                  // Count best lap victories
+                  const sortedByLap = turn
+                    .map((p: any) => ({
+                      ...p,
+                      bestLap: p.lapTimes ? Math.min(...p.lapTimes.filter((t: number) => t > 0)) : Infinity
+                    }))
+                    .filter((p: any) => p.bestLap !== Infinity)
+                    .sort((a: any, b: any) => a.bestLap - b.bestLap);
+                  
+                  if (sortedByLap.length > 0 && playerAccStats[sortedByLap[0].playerId]) {
+                    playerAccStats[sortedByLap[0].playerId].bestLaps++;
+                  }
+                }
+              });
+            }
+          });
+        }
+
+        // Add total scores for ranking
+        Object.entries(game.state.playerStats || {}).forEach(([playerId, stats]) => {
           if (playerAccStats[playerId]) {
-            playerAccStats[playerId].bestLaps += (stats as PlayerStats).bestLaps || 0;
-            playerAccStats[playerId].bestAverages += (stats as PlayerStats).bestAverages || 0;
             playerAccStats[playerId].totalScore += (stats as PlayerStats).totalScore || 0;
           }
         });
@@ -119,15 +150,46 @@ const StatsView: React.FC<StatsViewProps> = ({
       }
     });
 
-    // Add current game stats if active
-    if (gameState && gameState.playerStats) {
-      Object.entries(gameState.playerStats).forEach(([playerId, stats]) => {
-        if (playerAccStats[playerId]) {
-          playerAccStats[playerId].bestLaps += (stats as PlayerStats).bestLaps || 0;
-          playerAccStats[playerId].bestAverages += (stats as PlayerStats).bestAverages || 0;
-          playerAccStats[playerId].totalScore += (stats as PlayerStats).totalScore || 0;
+    // Add current game stats if active - calculate from circuitResults
+    if (gameState && gameState.circuitResults) {
+      gameState.circuitResults.forEach((circuitResult: any) => {
+        if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
+          circuitResult.turns.forEach((turn: any) => {
+            if (Array.isArray(turn)) {
+              // Count best average victories
+              const sortedByAverage = turn
+                .filter((p: any) => p.averageTime && p.averageTime > 0)
+                .sort((a: any, b: any) => a.averageTime - b.averageTime);
+              
+              if (sortedByAverage.length > 0 && playerAccStats[sortedByAverage[0].playerId]) {
+                playerAccStats[sortedByAverage[0].playerId].bestAverages++;
+              }
+              
+              // Count best lap victories
+              const sortedByLap = turn
+                .map((p: any) => ({
+                  ...p,
+                  bestLap: p.lapTimes ? Math.min(...p.lapTimes.filter((t: number) => t > 0)) : Infinity
+                }))
+                .filter((p: any) => p.bestLap !== Infinity)
+                .sort((a: any, b: any) => a.bestLap - b.bestLap);
+              
+              if (sortedByLap.length > 0 && playerAccStats[sortedByLap[0].playerId]) {
+                playerAccStats[sortedByLap[0].playerId].bestLaps++;
+              }
+            }
+          });
         }
       });
+      
+      // Add current game total scores
+      if (gameState.playerStats) {
+        Object.entries(gameState.playerStats).forEach(([playerId, stats]) => {
+          if (playerAccStats[playerId]) {
+            playerAccStats[playerId].totalScore += (stats as PlayerStats).totalScore || 0;
+          }
+        });
+      }
     }
 
     // Calculate ranking (championships * 10 + bestLaps * 2 + bestAverages)
