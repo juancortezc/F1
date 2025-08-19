@@ -23,6 +23,14 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
   const currentCircuit = circuits[gameState.currentCircuitIndex];
   const currentPlayer = players.find(p => p.id === gameState.playerOrder[gameState.currentPlayerIndex]);
 
+  // Debug: Log parameters
+  console.log('LivePage params:', {
+    gameId,
+    circuitId: currentCircuit?.id,
+    turnNumber: gameState.currentTurn,
+    url: `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`
+  });
+
   // Fetch live lap times with polling
   const { data: liveData, error: liveError } = useSWR(
     `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`,
@@ -43,7 +51,10 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
   // Process live data and combine with session data
   const processPlayerData = () => {
+    console.log('LiveData received:', liveData);
+    
     if (!liveData?.success || !liveData.data?.liveLapTimes) {
+      console.log('No live data available');
       return [];
     }
 
