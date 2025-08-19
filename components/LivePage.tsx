@@ -151,12 +151,12 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       
       // Check against historical best lap
       if (currentCircuit.historicalBestLap && timeMs <= currentCircuit.historicalBestLap) {
-        return 'bg-purple-900 text-purple-200 border-purple-500'; // Historical record
+        return 'bg-purple-900 text-white border-purple-500'; // Historical record
       }
       
       // Check against session best lap
       if (circuitSessionBests.bestLap && timeMs <= circuitSessionBests.bestLap) {
-        return 'bg-green-900 text-green-200 border-green-500'; // Session record
+        return 'bg-green-900 text-white border-green-500'; // Session record
       }
       
       // Check for personal best in this session
@@ -167,12 +167,12 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
     } else if (type === 'average') {
       // Check against historical best average
       if (currentCircuit.historicalBestAverage && timeMs <= currentCircuit.historicalBestAverage) {
-        return 'bg-purple-900 text-purple-200 border-purple-500'; // Historical record
+        return 'bg-purple-900 text-white border-purple-500'; // Historical record
       }
       
       // Check against session best average
       if (circuitSessionBests.bestAverage && timeMs <= circuitSessionBests.bestAverage) {
-        return 'bg-green-900 text-green-200 border-green-500'; // Session record
+        return 'bg-green-900 text-white border-green-500'; // Session record
       }
       
       // For averages, check if it's the player's personal best average (simplified)
