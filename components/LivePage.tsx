@@ -136,26 +136,48 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
   const nextPlayer = players.find(p => p.id === gameState.playerOrder[nextPlayerIndex]);
 
   // Function to get cell color based on record type
-  const getCellColor = (timeMs: number | null, type: 'lap' | 'average'): string => {
+  const getCellColor = (timeMs: number | null, type: 'lap' | 'average', playerId?: string): string => {
     if (!timeMs || timeMs <= 0) return '';
     
+    // Find player's best time for personal record comparison
+    const playerBestTimes = liveData?.data?.liveLapTimes
+      ?.filter((lap: any) => lap.playerId === playerId && lap.circuitId === currentCircuit.id)
+      ?.map((lap: any) => lap.timeMs) || [];
+    
+    const playerBestTime = playerBestTimes.length > 0 ? Math.min(...playerBestTimes) : null;
+    
     if (type === 'lap') {
+      // Priority: Historical > Session > Personal > Normal
+      
       // Check against historical best lap
       if (currentCircuit.historicalBestLap && timeMs <= currentCircuit.historicalBestLap) {
-        return 'bg-purple-900 text-purple-200'; // Historical record
+        return 'bg-purple-900 text-purple-200 border-purple-500'; // Historical record
       }
+      
       // Check against session best lap
       if (circuitSessionBests.bestLap && timeMs <= circuitSessionBests.bestLap) {
-        return 'bg-green-900 text-green-200'; // Session record
+        return 'bg-green-900 text-green-200 border-green-500'; // Session record
       }
+      
+      // Check for personal best in this session
+      if (playerBestTime && timeMs === playerBestTime) {
+        return 'bg-yellow-900 text-yellow-200 border-yellow-500'; // Personal record
+      }
+      
     } else if (type === 'average') {
       // Check against historical best average
       if (currentCircuit.historicalBestAverage && timeMs <= currentCircuit.historicalBestAverage) {
-        return 'bg-purple-900 text-purple-200'; // Historical record
+        return 'bg-purple-900 text-purple-200 border-purple-500'; // Historical record
       }
+      
       // Check against session best average
       if (circuitSessionBests.bestAverage && timeMs <= circuitSessionBests.bestAverage) {
-        return 'bg-green-900 text-green-200'; // Session record
+        return 'bg-green-900 text-green-200 border-green-500'; // Session record
+      }
+      
+      // For averages, check if it's the player's personal best average (simplified)
+      if (playerBestTime && timeMs <= playerBestTime + 1000) { // Within 1 second of best lap
+        return 'bg-yellow-900 text-yellow-200 border-yellow-500'; // Personal record
       }
     }
     
@@ -248,33 +270,37 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                       </div>
                     </td>
 
-                    {/* Player Name */}
+                    {/* Player Name and Delta */}
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-zinc-100">
-                        {data.player?.name}
-                      </div>
-                      <div className="text-xs text-zinc-400">
-                        {data.position === 1 && data.bestLap ? (
-                          // Líder: mostrar su mejor vuelta de la sesión
-                          <span className="text-f1-yellow font-mono">
-                            Mejor: {formatTime(data.bestLap)}
-                          </span>
-                        ) : data.position > 1 && playerData[0]?.bestLap && data.bestLap ? (
-                          // Otros: mostrar delta con el líder
-                          <span className="text-zinc-300 font-mono">
-                            +{formatTime(data.bestLap - playerData[0].bestLap)}
-                          </span>
-                        ) : (
-                          // Fallback: mostrar progreso de vueltas
-                          <span>{data.completedLaps}/{gameState.settings.lapsPerTurn} vueltas</span>
-                        )}
+                      <div className="flex items-center justify-between min-w-[150px]">
+                        <div>
+                          <div className="font-semibold text-zinc-100 text-base">
+                            {data.player?.name}
+                          </div>
+                          <div className="text-xs text-zinc-500">
+                            {data.completedLaps}/{gameState.settings.lapsPerTurn} vueltas
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          {data.position === 1 && data.bestLap ? (
+                            // Líder: mostrar su mejor vuelta de la sesión
+                            <span className="text-f1-yellow font-mono font-bold text-sm">
+                              {formatTime(data.bestLap)}
+                            </span>
+                          ) : data.position > 1 && playerData[0]?.bestLap && data.bestLap ? (
+                            // Otros: mostrar delta con el líder
+                            <span className="text-red-400 font-mono font-bold text-base">
+                              +{formatTime(data.bestLap - playerData[0].bestLap)}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </td>
 
                     {/* Individual Lap Times */}
                     {data.lapTimes.map((lapTime, lapIndex) => (
-                      <td key={lapIndex} className={`px-3 py-3 text-center ${getCellColor(lapTime, 'lap')}`}>
-                        <span className="font-mono font-semibold">
+                      <td key={lapIndex} className={`px-3 py-3 text-center ${getCellColor(lapTime, 'lap', data.playerId)}`}>
+                        <span className="font-mono font-bold text-lg tracking-wide">
                           {lapTime ? formatTime(lapTime) : '-:--.---'}
                         </span>
                       </td>
@@ -283,13 +309,13 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                     {/* Fill remaining lap columns if needed */}
                     {Array.from({ length: Math.max(0, gameState.settings.lapsPerTurn - data.lapTimes.length) }).map((_, i) => (
                       <td key={`empty-${i}`} className="px-3 py-3 text-center">
-                        <span className="font-mono font-semibold text-zinc-600">-:--.---</span>
+                        <span className="font-mono font-bold text-lg tracking-wide text-zinc-600">-:--.---</span>
                       </td>
                     ))}
 
                     {/* Average */}
-                    <td className={`px-4 py-3 text-center ${getCellColor(data.averageTime, 'average')}`}>
-                      <span className="font-mono font-bold text-lg">
+                    <td className={`px-4 py-3 text-center ${getCellColor(data.averageTime, 'average', data.playerId)}`}>
+                      <span className="font-mono font-bold text-xl tracking-wide">
                         {data.averageTime ? formatTime(data.averageTime) : '-:--.---'}
                       </span>
                     </td>
@@ -305,12 +331,16 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       <div className="p-3 border-t border-zinc-800">
         <div className="flex flex-wrap gap-4 text-xs text-zinc-400">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-purple-900"></div>
+            <div className="w-3 h-3 bg-purple-900 border border-purple-500"></div>
             <span>Récord Histórico</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-900"></div>
+            <div className="w-3 h-3 bg-green-900 border border-green-500"></div>
             <span>Récord de Sesión</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-yellow-900 border border-yellow-500"></div>
+            <span>Récord Personal</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-f1-yellow"></div>
