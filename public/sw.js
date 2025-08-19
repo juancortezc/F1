@@ -23,8 +23,14 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch - simple pass-through, no caching to avoid issues
+// Fetch - simple pass-through with error handling
 self.addEventListener('fetch', (event) => {
-  // Pass through all requests without caching
-  event.respondWith(fetch(event.request));
+  // Pass through all requests without caching, with error handling
+  event.respondWith(
+    fetch(event.request).catch((error) => {
+      console.warn('SW fetch failed:', error);
+      // Return a basic response for failed requests
+      return new Response('Network error', { status: 503 });
+    })
+  );
 });
