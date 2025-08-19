@@ -51,9 +51,55 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const averageTimeMs = Math.round(timesToAverage.reduce((sum, time) => sum + time, 0) / timesToAverage.length);
 
-    // For now, we'll set turnScore to 0 - this will be calculated by the main game logic
-    // when the turn is officially submitted via the existing race endpoint
-    const turnScore = 0;
+    // Get active game to calculate proper turn score
+    const activeGame = await prisma.game.findFirst({
+      where: { id: gameId, status: 'ACTIVE' },
+      select: { state: true }
+    });
+
+    let turnScore = 0;
+    
+    if (activeGame && activeGame.state) {
+      const gameState = activeGame.state as any;
+      const { scoringMethod = 'average' } = gameState.settings;
+      
+      // Get all completed players for this turn to calculate rankings
+      const allTurnCompletions = await prisma.turnCompletion.findMany({
+        where: {
+          gameId,
+          circuitId,
+          turnNumber,
+          isCompleted: true
+        }
+      });
+
+      // Calculate points based on scoring method
+      const getPoints = (rank: number): number => {
+        if (rank === 0) return 3;
+        if (rank === 1) return 2; 
+        if (rank === 2) return 1;
+        return 0;
+      };
+
+      if (scoringMethod === 'average' || scoringMethod === 'both') {
+        // Sort by average time (this player's average vs others)
+        const playerAverages = allTurnCompletions
+          .map(tc => ({
+            playerId: tc.playerId,
+            averageTime: tc.averageTimeMs || Infinity
+          }))
+          .concat([{ playerId, averageTime: averageTimeMs }]) // Add current player
+          .sort((a, b) => a.averageTime - b.averageTime);
+
+        const rank = playerAverages.findIndex(p => p.playerId === playerId);
+        if (rank !== -1) {
+          turnScore += getPoints(rank);
+        }
+      }
+
+      // TODO: Add best lap scoring if scoringMethod includes 'lap'
+      // This would require more complex logic to compare individual lap times
+    }
 
     // Update turn completion
     const turnCompletion = await prisma.turnCompletion.upsert({
