@@ -252,7 +252,20 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits }) => 
                         {data.player?.name}
                       </div>
                       <div className="text-xs text-zinc-400">
-                        {data.completedLaps}/{gameState.settings.lapsPerTurn} vueltas
+                        {data.position === 1 && data.bestLap ? (
+                          // Líder: mostrar su mejor vuelta de la sesión
+                          <span className="text-f1-yellow font-mono">
+                            Mejor: {formatTime(data.bestLap)}
+                          </span>
+                        ) : data.position > 1 && playerData[0]?.bestLap && data.bestLap ? (
+                          // Otros: mostrar delta con el líder
+                          <span className="text-zinc-300 font-mono">
+                            +{formatTime(data.bestLap - playerData[0].bestLap)}
+                          </span>
+                        ) : (
+                          // Fallback: mostrar progreso de vueltas
+                          <span>{data.completedLaps}/{gameState.settings.lapsPerTurn} vueltas</span>
+                        )}
                       </div>
                     </td>
 
