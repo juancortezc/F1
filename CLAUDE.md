@@ -74,9 +74,10 @@ Sistema de cronometraje para competencias de F1 con simuladores, diseñado espec
 ## 🛠️ Stack Técnico
 - **Frontend**: Next.js con TypeScript
 - **Estilos**: Tailwind CSS con sistema de diseño personalizado
-- **Base de datos**: SQLite con Prisma
-- **Actualizaciones**: SWR para polling y caché
-- **Hosting**: Optimizado para Vercel
+- **Base de datos**: PostgreSQL con Prisma ORM
+- **Actualizaciones**: SWR para polling y caché en tiempo real
+- **Hosting**: Optimizado para Vercel con Neon Database
+- **Service Worker**: Implementación mínima para PWA básico
 
 ## 📋 Comandos Importantes
 ```bash
@@ -123,3 +124,119 @@ npx prisma migrate dev  # Migrar esquema
 4. Iniciar campeonato
 5. Jugar como un jugador más
 6. Ver resultados y proclamar campeón
+
+## 🔧 Problemas Técnicos Resueltos y Aprendizajes
+
+### Errores de Routing en Next.js
+**Problema**: Error "You cannot use different slug names for the same dynamic path ('id' !== 'playerId')"
+- **Causa**: Conflicto entre `/api/players/[id].ts` y `/api/players/[playerId]/stats.ts`
+- **Solución**: Unificar nombres de parámetros dinámicos - usar `[id]` consistentemente
+- **Aprendizaje**: Next.js requiere nombres de parámetros consistentes en rutas que comparten el mismo nivel
+
+### Errores de Base de Datos con Prisma
+**Problema**: APIs devolviendo 500 por campos inexistentes
+- **Causa**: Desincronización entre schema Prisma y código (ej: `bestLap` vs `historicalBestLap`)
+- **Solución**: Revisar schema.prisma y usar nombres exactos de campos
+- **Aprendizaje**: Siempre verificar el schema antes de hacer consultas
+
+### Service Worker Cache Issues
+**Problema**: Error `cache.addAll()` causando fallos de carga
+- **Causa**: URLs en urlsToCache que no existen o son inaccesibles
+- **Solución**: Implementar service worker mínimo que pase todas las requests sin cache
+- **Aprendizaje**: Para desarrollo, un SW simple es mejor que uno complejo que falla
+
+### Componentes TypeScript
+**Problema**: Props inexistentes en componentes (ej: `variant="info"` en DataCard)
+- **Causa**: Uso de props no definidos en interfaces TypeScript
+- **Solución**: Verificar interfaces de componentes y usar solo props válidos
+- **Aprendizaje**: TypeScript es estricto - revisar siempre las definiciones de tipos
+
+### Navegación de Usuario Simplificada
+**Problema**: Página intermedia confusa para jugadores sin campeonatos activos
+- **Causa**: UX complicada con múltiples pantallas innecesarias
+- **Solución**: Flujo directo - jugadores van a LIVE (si hay juego) o Acumulados (sin juego)
+- **Aprendizaje**: Menos pantallas = mejor UX para usuarios 50+
+
+## 📊 Nuevas Funcionalidades Implementadas
+
+### Sistema de Puntaje Unificado
+- **RaceProgress.tsx**: Transformado de barras de progreso a tabla de clasificación
+- **Columnas**: POS, JUGADOR, PTS, VR (Vueltas Rápidas), PR (Promedios), 1°, 2°, 3° (posiciones por turno)
+- **Cálculos**: `calculateTurnPositions()` para estadísticas de posiciones por circuito
+- **Diseño**: Scroll horizontal en móvil, fuentes ligeras, colores zinc
+
+### Sistema de Resultados Dual
+- **ResultsView.tsx**: Dos tabs principales
+  - **TIEMPOS**: Récords de vueltas rápidas y promedios por circuito
+  - **ACUMULADOS**: Estadísticas de carrera (campeonatos ganados, récords, etc.)
+- **Integración**: Usa gameHistory para calcular estadísticas históricas
+- **UX**: Tab navigation simple y clara
+
+### Navegación Directa para Jugadores
+- **HubScreen.tsx**: Eliminada página intermedia "Estadísticas y Menú"
+- **Flujo simplificado**: 
+  - Con campeonato activo → LIVE tab
+  - Sin campeonato → Acumulados tab
+- **Menos clics**: Acceso directo a contenido relevante
+
+## 🗄️ Estructura de Base de Datos
+
+### Modelos Principales
+```prisma
+model Player {
+  id: String (CUID)
+  name: String
+  pin: String (default "0000")
+  imageUrl: String
+}
+
+model Circuit {
+  historicalBestLap: Int? (milliseconds)
+  historicalBestAverage: Int? (milliseconds)
+  bestLapHolderId: String?
+  bestAverageHolderId: String?
+}
+
+model Game {
+  state: Json (GameState completo)
+  status: String (ACTIVE/COMPLETED)
+}
+```
+
+### APIs Críticas
+- `/api/players/[id]/stats` - Estadísticas individuales de jugador
+- `/api/circuits` - Lista de circuitos con récords
+- `/api/settings` - Configuración global (PIN admin)
+- `/api/game/active` - Estado del juego activo
+
+## 🎨 Sistema de Colores Refinado
+
+### Paleta Principal
+```css
+--f1-black: #000000      /* Fondo principal */
+--f1-red: #FF1801        /* Acciones críticas */
+--zinc-900: #18181b      /* Superficies secundarias */
+--zinc-300: #d4d4d8      /* Texto secundario */
+--zinc-100: #f4f4f5      /* Texto principal */
+```
+
+### Aplicación por Componente
+- **Botones primarios**: bg-f1-red con texto blanco
+- **Botones secundarios**: bg-zinc-900 con bordes zinc-700
+- **Tarjetas**: bg-zinc-900 con bordes zinc-800
+- **Texto**: zinc-100 (principal), zinc-300 (secundario)
+
+## 🔄 Polling y Actualizaciones en Tiempo Real
+
+### Configuración SWR
+```javascript
+// Cada 3 segundos para datos de juego activo
+const interval = setInterval(() => {
+  mutate('/api/game/active');
+}, 3000);
+```
+
+### Estrategia de Caché
+- **Revalidar en focus**: Datos frescos al cambiar de tab
+- **Revalidar en reconexión**: Sincronización automática
+- **Optimistic updates**: UI responde antes de confirmación del servidor

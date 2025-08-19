@@ -1,13 +1,35 @@
 import React from 'react';
 import { GameState, Player } from '../types';
-import { TrophyIcon } from './icons';
-import DataCard from './DataCard';
-import StatsGrid from './StatsGrid';
 
 interface RaceProgressProps {
   gameState: GameState;
   players: Player[];
 }
+
+// Calculate turn positions for each player per circuit
+const calculateTurnPositions = (gameState: GameState, players: Player[]) => {
+  const playerTurnPositions: Record<string, { firsts: number; seconds: number; thirds: number }> = {};
+  
+  // Initialize counters
+  players.forEach(player => {
+    playerTurnPositions[player.id] = { firsts: 0, seconds: 0, thirds: 0 };
+  });
+
+  // Process each circuit's results
+  gameState.circuitResults.forEach(circuit => {
+    circuit.turns.forEach(turn => {
+      // Sort players by turn score for this specific turn
+      const turnStandings = [...turn].sort((a, b) => b.turnScore - a.turnScore);
+      
+      // Award positions (only top 3)
+      if (turnStandings[0]) playerTurnPositions[turnStandings[0].playerId].firsts++;
+      if (turnStandings[1]) playerTurnPositions[turnStandings[1].playerId].seconds++;
+      if (turnStandings[2]) playerTurnPositions[turnStandings[2].playerId].thirds++;
+    });
+  });
+
+  return playerTurnPositions;
+};
 
 const RaceProgress: React.FC<RaceProgressProps> = ({ gameState, players }) => {
   const { settings, currentCircuitIndex, currentTurn } = gameState;
@@ -20,174 +42,154 @@ const RaceProgress: React.FC<RaceProgressProps> = ({ gameState, players }) => {
   const totalProgressTurns = totalCircuits * totalTurns;
   const overallProgress = Math.round((completedTurns / totalProgressTurns) * 100);
   
-  // Get current standings
+  // Get current standings with additional stats
+  const turnPositions = calculateTurnPositions(gameState, players);
+  
   const standings = Object.entries(gameState.playerStats)
-    .map(([playerId, stats]) => ({
-      player: players.find(p => p.id === playerId)!,
-      score: stats.totalScore
-    }))
+    .map(([playerId, stats]) => {
+      const player = players.find(p => p.id === playerId)!;
+      const positions = turnPositions[playerId] || { firsts: 0, seconds: 0, thirds: 0 };
+      
+      return {
+        player,
+        score: stats.totalScore,
+        bestLaps: stats.bestLaps || 0,
+        bestAverages: stats.bestAverages || 0,
+        firsts: positions.firsts,
+        seconds: positions.seconds,
+        thirds: positions.thirds
+      };
+    })
     .filter(s => s.player)
     .sort((a, b) => b.score - a.score);
 
-  // Calculate position changes (simplified - would need historical data for real changes)
-  const getPositionIndicator = (index: number) => {
-    if (index === 0) return { icon: '👑', color: 'text-yellow-400', label: 'Líder' };
-    if (index === 1) return { icon: '🥈', color: 'text-slate-300', label: '2do' };
-    if (index === 2) return { icon: '🥉', color: 'text-amber-600', label: '3ro' };
-    return { icon: `${index + 1}`, color: 'text-slate-400', label: `${index + 1}°` };
-  };
-
   return (
     <div className="space-y-6">
-      {/* Overall Progress */}
-      <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
+      {/* Progress Header */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-slate-100">Progreso del Campeonato</h3>
-          <span className="text-sm text-slate-400">
+          <h3 className="text-xl font-bold text-zinc-100">Progreso del Campeonato</h3>
+          <span className="text-zinc-300">
             Circuito {currentCircuitIndex + 1} de {totalCircuits}
           </span>
         </div>
         
         {/* Progress Bar */}
-        <div className="w-full bg-slate-700 rounded-full h-3 mb-4">
+        <div className="w-full bg-zinc-700 rounded-full h-3 mb-4">
           <div 
-            className="bg-gradient-to-r from-[#FF1801] to-red-600 h-3 rounded-full transition-all duration-500 ease-out"
+            className="bg-red-600 h-3 rounded-full transition-all duration-500"
             style={{ width: `${overallProgress}%` }}
           ></div>
         </div>
         
-        <div className="flex justify-between text-sm text-slate-400">
+        <div className="flex justify-between text-zinc-400">
           <span>Turno {currentTurn} de {totalTurns}</span>
           <span>{overallProgress}% Completado</span>
         </div>
       </div>
 
-      {/* Circuit Progress */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {settings.circuits.map((circuit, index) => {
-          const isCompleted = index < currentCircuitIndex;
-          const isCurrent = index === currentCircuitIndex;
-          const isUpcoming = index > currentCircuitIndex;
-          
-          let status = 'upcoming';
-          let statusColor = 'text-slate-500';
-          let statusBg = 'bg-slate-800/30';
-          
-          if (isCompleted) {
-            status = 'completed';
-            statusColor = 'text-green-400';
-            statusBg = 'bg-green-900/20 border-green-500/30';
-          } else if (isCurrent) {
-            status = 'current';
-            statusColor = 'text-[#FF1801]';
-            statusBg = 'bg-[#FF1801]/10 border-[#FF1801]/30';
-          }
-          
-          return (
-            <div key={circuit.id} className={`p-4 rounded-lg border ${statusBg}`}>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-slate-200 text-sm truncate">
-                  {circuit.name}
-                </h4>
-                <div className={`text-xs font-medium ${statusColor}`}>
-                  {status === 'completed' && '✓'}
-                  {status === 'current' && '🏁'}
-                  {status === 'upcoming' && '⏳'}
-                </div>
-              </div>
-              
-              {isCurrent && (
-                <div className="w-full bg-slate-700 rounded h-1.5 mb-2">
-                  <div 
-                    className="bg-[#FF1801] h-1.5 rounded transition-all duration-300"
-                    style={{ width: `${((currentTurn - 1) / totalTurns) * 100}%` }}
-                  ></div>
-                </div>
-              )}
-              
-              <p className="text-xs text-slate-400">
-                {isCompleted ? 'Completado' : 
-                 isCurrent ? `Turno ${currentTurn}/${totalTurns}` : 
-                 'Próximo'}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Current Standings */}
-      <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-        <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
-          <TrophyIcon className="w-5 h-5 text-[#FF1801]" />
-          Clasificación Actual
-        </h3>
-        
-        <div className="space-y-3">
-          {standings.slice(0, 5).map((standing, index) => {
-            const positionInfo = getPositionIndicator(index);
-            
-            return (
-              <div key={standing.player.id} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`text-lg font-bold w-8 text-center ${positionInfo.color}`}>
-                    {positionInfo.icon}
-                  </div>
-                  <img 
-                    src={standing.player.imageUrl} 
-                    alt={standing.player.name}
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <span className="font-medium text-slate-200">
-                    {standing.player.name}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-slate-100">
-                    {standing.score} pts
-                  </div>
-                  <div className={`text-xs ${positionInfo.color}`}>
-                    {positionInfo.label}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      {/* Classification Table */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+        <div className="p-4 border-b border-zinc-800">
+          <h3 className="text-xl font-bold text-zinc-100">Clasificación General</h3>
         </div>
         
-        {standings.length > 5 && (
-          <div className="text-center mt-3">
-            <span className="text-sm text-slate-400">
-              +{standings.length - 5} más
-            </span>
-          </div>
-        )}
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-zinc-800">
+              <tr className="text-left">
+                <th className="p-4 text-zinc-300 font-semibold">POS</th>
+                <th className="p-4 text-zinc-300 font-semibold">JUGADOR</th>
+                <th className="p-4 text-zinc-300 font-semibold text-center">PTS</th>
+                <th className="p-4 text-zinc-300 font-semibold text-center">VR</th>
+                <th className="p-4 text-zinc-300 font-semibold text-center">PR</th>
+                <th className="p-4 text-zinc-300 font-semibold text-center">1°</th>
+                <th className="p-4 text-zinc-300 font-semibold text-center">2°</th>
+                <th className="p-4 text-zinc-300 font-semibold text-center">3°</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((standing, index) => (
+                <tr key={standing.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                  <td className="p-4">
+                    <span className={`font-bold text-lg ${
+                      index === 0 ? 'text-yellow-400' :
+                      index === 1 ? 'text-zinc-300' :
+                      index === 2 ? 'text-amber-600' :
+                      'text-zinc-400'
+                    }`}>
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className="font-semibold text-zinc-100">{standing.player.name}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="font-bold text-zinc-100">{standing.score}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-zinc-300">{standing.bestLaps}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-zinc-300">{standing.bestAverages}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-yellow-400 font-semibold">{standing.firsts}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-zinc-300 font-semibold">{standing.seconds}</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-amber-600 font-semibold">{standing.thirds}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden">
+          {standings.map((standing, index) => (
+            <div key={standing.player.id} className="p-4 border-b border-zinc-800 last:border-b-0">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className={`font-bold text-xl w-8 text-center ${
+                    index === 0 ? 'text-yellow-400' :
+                    index === 1 ? 'text-zinc-300' :
+                    index === 2 ? 'text-amber-600' :
+                    'text-zinc-400'
+                  }`}>
+                    {index + 1}
+                  </span>
+                  <span className="font-semibold text-zinc-100 text-lg">{standing.player.name}</span>
+                </div>
+                <span className="font-bold text-zinc-100 text-xl">{standing.score} pts</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Vueltas Rápidas:</span>
+                  <span className="text-zinc-300 font-semibold">{standing.bestLaps}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Mejores Promedios:</span>
+                  <span className="text-zinc-300 font-semibold">{standing.bestAverages}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Primeros:</span>
+                  <span className="text-yellow-400 font-semibold">{standing.firsts}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Segundos:</span>
+                  <span className="text-zinc-300 font-semibold">{standing.seconds}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      
-      {/* Quick Stats */}
-      <StatsGrid columns={3} gap="md">
-        <DataCard
-          title="Circuitos Restantes"
-          value={totalCircuits - currentCircuitIndex}
-          icon={<span className="text-lg">🏁</span>}
-          variant="info"
-          size="sm"
-        />
-        <DataCard
-          title="Líder Actual"
-          value={standings[0]?.player.name || 'N/A'}
-          subtitle={`${standings[0]?.score || 0} puntos`}
-          icon={<TrophyIcon className="w-4 h-4" />}
-          variant="highlight"
-          size="sm"
-        />
-        <DataCard
-          title="Brecha al Líder"
-          value={standings[1] ? `${standings[0].score - standings[1].score} pts` : '0 pts'}
-          icon={<span className="text-lg">📊</span>}
-          variant="warning"
-          size="sm"
-        />
-      </StatsGrid>
     </div>
   );
 };

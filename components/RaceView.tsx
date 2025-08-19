@@ -46,11 +46,11 @@ const TimeInput: React.FC<{
             }}
             maxLength={maxLength}
             placeholder={placeholder}
-            className={`w-full text-center text-f1-2xl font-mono p-3 rounded-md border-2 transition-colors touch-target ${
+            className={`w-full text-center text-3xl font-mono p-4 rounded-md border-2 transition-colors touch-target ${
               isBest 
-                ? 'bg-green-900/20 border-green-800 text-f1-green' 
-                : 'surface-primary border-subtle text-primary'
-            } focus:border-f1-red`}
+                ? 'bg-green-900/30 border-green-500 text-green-400' 
+                : 'bg-zinc-900 border-zinc-700 text-zinc-100'
+            } focus:border-red-500`}
         />
     );
 };
@@ -233,36 +233,36 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
   });
 
   return (
-    <div className="min-h-screen bg-f1-black p-4">
-      <div className="max-w-2xl mx-auto space-y-4">
+    <div className="min-h-screen bg-black p-4">
+      <div className="max-w-2xl mx-auto space-y-6">
         
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-f1-xl font-bold text-primary mb-2">F1 NIGHT</h1>
-          <div className="surface-primary border border-subtle rounded-md p-4">
-            <div className="text-f1-xl font-bold text-f1-red mb-2">{currentCircuit.name}</div>
-            <div className="text-f1-lg text-primary font-semibold">{currentPlayer.name}</div>
-            <div className="text-secondary">Turno {currentTurn} • Vuelta {currentPlayerIndex + 1}/{playerOrder.length}</div>
+          <h1 className="text-2xl font-bold text-zinc-100 mb-4">F1 NIGHT</h1>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
+            <div className="text-2xl font-bold text-red-500 mb-3">{currentCircuit.name}</div>
+            <div className="text-xl text-zinc-100 font-bold mb-2">{currentPlayer.name}</div>
+            <div className="text-zinc-300 text-lg">Turno {currentTurn} • Vuelta {currentPlayerIndex + 1}/{playerOrder.length}</div>
           </div>
         </div>
 
         {/* Session Records */}
         {(circuitSessionBests.bestLap || circuitSessionBests.bestAverage) && (
-          <div className="surface-primary border border-subtle rounded-md p-4">
-            <h2 className="text-f1-lg font-bold text-primary mb-3">Récords de Sesión</h2>
-            <div className="space-y-2">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
+            <h2 className="text-xl font-bold text-zinc-100 mb-4">Récords de Sesión</h2>
+            <div className="space-y-3">
               {circuitSessionBests.bestLap && (
-                <div className="flex justify-between">
-                  <span className="text-secondary">Mejor Vuelta</span>
-                  <span className="text-f1-green font-mono font-bold">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-300 text-lg">Mejor Vuelta</span>
+                  <span className="text-green-400 font-mono font-bold text-xl">
                     {formatTime(circuitSessionBests.bestLap)}
                   </span>
                 </div>
               )}
               {circuitSessionBests.bestAverage && (
-                <div className="flex justify-between">
-                  <span className="text-secondary">Mejor Promedio</span>
-                  <span className="text-f1-green font-mono font-bold">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-300 text-lg">Mejor Promedio</span>
+                  <span className="text-green-400 font-mono font-bold text-xl">
                     {formatTime(circuitSessionBests.bestAverage)}
                   </span>
                 </div>
@@ -278,13 +278,13 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             const isSaved = savedLapTimes[index];
             
             return (
-              <div key={index} className="surface-primary border border-subtle rounded-md p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-f1-lg font-semibold text-primary">
+              <div key={index} className="bg-zinc-900 border border-zinc-800 rounded-md p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-zinc-100">
                     Vuelta {index + 1}
                   </h3>
                   {isSaved && (
-                    <span className="text-f1-green text-f1-sm">Guardado</span>
+                    <span className="text-green-400 text-base font-semibold">✓ Guardado</span>
                   )}
                 </div>
                 
@@ -312,8 +312,8 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
                   />
                 </div>
                 
-                <div className="text-center mt-2">
-                  <span className="text-f1-sm text-secondary">M : SS . mmm</span>
+                <div className="text-center mt-3">
+                  <span className="text-base text-zinc-400">M : SS . mmm</span>
                 </div>
               </div>
             );
@@ -322,19 +322,19 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
         {/* Current Average */}
         {currentAverage !== null && (
-          <div className="surface-primary border border-subtle rounded-md p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
             <div className="flex justify-between items-center">
-              <span className="text-f1-lg text-primary">Promedio Actual</span>
-              <span className={`text-f1-xl font-mono font-bold ${
+              <span className="text-xl text-zinc-100 font-semibold">Promedio Actual</span>
+              <span className={`text-2xl font-mono font-bold ${
                 circuitSessionBests.bestAverage && currentAverage <= circuitSessionBests.bestAverage
-                  ? 'text-f1-green'
-                  : 'text-primary'
+                  ? 'text-green-400'
+                  : 'text-zinc-100'
               }`}>
                 {formatTime(currentAverage)}
               </span>
             </div>
             {settings.lapsPerTurn === 5 && settings.useBest4Of5Laps && (
-              <p className="text-f1-sm text-secondary mt-2">
+              <p className="text-base text-zinc-400 mt-3">
                 Usando las mejores 4 de 5 vueltas
               </p>
             )}
@@ -347,7 +347,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || lapTimes.map(timeToMs).filter(ms => ms > 0).length < settings.lapsPerTurn}
-              className="w-full touch-target bg-f1-red text-white font-bold text-f1-lg rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-full touch-target bg-red-600 text-white font-bold text-xl rounded-md py-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-red-700"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -368,7 +368,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
               <button
                 onClick={() => setShowTransferDialog(true)}
                 disabled={isSubmitting}
-                className="w-full touch-target surface-secondary border border-subtle text-primary font-semibold text-f1-base rounded-md transition-opacity"
+                className="w-full touch-target bg-zinc-800 border border-zinc-600 text-zinc-100 font-semibold text-lg rounded-md py-4 transition-all hover:bg-zinc-700"
               >
                 Transferir Control
               </button>
@@ -378,7 +378,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
 
         {/* Auto-save indicator */}
         {isAutoSaving && (
-          <div className="text-center text-f1-sm text-secondary animate-pulse">
+          <div className="text-center text-base text-zinc-400 animate-pulse">
             Guardando automáticamente...
           </div>
         )}
@@ -387,11 +387,11 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
       {/* Transfer Control Dialog */}
       {showTransferDialog && (
         <TransferControlDialog
+          isOpen={showTransferDialog}
+          onClose={() => setShowTransferDialog(false)}
           participantUsers={participantUsers}
-          currentUserId={currentUser.userId}
+          currentControllerId={gameState.currentController}
           onTransfer={handleTransferControl}
-          onCancel={() => setShowTransferDialog(false)}
-          isSubmitting={isSubmitting}
         />
       )}
     </div>

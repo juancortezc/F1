@@ -7,16 +7,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { playerId } = req.query;
+  const { id } = req.query;
 
-  if (!playerId || typeof playerId !== 'string') {
+  if (!id || typeof id !== 'string') {
     return res.status(400).json({ error: 'Player ID is required' });
   }
 
   try {
     // Get player
     const player = await prisma.player.findUnique({
-      where: { id: playerId }
+      where: { id }
     });
 
     if (!player) {
@@ -26,7 +26,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Get all game history
     const games = await prisma.game.findMany({
       where: { status: 'COMPLETED' },
-      orderBy: { completedAt: 'desc' }
+      orderBy: { updatedAt: 'desc' }
     });
 
     let totalGames = 0;
@@ -40,7 +40,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       if (!game.state || typeof game.state !== 'object') continue;
       
       const gameState = game.state as any;
-      const playerStats = gameState.playerStats?.[playerId];
+      const playerStats = gameState.playerStats?.[id];
       
       if (!playerStats) continue;
       
@@ -54,7 +54,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }))
         .sort((a, b) => b.totalScore - a.totalScore);
       
-      const position = standings.findIndex(s => s.playerId === playerId) + 1;
+      const position = standings.findIndex(s => s.playerId === id) + 1;
       
       if (position === 1) {
         totalWins++;
@@ -65,9 +65,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       bestAverages += playerStats.bestAverages || 0;
       
       // Add to recent results
-      if (recentResults.length < 10 && game.completedAt) {
+      if (recentResults.length < 10 && game.updatedAt) {
         recentResults.push({
-          date: game.completedAt,
+          date: game.updatedAt,
           position,
           totalPlayers: standings.length
         });
@@ -78,8 +78,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const circuits = await prisma.circuit.findMany();
     const circuitRecords = circuits.map(circuit => ({
       circuitName: circuit.name,
-      bestLap: circuit.bestLapHolderId === playerId ? circuit.bestLap : null,
-      bestAverage: circuit.bestAverageHolderId === playerId ? circuit.bestAverage : null
+      bestLap: circuit.bestLapHolderId === id ? circuit.historicalBestLap : null,
+      bestAverage: circuit.bestAverageHolderId === id ? circuit.historicalBestAverage : null
     }));
 
     return res.status(200).json({

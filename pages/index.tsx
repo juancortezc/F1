@@ -13,7 +13,7 @@ import HubScreen from '../components/HubScreen';
 import AdminView from '../components/AdminView';
 import RaceProgress from '../components/RaceProgress';
 import SpectatorDashboard from '../components/SpectatorDashboard';
-import PlayerStats from '../components/PlayerStats';
+import PlayerStatsComponent from '../components/PlayerStats';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
 
 type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'stats';
@@ -35,7 +35,7 @@ function useApiData() {
 
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('landing');
-  const [activeTab, setActiveTab] = useState<'race' | 'progress' | 'results' | 'spectator'>('race');
+  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'results' | 'spectator' | 'acumulados'>('race');
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
@@ -55,10 +55,21 @@ function App() {
         
         if (activeGame && activeGame.state) {
           const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
-          setGamePhase(isFinished ? 'results' : 'race');
-          setActiveTab(isFinished ? 'results' : 'race');
+          if (isFinished) {
+            setGamePhase('results');
+            setActiveTab('results');
+          } else {
+            setGamePhase('race');
+            setActiveTab('spectator');
+          }
         } else {
-          setGamePhase('hub');
+          // No active game - players go directly to historical results, organizers to hub
+          if (user.role === 'player') {
+            setGamePhase('results');
+            setActiveTab('acumulados'); // Show historical stats
+          } else {
+            setGamePhase('hub');
+          }
         }
       } catch (e) {
         localStorage.removeItem('f1-user');
@@ -109,10 +120,23 @@ function App() {
       }
       
       const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
-      setGamePhase(isFinished ? 'results' : 'race');
-      setActiveTab(isFinished ? 'results' : 'race');
+      if (isFinished) {
+        // Game finished - both go to results
+        setGamePhase('results');
+        setActiveTab('results');
+      } else {
+        // Active game - direct to race view
+        setGamePhase('race');
+        setActiveTab('spectator'); // Default to spectator dashboard for better mobile UX
+      }
     } else {
-      setGamePhase('hub');
+      // No active game - players go directly to historical results, organizers to hub
+      if (user.role === 'player') {
+        setGamePhase('results');
+        setActiveTab('acumulados'); // Show historical stats
+      } else {
+        setGamePhase('hub');
+      }
     }
   };
 
@@ -748,10 +772,10 @@ function App() {
                                     Dashboard
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('progress')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'progress' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    onClick={() => setActiveTab('puntaje')} 
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'puntaje' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Progreso
+                                    Puntaje
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('results')} 
@@ -795,10 +819,10 @@ function App() {
                                     Dashboard
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('progress')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'progress' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    onClick={() => setActiveTab('puntaje')} 
+                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'puntaje' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Progreso
+                                    Puntaje
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('results')} 
@@ -843,13 +867,33 @@ function App() {
                 <main className="mt-4">
                     {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
                     {activeTab === 'spectator' && <SpectatorDashboard gameState={gameStateFromDB} players={players} circuits={circuits} />}
-                    {activeTab === 'progress' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
+                    {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                     {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                     {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}
                 </main>
             </div>
           );
         }
+        
+        // Handle results view without active game (for historical stats)
+        if (gamePhase === 'results' && !activeGame && players && circuits) {
+          // Create a mock game state for historical view
+          const mockGameState = {
+            settings: { name: 'Estadísticas Históricas', circuits: [], players: [] },
+            currentCircuitIndex: 0,
+            playerStats: {},
+            circuitResults: []
+          };
+          
+          return <ResultsView 
+            gameState={mockGameState as any} 
+            players={players} 
+            circuits={circuits} 
+            gameHistory={gameHistory || []} 
+            onNewGame={handleNewGame} 
+          />;
+        }
+        
         return <div className="text-center p-8">Loading game... Please wait.</div>;
       default:
         return <div>Something went wrong</div>;
