@@ -44,18 +44,20 @@ const SpectatorDashboard: React.FC<SpectatorDashboardProps> = ({ gameState, play
         .slice(0, 5)
         .reverse();
       
-      const currentLapIds = new Set(recentLaps.map(lap => lap.id));
-      const incomingLapIds = new Set(newLaps.map((lap: any) => lap.id));
-      const newIds = new Set([...incomingLapIds].filter(id => !currentLapIds.has(id)) as string[]);
-      
-      setRecentLaps(newLaps);
-      
-      if (newIds.size > 0) {
-        setNewLapIds(newIds);
-        setTimeout(() => setNewLapIds(new Set()), 2000);
-      }
+      setRecentLaps(prevLaps => {
+        const currentLapIds = new Set(prevLaps.map(lap => lap.id));
+        const incomingLapIds = new Set(newLaps.map((lap: any) => lap.id));
+        const newIds = new Set([...incomingLapIds].filter(id => !currentLapIds.has(id)) as string[]);
+        
+        if (newIds.size > 0) {
+          setNewLapIds(newIds);
+          setTimeout(() => setNewLapIds(new Set()), 2000);
+        }
+        
+        return newLaps;
+      });
     }
-  }, [liveData, gameState.currentTurn, recentLaps]);
+  }, [liveData, gameState.currentTurn]);
 
   // Get current circuit session times
   const currentCircuitTimes = gameState.lapTimesLog.filter(lap => lap.circuitName === currentCircuit.name);

@@ -12,7 +12,7 @@ import ResultsView from '../components/ResultsView';
 import HubScreen from '../components/HubScreen';
 import AdminView from '../components/AdminView';
 import RaceProgress from '../components/RaceProgress';
-import SpectatorDashboard from '../components/SpectatorDashboard';
+import LivePage from '../components/LivePage';
 import PlayerStatsComponent from '../components/PlayerStats';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
 
@@ -35,7 +35,7 @@ function useApiData() {
 
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('landing');
-  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'results' | 'spectator' | 'acumulados'>('race');
+  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'results' | 'live' | 'acumulados'>('race');
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
@@ -60,7 +60,7 @@ function App() {
             setActiveTab('results');
           } else {
             setGamePhase('race');
-            setActiveTab('spectator');
+            setActiveTab('live');
           }
         } else {
           // No active game - players go directly to historical results, organizers to hub
@@ -127,7 +127,7 @@ function App() {
       } else {
         // Active game - direct to race view
         setGamePhase('race');
-        setActiveTab('spectator'); // Default to spectator dashboard for better mobile UX
+        setActiveTab('live'); // Default to live view for better mobile UX
       }
     } else {
       // No active game - players go directly to historical results, organizers to hub
@@ -766,10 +766,10 @@ function App() {
                                     Registro
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('spectator')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'spectator' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    onClick={() => setActiveTab('live')} 
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'live' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Dashboard
+                                    LIVE
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('puntaje')} 
@@ -813,10 +813,10 @@ function App() {
                                     Registro
                                 </button>
                                 <button 
-                                    onClick={() => setActiveTab('spectator')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'spectator' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                    onClick={() => setActiveTab('live')} 
+                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'live' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    Dashboard
+                                    LIVE
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('puntaje')} 
@@ -866,7 +866,7 @@ function App() {
                 
                 <main className="mt-4">
                     {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
-                    {activeTab === 'spectator' && <SpectatorDashboard gameState={gameStateFromDB} players={players} circuits={circuits} />}
+                    {activeTab === 'live' && <LivePage gameState={gameStateFromDB} players={players} circuits={circuits} />}
                     {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                     {activeTab === 'results' && <ResultsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                     {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to Results tab to see the final standings.</div>}
