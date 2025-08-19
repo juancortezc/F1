@@ -33,6 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     let totalWins = 0;
     let fastestLaps = 0;
     let bestAverages = 0;
+    let circuitVictories = 0;
     const recentResults = [];
 
     // Process game history
@@ -46,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       
       totalGames++;
       
-      // Check if player won
+      // Check if player won championship
       const standings = Object.entries(gameState.playerStats || {})
         .map(([id, stats]: [string, any]) => ({
           playerId: id,
@@ -60,9 +61,40 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         totalWins++;
       }
       
-      // Count best laps and averages
-      fastestLaps += playerStats.bestLaps || 0;
-      bestAverages += playerStats.bestAverages || 0;
+      // Calculate circuit victories and records from circuitResults
+      if (gameState.circuitResults && Array.isArray(gameState.circuitResults)) {
+        gameState.circuitResults.forEach((circuitResult: any) => {
+          if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
+            circuitResult.turns.forEach((turn: any) => {
+              if (Array.isArray(turn)) {
+                // Check for best average victory
+                const sortedByAverage = turn
+                  .filter((p: any) => p.averageTime && p.averageTime > 0)
+                  .sort((a: any, b: any) => a.averageTime - b.averageTime);
+                
+                if (sortedByAverage.length > 0 && sortedByAverage[0].playerId === id) {
+                  bestAverages++;
+                  circuitVictories++;
+                }
+                
+                // Check for best lap victory
+                const sortedByLap = turn
+                  .map((p: any) => ({
+                    ...p,
+                    bestLap: p.lapTimes ? Math.min(...p.lapTimes.filter((t: number) => t > 0)) : Infinity
+                  }))
+                  .filter((p: any) => p.bestLap !== Infinity)
+                  .sort((a: any, b: any) => a.bestLap - b.bestLap);
+                
+                if (sortedByLap.length > 0 && sortedByLap[0].playerId === id) {
+                  fastestLaps++;
+                  circuitVictories++;
+                }
+              }
+            });
+          }
+        });
+      }
       
       // Add to recent results
       if (recentResults.length < 10 && game.updatedAt) {
@@ -87,6 +119,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       totalWins,
       fastestLaps,
       bestAverages,
+      circuitVictories,
       circuitRecords,
       recentResults
     });

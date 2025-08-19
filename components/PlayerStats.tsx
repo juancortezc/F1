@@ -14,6 +14,7 @@ interface PlayerStatistics {
   totalWins: number;
   fastestLaps: number;
   bestAverages: number;
+  circuitVictories: number;
   circuitRecords: Array<{
     circuitName: string;
     bestLap: number | null;
@@ -81,12 +82,16 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ currentUser, onBack }) => {
                   <p className="text-primary text-f1-2xl font-bold">{stats.totalGames}</p>
                 </div>
                 <div>
-                  <p className="text-secondary text-f1-sm">Vueltas Rápidas</p>
+                  <p className="text-secondary text-f1-sm">Victorias V.Rápidas</p>
                   <p className="text-f1-green text-f1-2xl font-bold">{stats.fastestLaps}</p>
                 </div>
                 <div>
-                  <p className="text-secondary text-f1-sm">Mejores Promedios</p>
-                  <p className="text-primary text-f1-2xl font-bold">{stats.bestAverages}</p>
+                  <p className="text-secondary text-f1-sm">Victorias Promedios</p>
+                  <p className="text-purple-400 text-f1-2xl font-bold">{stats.bestAverages}</p>
+                </div>
+                <div>
+                  <p className="text-secondary text-f1-sm">Total Victorias</p>
+                  <p className="text-f1-red text-f1-2xl font-bold">{stats.circuitVictories}</p>
                 </div>
               </div>
             </div>
