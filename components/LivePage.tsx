@@ -20,16 +20,9 @@ const formatTime = (ms: number | null | undefined): string => {
 };
 
 const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameId = 'active-game' }) => {
-  const currentCircuit = circuits[gameState.currentCircuitIndex];
+  // Use circuit from gameState to ensure consistency with RaceView
+  const currentCircuit = gameState.circuits[gameState.currentCircuitIndex];
   const currentPlayer = players.find(p => p.id === gameState.playerOrder[gameState.currentPlayerIndex]);
-
-  // Debug: Log parameters
-  console.log('LivePage params:', {
-    gameId,
-    circuitId: currentCircuit?.id,
-    turnNumber: gameState.currentTurn,
-    url: `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`
-  });
 
   // Fetch live lap times with polling
   const { data: liveData, error: liveError } = useSWR(
@@ -51,10 +44,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
   // Process live data and combine with session data
   const processPlayerData = () => {
-    console.log('LiveData received:', liveData);
-    
     if (!liveData?.success || !liveData.data?.liveLapTimes) {
-      console.log('No live data available');
       return [];
     }
 
