@@ -58,68 +58,81 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-6">
       <div className="max-w-sm w-full">
+        {/* Back Button */}
         <button
           onClick={onBack}
-          className="mb-8 text-zinc-300 hover:text-zinc-100 transition-colors flex items-center gap-2 text-f1-lg touch-target"
+          className="mb-12 flex items-center gap-2 text-zinc-400 hover:text-zinc-100 transition-colors text-sm"
         >
-          ← Volver
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Volver
         </button>
         
-        <div className="text-center mb-8">
+        {/* Header */}
+        <div className="text-center mb-16">
           <img 
             src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
             alt="F1" 
-            className="h-24 mx-auto mb-6"
+            className="h-12 mx-auto mb-8 brightness-0 invert opacity-80"
           />
-          <h1 className="text-3xl font-bold text-zinc-100 mb-3">F1 NIGHT</h1>
-          <p className="text-f1-xl text-zinc-300">
-            {selectedRole === 'organizer' ? 'Organizador' : 'Jugador'}
+          <h1 className="text-2xl font-bold text-zinc-100 mb-6 tracking-wider">F1 NIGHT</h1>
+          <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">
+            {selectedRole === 'organizer' ? 'ORGANIZADOR' : 'JUGADOR'}
           </p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-zinc-300 text-f1-lg mb-3">
-              Ingresa tu PIN
-            </label>
-            <input
-              type="password"
-              value={pin}
-              onChange={handlePinChange}
-              maxLength={4}
-              className="w-full text-4xl tracking-[1em] text-center bg-zinc-900 border-2 border-zinc-700 rounded-md p-4 text-zinc-100 focus:border-red-500 transition-colors touch-target"
-              placeholder="----"
-              autoFocus
-            />
-          </div>
-          
-          {error && (
-            <p className="text-red-500 text-f1-lg text-center font-semibold">{error}</p>
-          )}
-          
-          <button
-            type="submit"
-            disabled={pin.length !== 4 || isLoading}
-            className="w-full touch-target bg-red-600 text-white font-bold text-f1-xl rounded-md py-4 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:bg-red-700"
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <LoadingSpinner size="sm" />
-                Verificando...
-              </span>
-            ) : (
-              'INGRESAR'
+        {/* Login Form */}
+        <div className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-zinc-500 font-mono text-xs uppercase tracking-wider mb-3">
+                PIN
+              </label>
+              <input
+                type="password"
+                value={pin}
+                onChange={handlePinChange}
+                maxLength={4}
+                className="w-full text-3xl font-mono tracking-[0.8em] text-center bg-transparent border-b-2 border-zinc-700 py-3 text-zinc-100 focus:border-f1-red focus:outline-none transition-colors"
+                placeholder="————"
+                autoFocus
+              />
+            </div>
+            
+            {error && (
+              <div className="py-2">
+                <p className="text-red-400 text-center text-sm">{error}</p>
+              </div>
             )}
-          </button>
-        </form>
+            
+            <button
+              type="submit"
+              disabled={pin.length !== 4 || isLoading}
+              className="w-full bg-f1-red text-white font-semibold text-sm py-3 disabled:bg-zinc-700 disabled:cursor-not-allowed transition-colors hover:bg-red-700 tracking-wider"
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <LoadingSpinner size="sm" />
+                  VERIFICANDO
+                </span>
+              ) : (
+                'INGRESAR'
+              )}
+            </button>
+          </form>
+        </div>
         
-        <p className="text-center text-f1-base text-zinc-400 mt-8">
-          {selectedRole === 'organizer' 
-            ? 'PIN de administrador requerido'
-            : 'PIN personal de jugador'}
-        </p>
+        {/* Footer Info */}
+        <div className="text-center mt-12">
+          <p className="text-zinc-600 text-xs">
+            {selectedRole === 'organizer' 
+              ? 'PIN de administrador'
+              : 'PIN personal de 4 dígitos'}
+          </p>
+        </div>
       </div>
     </div>
   );
