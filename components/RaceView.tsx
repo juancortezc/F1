@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSWRConfig } from 'swr';
 import { GameState, LapTime as LapTimeType, Player } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 import TransferControlDialog from './TransferControlDialog';
@@ -88,15 +89,29 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     </div>;
   }
 
-  const [lapTimes, setLapTimes] = useState<LapTimeType[]>(() => 
-    Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' })
-  );
+  const [lapTimes, setLapTimes] = useState<LapTimeType[]>(() => {
+    // Try to restore lap times from localStorage first
+    const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === settings.lapsPerTurn) {
+          return parsed;
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved lap times:', e);
+      }
+    }
+    return Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' });
+  });
   const [currentAverage, setCurrentAverage] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [savedLapTimes, setSavedLapTimes] = useState<Record<number, boolean>>({});
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { mutate } = useSWRConfig();
 
   const isCurrentController = currentUser.userId === currentController;
 
@@ -141,6 +156,9 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
       if (response.ok) {
         setSavedLapTimes(prev => ({ ...prev, [lapIndex]: true }));
         
+        // Invalidate live lap times cache to refresh LIVE page immediately
+        mutate(key => typeof key === 'string' && key.includes('/api/lap-times/live'));
+        
         // Check and update historical records immediately
         try {
           await fetch('/api/circuits/update-records', {
@@ -171,6 +189,10 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     const newLapTimes = [...lapTimes];
     newLapTimes[index] = { ...newLapTimes[index], [field]: value };
     setLapTimes(newLapTimes);
+    
+    // Save to localStorage immediately for form persistence
+    const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+    localStorage.setItem(storageKey, JSON.stringify(newLapTimes));
     
     const updatedLapTime = newLapTimes[index];
     const timeMs = timeToMs(updatedLapTime);
@@ -228,6 +250,11 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     setIsSubmitting(true);
     try {
       await onTurnComplete(currentPlayerId, validTimes);
+      
+      // Clear localStorage after successful submission
+      const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+      localStorage.removeItem(storageKey);
+      
     } catch (error) {
       console.error('Error submitting turn:', error);
       alert('Error al guardar los tiempos. Por favor intenta de nuevo.');
@@ -247,6 +274,11 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
     setIsSubmitting(true);
     try {
       await onTurnComplete(currentPlayerId, validTimes, newControllerId);
+      
+      // Clear localStorage after successful submission
+      const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+      localStorage.removeItem(storageKey);
+      
       setShowTransferDialog(false);
     } catch (error) {
       console.error('Error transferring control:', error);

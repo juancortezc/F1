@@ -4,6 +4,7 @@ import { Player, Circuit } from '../types';
 import { PlusIcon, PencilIcon, TrashIcon } from './icons';
 import { useSWRConfig } from 'swr';
 import Modal from './Modal';
+import CircuitImage from './CircuitImage';
 
 interface AdminViewProps {
     players: Player[];
@@ -19,33 +20,35 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
     const { mutate } = useSWRConfig();
 
     const handleDeletePlayer = async (id: string) => {
-        if(window.confirm('Are you sure you want to delete this player?')) {
+        if(window.confirm('¿Estás seguro de que quieres eliminar este jugador?')) {
             try {
                 const response = await fetch(`/api/players/${id}`, { method: 'DELETE' });
                 if (!response.ok) {
                     const error = await response.json();
-                    alert(`Failed to delete player: ${error.error || 'Unknown error'}`);
+                    alert(`Error al eliminar jugador: ${error.error || 'Error desconocido'}`);
                     return;
                 }
                 mutate('/api/players');
+                alert('Jugador eliminado exitosamente');
             } catch (error) {
-                alert('Failed to delete player: Network error');
+                alert('Error de red al eliminar jugador');
             }
         }
     }
 
     const handleDeleteCircuit = async (id: string) => {
-        if(window.confirm('Are you sure you want to delete this circuit?')) {
+        if(window.confirm('¿Estás seguro de que quieres eliminar este circuito?')) {
             try {
                 const response = await fetch(`/api/circuits/${id}`, { method: 'DELETE' });
                 if (!response.ok) {
                     const error = await response.json();
-                    alert(`Failed to delete circuit: ${error.error || 'Unknown error'}`);
+                    alert(`Error al eliminar circuito: ${error.error || 'Error desconocido'}`);
                     return;
                 }
                 mutate('/api/circuits');
+                alert('Circuito eliminado exitosamente');
             } catch (error) {
-                alert('Failed to delete circuit: Network error');
+                alert('Error de red al eliminar circuito');
             }
         }
     }
@@ -56,6 +59,8 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
         const url = isNew ? `/api/${type}s` : `/api/${type}s/${itemData.id}`;
         const method = isNew ? 'POST' : 'PUT';
         
+        console.log(`Saving ${type}:`, { url, method, itemData }); // Debug log
+        
         try {
             const response = await fetch(url, {
                 method,
@@ -65,14 +70,20 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
             
             if (!response.ok) {
                 const error = await response.json();
-                alert(`Failed to save ${type}: ${error.error || 'Unknown error'}`);
+                console.error(`API Error for ${type}:`, error); // Debug log
+                alert(`Error al guardar ${type === 'player' ? 'jugador' : 'circuito'}: ${error.error || 'Error desconocido'}`);
                 return;
             }
 
+            const result = await response.json();
+            console.log(`Successfully saved ${type}:`, result); // Debug log
+            
             mutate(`/api/${type}s`);
             setEditingItem(null);
+            alert(`${type === 'player' ? 'Jugador' : 'Circuito'} guardado exitosamente`);
         } catch (error) {
-            alert(`Failed to save ${type}: Network error`);
+            console.error(`Network error for ${type}:`, error); // Debug log
+            alert(`Error de red al guardar ${type === 'player' ? 'jugador' : 'circuito'}`);
         }
     }
 
@@ -135,7 +146,11 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
                         <div className="divide-y divide-zinc-800">
                             {circuits.map(circuit => (
                                 <div key={circuit.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
-                                    <img src={circuit.imageUrl} alt={circuit.name} className="w-12 h-8 object-cover rounded"/>
+                                    <CircuitImage 
+                                        src={circuit.imageUrl} 
+                                        alt={circuit.name} 
+                                        className="w-12 h-8 object-cover rounded"
+                                    />
                                     <div className="flex-grow">
                                         <span className="text-zinc-100 font-semibold">{circuit.name}</span>
                                     </div>
@@ -174,7 +189,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
 const EditForm: React.FC<{item: EditingItem, onSave: (data: Partial<Player | Circuit>, type: 'player' | 'circuit') => void, onCancel: () => void}> = ({ item, onSave, onCancel }) => {
     const isNewPlayer = item === 'new-player';
     const isNewCircuit = item === 'new-circuit';
-    const isPlayer = isNewPlayer || (typeof item === 'object' && item && 'id' in item && 'imageUrl' in item && !isNewCircuit);
+    const isPlayer = isNewPlayer || (typeof item === 'object' && item && 'pin' in item); // Players have 'pin' property, circuits don't
 
     const [formData, setFormData] = useState(() => {
         if (isNewPlayer) {

@@ -15,6 +15,7 @@ import GameModify from '../components/GameModify';
 import RaceProgress from '../components/RaceProgress';
 import LivePage from '../components/LivePage';
 import PlayerStatsComponent from '../components/PlayerStats';
+import UserAvatar from '../components/UserAvatar';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
 
 type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'stats' | 'modify';
@@ -43,6 +44,9 @@ function App() {
   const { mutate } = useSWRConfig();
   const { addToast } = useToast();
   const { players, circuits, activeGame, pinCode, gameHistory, isLoading, error } = useApiData();
+
+  // Get current player data
+  const currentPlayer = currentUser && players ? players.find(p => p.id === currentUser.userId || p.name === currentUser.name) : null;
 
   // Verificar sesión guardada al cargar
   useEffect(() => {
@@ -84,6 +88,8 @@ function App() {
     if (gamePhase === 'race' || gamePhase === 'results') {
       const interval = setInterval(() => {
         mutate('/api/game/active');
+        // Also invalidate lap times live data to refresh LIVE tab
+        mutate(key => typeof key === 'string' && key.includes('/api/lap-times/live'));
       }, 3000);
       
       return () => clearInterval(interval);
@@ -767,19 +773,17 @@ function App() {
                       >
                         Volver
                       </button>
-                      <button
+                      <UserAvatar
+                        imageUrl={currentPlayer?.imageUrl}
+                        name={currentPlayer?.name || currentUser?.name}
+                        className="w-8 h-8"
                         onClick={() => {
                           if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
                             handleLogout();
                           }
                         }}
-                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
                         title="Cerrar Sesión"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      />
                     </div>
                   </div>
                 </div>
@@ -820,19 +824,17 @@ function App() {
                                 </button>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button
+                                <UserAvatar
+                                    imageUrl={currentPlayer?.imageUrl}
+                                    name={currentPlayer?.name || currentUser?.name}
+                                    className="w-7 h-7"
                                     onClick={() => {
                                         if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
                                             handleLogout();
                                         }
                                     }}
-                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
                                     title="Cerrar Sesión"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
+                                />
                             </div>
                         </div>
                         
@@ -925,19 +927,17 @@ function App() {
                             
                             {/* Right: Action Buttons */}
                             <div className="flex items-center gap-3">
-                                <button
+                                <UserAvatar
+                                    imageUrl={currentPlayer?.imageUrl}
+                                    name={currentPlayer?.name}
+                                    className="w-8 h-8"
                                     onClick={() => {
                                         if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
                                             handleLogout();
                                         }
                                     }}
-                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors"
                                     title="Cerrar Sesión"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                    </svg>
-                                </button>
+                                />
                             </div>
                         </div>
                     </div>

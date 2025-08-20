@@ -3,6 +3,7 @@ import { GameState, Player, Circuit } from '../types';
 import { PlusIcon, TrashIcon } from './icons';
 import { useSWRConfig } from 'swr';
 import Modal from './Modal';
+import CircuitImage from './CircuitImage';
 
 interface GameModifyProps {
     gameState: GameState;
@@ -297,7 +298,11 @@ const GameModify: React.FC<GameModifyProps> = ({ gameState, players, circuits, g
                                         <div key={circuit.id} className={`p-3 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors ${
                                             isCompleted ? 'bg-green-900/20' : ''
                                         } ${isChanged ? 'bg-blue-900/20' : ''}`}>
-                                            <img src={circuit.imageUrl} alt={circuit.name} className="w-12 h-8 object-cover rounded"/>
+                                            <CircuitImage 
+                                                src={circuit.imageUrl} 
+                                                alt={circuit.name} 
+                                                className="w-12 h-8 object-cover rounded"
+                                            />
                                             <div className="flex-grow">
                                                 <span className="text-zinc-100 font-semibold">{circuit.name}</span>
                                                 <div className="flex gap-2 mt-1">
@@ -443,7 +448,11 @@ const GameModify: React.FC<GameModifyProps> = ({ gameState, players, circuits, g
                                         onClick={() => handleAddCircuit(circuit.id)}
                                         className="w-full p-3 flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 rounded transition-colors"
                                     >
-                                        <img src={circuit.imageUrl} alt={circuit.name} className="w-16 h-10 object-cover rounded"/>
+                                        <CircuitImage 
+                                            src={circuit.imageUrl} 
+                                            alt={circuit.name} 
+                                            className="w-16 h-10 object-cover rounded"
+                                        />
                                         <span className="text-zinc-100 font-semibold">{circuit.name}</span>
                                     </button>
                                 ))}

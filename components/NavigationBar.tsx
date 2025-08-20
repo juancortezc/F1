@@ -1,5 +1,6 @@
 import React from 'react';
-import { UserSession } from '../types';
+import { UserSession, Player } from '../types';
+import UserAvatar from './UserAvatar';
 
 interface NavigationBarProps {
   title: string;
@@ -9,6 +10,7 @@ interface NavigationBarProps {
   showAdmin?: boolean;
   onAdmin?: () => void;
   currentUser?: UserSession | null;
+  currentPlayer?: Player | null;
   onLogout?: () => void;
   children?: React.ReactNode;
 }
@@ -19,6 +21,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   onBack,
   onCancel,
   currentUser,
+  currentPlayer,
   onLogout,
   children
 }) => {
@@ -70,19 +73,17 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
               </button>
             )}
             {currentUser && onLogout && (
-              <button
+              <UserAvatar
+                imageUrl={currentPlayer?.imageUrl}
+                name={currentPlayer?.name}
+                className="w-8 h-8"
                 onClick={() => {
                   if (window.confirm('¿Cerrar sesión?')) {
                     onLogout();
                   }
                 }}
-                className="p-2 text-secondary hover:text-f1-red rounded-md transition-colors"
                 title="Cerrar Sesión"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
+              />
             )}
           </div>
         </div>
