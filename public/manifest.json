@@ -4,7 +4,7 @@
   "description": "Professional F1 racing session tracker and championship manager",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "background_color": "#000000",
   "theme_color": "#FF1801",
   "orientation": "any",
   "scope": "/",

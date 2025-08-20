@@ -73,14 +73,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                 Ingresando...
               </span>
             ) : (
-              'Crear Campeonato'
+              'Administrador'
             )}
           </button>
         </div>
 
         {/* Footer */}
         <div className="text-center text-f1-sm text-muted pt-8">
-          <p>Sistema de cronometraje para F1 Night</p>
+          <p>Creado por Black Mamba 2025</p>
         </div>
       </div>
     </div>
