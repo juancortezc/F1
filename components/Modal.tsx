@@ -78,7 +78,7 @@ const Modal: React.FC<ModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className={`bg-slate-800 rounded-lg p-6 w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] overflow-y-auto`}
+        className={`bg-zinc-900 border border-zinc-700 rounded-md p-6 w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] overflow-y-auto`}
         style={{
           marginBottom: 'env(safe-area-inset-bottom)',
           marginTop: 'env(safe-area-inset-top)',
@@ -87,18 +87,18 @@ const Modal: React.FC<ModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">{title}</h2>
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-800">
+            <h2 className="text-xl font-bold text-zinc-100">{title}</h2>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white text-2xl leading-none"
+              className="text-zinc-400 hover:text-zinc-100 transition-colors duration-200 w-8 h-8 flex items-center justify-center rounded hover:bg-zinc-800 touch-target"
               aria-label="Cerrar"
             >
               ×
             </button>
           </div>
         )}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {children}
         </div>
       </div>

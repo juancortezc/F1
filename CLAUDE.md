@@ -209,22 +209,170 @@ model Game {
 - `/api/settings` - Configuración global (PIN admin)
 - `/api/game/active` - Estado del juego activo
 
-## 🎨 Sistema de Colores Refinado
+## 🎨 F1 Luxury Look - Sistema de Diseño Refinado
 
-### Paleta Principal
+### Definición del Luxury Look
+El **F1 Luxury Look** es un sistema de diseño inspirado en interfaces profesionales de timing deportivo, caracterizado por:
+
+1. **Minimalismo Premium**: Información densa pero organizada, sin elementos decorativos
+2. **Tipografía Deportiva**: Font monoespace para datos críticos, sans-serif para navegación
+3. **Color Psychology**: Paleta restringida con colores semánticos (oro=1°, plata=2°, bronce=3°)
+4. **Micro-interacciones**: Transiciones sutiles que comunican profesionalismo
+5. **Data-First**: El contenido es rey, la UI es invisible
+
+### Paleta de Colores Luxury
 ```css
---f1-black: #000000      /* Fondo principal */
---f1-red: #FF1801        /* Acciones críticas */
---zinc-900: #18181b      /* Superficies secundarias */
---zinc-300: #d4d4d8      /* Texto secundario */
---zinc-100: #f4f4f5      /* Texto principal */
+/* Fondos */
+--luxury-black: #000000         /* Fondo principal - Elegancia máxima */
+--luxury-surface: #18181b       /* zinc-900 - Superficies principales */
+--luxury-elevated: #27272a      /* zinc-800 - Headers y elementos elevados */
+--luxury-border: #3f3f46        /* zinc-700 - Bordes sutiles */
+--luxury-divider: #52525b       /* zinc-600 - Separadores */
+
+/* Textos */
+--luxury-text-primary: #f4f4f5  /* zinc-100 - Texto principal */
+--luxury-text-secondary: #a1a1aa /* zinc-400 - Texto secundario */
+--luxury-text-muted: #71717a    /* zinc-500 - Texto desenfatizado */
+
+/* Acciones */
+--luxury-action: #FF1801        /* F1 Red - Solo acciones críticas */
+--luxury-danger: #dc2626        /* red-600 - Estados de error */
+
+/* Posiciones (Semánticos) */
+--luxury-first: #fbbf24         /* amber-400 - Oro (1er lugar) */
+--luxury-second: #d4d4d8        /* zinc-300 - Plata (2do lugar) */
+--luxury-third: #f59e0b         /* amber-500 - Bronce (3er lugar) */
 ```
 
-### Aplicación por Componente
-- **Botones primarios**: bg-f1-red con texto blanco
-- **Botones secundarios**: bg-zinc-900 con bordes zinc-700
-- **Tarjetas**: bg-zinc-900 con bordes zinc-800
-- **Texto**: zinc-100 (principal), zinc-300 (secundario)
+### Componentes Luxury
+
+#### **Tablas de Datos (RaceProgress, AdminView)**
+```css
+/* Header estilo F1 */
+.luxury-table-header {
+  @apply bg-zinc-800 px-3 py-2 text-xs font-mono uppercase tracking-wide text-zinc-400;
+}
+
+/* Filas compactas */
+.luxury-table-row {
+  @apply px-3 py-2 border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors;
+}
+
+/* Datos monoespace */
+.luxury-data-cell {
+  @apply font-mono font-bold text-center;
+}
+```
+
+#### **Cards y Modales**
+```css
+/* Surface elevation */
+.luxury-card {
+  @apply bg-zinc-900 border border-zinc-800 rounded-md;
+}
+
+/* Modal luxury */
+.luxury-modal {
+  @apply bg-zinc-900 border border-zinc-700 rounded-md;
+}
+
+/* Header con separador */
+.luxury-header {
+  @apply px-3 py-2 border-b border-zinc-700 bg-zinc-800;
+}
+```
+
+#### **Interacciones Luxury**
+```css
+/* Botón primario */
+.luxury-button-primary {
+  @apply bg-f1-red text-white font-bold rounded hover:bg-red-700 transition-colors;
+}
+
+/* Botón secundario */
+.luxury-button-secondary {
+  @apply bg-zinc-700 text-zinc-100 font-bold rounded hover:bg-zinc-600 transition-colors;
+}
+
+/* Hover states sutiles */
+.luxury-hover {
+  @apply hover:bg-zinc-800/30 transition-colors duration-200;
+}
+```
+
+### Tipografía Luxury
+
+#### **Jerarquía de Fuentes**
+```css
+/* Headers principales */
+.luxury-title {
+  @apply text-xl font-bold text-zinc-100;
+}
+
+/* Headers de sección */
+.luxury-section-title {
+  @apply text-lg font-bold text-zinc-100;
+}
+
+/* Datos críticos (tiempos, puntos) */
+.luxury-data {
+  @apply font-mono font-bold text-zinc-100;
+}
+
+/* Labels y metadata */
+.luxury-label {
+  @apply text-xs font-mono uppercase tracking-wide text-zinc-400;
+}
+
+/* Texto regular */
+.luxury-text {
+  @apply text-zinc-100 font-semibold;
+}
+```
+
+### Responsive Luxury
+
+#### **Mobile-First Premium**
+- **Tablas compactas**: Grid layouts que mantienen toda la información visible
+- **Touch targets**: Mínimo 44px para interacciones móviles
+- **Density control**: Información densa sin sacrificar legibilidad
+- **Scroll horizontal**: Para tablas con muchas columnas
+
+#### **Desktop Enhancement**
+- **Hover states**: Micro-interacciones que mejoran la experiencia
+- **Spacing generoso**: Más padding en desktop para comodidad visual
+- **Typography scaling**: Tamaños ligeramente diferentes para diferentes viewports
+
+### Principios de Implementación
+
+#### **Do's (Hacer)**
+✅ **Usar font-mono** para datos numéricos y códigos  
+✅ **Colores semánticos** solo donde comunican significado  
+✅ **Padding compacto** (px-3 py-2) para densidad premium  
+✅ **Transitions sutiles** (200ms max) para microinteracciones  
+✅ **Borders zinc-700/800** para definición sin ruido visual  
+✅ **Hierarchy clara** con zinc-100 (primary) y zinc-400 (secondary)  
+
+#### **Don'ts (Evitar)**
+❌ **Colores decorativos** que no comunican información  
+❌ **Sombras o efectos** que distraigan del contenido  
+❌ **Animaciones complejas** que ralenticen la percepción  
+❌ **Tipografía inconsistente** mezclando weights sin criterio  
+❌ **Spacing irregular** que rompa la grilla visual  
+❌ **Hover effects exagerados** que se sientan amateur  
+
+### Componentes de Referencia
+
+#### **Implementación Completa**
+- ✅ **RaceProgress.tsx** - Tabla luxury con headers, datos y posiciones
+- ✅ **AdminView.tsx** - Listas compactas con hover states
+- ✅ **Modal.tsx** - Modal elevation con borders y typography
+- ✅ **ResultsView.tsx** - Navegación por tabs y secciones organizadas
+
+#### **Próximos a Implementar**
+- 🔄 **LivePage.tsx** - Timing table con colores semánticos
+- 🔄 **SpectatorDashboard.tsx** - Vista simplificada luxury
+- 🔄 **Navigation components** - Consistency en toda la app
 
 ## 🔄 Polling y Actualizaciones en Tiempo Real
 

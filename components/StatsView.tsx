@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react';
 import { GameState, Player, Circuit, GameHistoryEntry, PlayerStats } from '../types';
-import DataCard from './DataCard';
-import StatsGrid from './StatsGrid';
 
 interface StatsViewProps {
   gameState: GameState;
@@ -21,11 +19,6 @@ interface AccumulatedStats {
   favoriteCircuit: string | null;
 }
 
-interface BestPerformer {
-  player: Player;
-  circuit: Circuit;
-  count: number;
-}
 
 const formatTime = (ms: number | null | undefined): string => {
   if (ms === null || ms === undefined) return '-:--.---';
@@ -43,7 +36,7 @@ const StatsView: React.FC<StatsViewProps> = ({
   gameHistory, 
   onNewGame 
 }) => {
-  const { accumulatedStats, bestPerformers } = useMemo(() => {
+  const { accumulatedStats } = useMemo(() => {
     // Initialize accumulated stats for each player
     const playerAccStats: Record<string, AccumulatedStats> = {};
     players.forEach(player => {
@@ -58,20 +51,14 @@ const StatsView: React.FC<StatsViewProps> = ({
       };
     });
 
-    // Track best performers by circuit
+    // Track favorite circuits
     const victoryCount: Record<string, Record<string, number>> = {}; // playerId -> circuitId -> count
-    const bestLapCount: Record<string, Record<string, number>> = {};
-    const bestAvgCount: Record<string, Record<string, number>> = {};
 
     // Initialize counters
     players.forEach(player => {
       victoryCount[player.id] = {};
-      bestLapCount[player.id] = {};
-      bestAvgCount[player.id] = {};
       circuits.forEach(circuit => {
         victoryCount[player.id][circuit.id] = 0;
-        bestLapCount[player.id][circuit.id] = 0;
-        bestAvgCount[player.id][circuit.id] = 0;
       });
     });
 
@@ -226,38 +213,9 @@ const StatsView: React.FC<StatsViewProps> = ({
       }))
       .sort((a, b) => b.rankingScore - a.rankingScore);
 
-    // Find best performers
-    const findBestPerformer = (counts: Record<string, Record<string, number>>): BestPerformer | null => {
-      let best: BestPerformer | null = null;
-      let maxCount = 0;
-
-      Object.entries(counts).forEach(([playerId, playerCircuits]) => {
-        Object.entries(playerCircuits).forEach(([circuitId, count]) => {
-          if (count > maxCount) {
-            const player = players.find(p => p.id === playerId);
-            const circuit = circuits.find(c => c.id === circuitId);
-            if (player && circuit) {
-              maxCount = count;
-              best = { player, circuit, count };
-            }
-          }
-        });
-      });
-
-      return best;
-    };
-
-    const bestVictories = findBestPerformer(victoryCount);
-    const bestVR = findBestPerformer(bestLapCount);
-    const bestPR = findBestPerformer(bestAvgCount);
 
     return {
-      accumulatedStats: rankedStats,
-      bestPerformers: {
-        victories: bestVictories,
-        bestLaps: bestVR,
-        bestAverages: bestPR
-      }
+      accumulatedStats: rankedStats
     };
   }, [gameHistory, gameState, players, circuits]);
 
@@ -273,19 +231,19 @@ const StatsView: React.FC<StatsViewProps> = ({
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-zinc-800 text-zinc-200 text-xs uppercase tracking-wide">
-                <th className="px-4 py-3 text-center font-bold">POS</th>
-                <th className="px-4 py-3 text-left font-bold">JUGADOR</th>
-                <th className="px-4 py-3 text-center font-bold">CAMPEONATOS</th>
-                <th className="px-4 py-3 text-center font-bold">VICTORIAS</th>
-                <th className="px-4 py-3 text-center font-bold">VR</th>
-                <th className="px-4 py-3 text-center font-bold">PR</th>
-                <th className="px-4 py-3 text-center font-bold">CIRCUITO FAVORITO</th>
+                <th className="px-2 py-3 text-center font-bold">POS</th>
+                <th className="px-4 py-3 text-left font-bold">JUG</th>
+                <th className="px-2 py-3 text-center font-bold">CMP</th>
+                <th className="px-2 py-3 text-center font-bold">VIC</th>
+                <th className="px-2 py-3 text-center font-bold">VR</th>
+                <th className="px-2 py-3 text-center font-bold">PR</th>
+                <th className="px-3 py-3 text-center font-bold">CRT</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {accumulatedStats.map((stats, index) => (
                 <tr key={stats.player.id} className={`${index % 2 === 0 ? 'bg-zinc-900' : 'bg-zinc-950'}`}>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-2 py-3 text-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mx-auto ${
                       index === 0 ? 'bg-f1-yellow text-black' :
                       index <= 2 ? 'bg-zinc-600 text-zinc-100' :
@@ -299,27 +257,27 @@ const StatsView: React.FC<StatsViewProps> = ({
                       {stats.player.name}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="font-mono font-bold text-f1-yellow text-lg">
+                  <td className="px-2 py-3 text-center">
+                    <span className="font-mono font-bold text-zinc-100 text-lg">
                       {stats.championships}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="font-mono font-bold text-f1-red text-lg">
+                  <td className="px-2 py-3 text-center">
+                    <span className="font-mono font-bold text-zinc-100 text-lg">
                       {stats.totalVictories}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="font-mono font-bold text-green-400 text-lg">
+                  <td className="px-2 py-3 text-center">
+                    <span className="font-mono font-bold text-zinc-100 text-lg">
                       {stats.bestLaps}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="font-mono font-bold text-purple-400 text-lg">
+                  <td className="px-2 py-3 text-center">
+                    <span className="font-mono font-bold text-zinc-100 text-lg">
                       {stats.bestAverages}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 py-3 text-center">
                     <span className="font-semibold text-zinc-300 text-sm">
                       {stats.favoriteCircuit || '-'}
                     </span>
@@ -331,43 +289,6 @@ const StatsView: React.FC<StatsViewProps> = ({
         </div>
       </div>
 
-      {/* Best Performers Section */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-md">
-        <div className="p-4 border-b border-zinc-800">
-          <h2 className="text-f1-xl font-bold text-zinc-100">Best</h2>
-        </div>
-        
-        <div className="p-4">
-          <StatsGrid columns={1} className="gap-4">
-            {bestPerformers.victories && (
-              <DataCard
-                title="Más Victorias"
-                value={`${bestPerformers.victories.player.name} - ${bestPerformers.victories.circuit.name}`}
-                subtitle={`${bestPerformers.victories.count} victorias`}
-                variant="highlight"
-              />
-            )}
-            
-            {bestPerformers.bestLaps && (
-              <DataCard
-                title="Más Vueltas Rápidas (VR)"
-                value={`${bestPerformers.bestLaps.player.name} - ${bestPerformers.bestLaps.circuit.name}`}
-                subtitle={`${bestPerformers.bestLaps.count} VR`}
-                variant="success"
-              />
-            )}
-            
-            {bestPerformers.bestAverages && (
-              <DataCard
-                title="Más Promedios (PR)"
-                value={`${bestPerformers.bestAverages.player.name} - ${bestPerformers.bestAverages.circuit.name}`}
-                subtitle={`${bestPerformers.bestAverages.count} PR`}
-                variant="success"
-              />
-            )}
-          </StatsGrid>
-        </div>
-      </div>
     </div>
   );
 };

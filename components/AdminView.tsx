@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 import { Player, Circuit } from '../types';
 import { PlusIcon, PencilIcon, TrashIcon } from './icons';
 import { useSWRConfig } from 'swr';
-import NavigationBar from './NavigationBar';
 import Modal from './Modal';
 
 interface AdminViewProps {
     players: Player[];
     circuits: Circuit[];
-    onBack: () => void;
+    onBack?: () => void;
 }
 
 type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | null;
@@ -78,48 +77,41 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
     }
 
     return (
-        <div className="min-h-screen bg-black">
-            <NavigationBar 
-                title="Administración"
-                subtitle="Gestionar jugadores, circuitos y configuración"
-                onBack={onBack}
-            />
-            
-            <div className="max-w-2xl mx-auto p-4">
+        <div className="max-w-2xl mx-auto p-4">
 
             <div className="space-y-8">
                 {/* Players Section */}
                 <div>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md">
-                        <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-zinc-100">Jugadores</h2>
+                        <div className="px-3 py-2 border-b border-zinc-700 flex justify-between items-center bg-zinc-800">
+                            <h2 className="text-lg font-bold text-zinc-100">Jugadores</h2>
                             <button 
                                 onClick={() => setEditingItem('new-player')} 
-                                className="bg-f1-red text-white p-3 rounded-md hover:bg-red-700 touch-target"
+                                className="bg-f1-red text-white p-2 rounded hover:bg-red-700 transition-colors"
                             >
-                                <PlusIcon className="w-5 h-5"/>
+                                <PlusIcon className="w-4 h-4"/>
                             </button>
                         </div>
                         <div className="divide-y divide-zinc-800">
                             {players.map(player => (
-                                <div key={player.id} className="p-4 flex items-center gap-4">
-                                    <img src={player.imageUrl} alt={player.name} className="w-12 h-12 rounded-full"/>
+                                <div key={player.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
+                                    <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full"/>
                                     <div className="flex-grow">
-                                        <div className="text-zinc-100 font-semibold text-lg">{player.name}</div>
-                                        <div className="text-zinc-400 text-base">PIN: ****</div>
+                                        <div className="text-zinc-100 font-semibold">{player.name}</div>
+                                        <div className="text-zinc-400 text-xs font-mono">PIN: ****</div>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-1">
                                         <button 
                                             onClick={() => setEditingItem(player)} 
-                                            className="p-3 text-zinc-400 hover:text-zinc-100 touch-target"
+                                            className="p-2 text-zinc-400 hover:text-zinc-100 transition-colors"
                                         >
-                                            <PencilIcon className="w-5 h-5"/>
+                                            <PencilIcon className="w-4 h-4"/>
                                         </button>
                                         <button 
                                             onClick={() => handleDeletePlayer(player.id)} 
-                                            className="p-3 text-zinc-400 hover:text-f1-red touch-target"
+                                            className="p-2 text-zinc-400 hover:text-f1-red transition-colors"
                                         >
-                                            <TrashIcon className="w-5 h-5"/>
+                                            <TrashIcon className="w-4 h-4"/>
                                         </button>
                                     </div>
                                 </div>
@@ -131,34 +123,34 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
                 {/* Circuits Section */}
                 <div>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md">
-                        <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-zinc-100">Circuitos</h2>
+                        <div className="px-3 py-2 border-b border-zinc-700 flex justify-between items-center bg-zinc-800">
+                            <h2 className="text-lg font-bold text-zinc-100">Circuitos</h2>
                             <button 
                                 onClick={() => setEditingItem('new-circuit')} 
-                                className="bg-f1-red text-white p-3 rounded-md hover:bg-red-700 touch-target"
+                                className="bg-f1-red text-white p-2 rounded hover:bg-red-700 transition-colors"
                             >
-                                <PlusIcon className="w-5 h-5"/>
+                                <PlusIcon className="w-4 h-4"/>
                             </button>
                         </div>
                         <div className="divide-y divide-zinc-800">
                             {circuits.map(circuit => (
-                                <div key={circuit.id} className="p-4 flex items-center gap-4">
-                                    <img src={circuit.imageUrl} alt={circuit.name} className="w-16 h-12 object-cover rounded"/>
+                                <div key={circuit.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
+                                    <img src={circuit.imageUrl} alt={circuit.name} className="w-12 h-8 object-cover rounded"/>
                                     <div className="flex-grow">
-                                        <span className="text-zinc-100 font-semibold text-lg">{circuit.name}</span>
+                                        <span className="text-zinc-100 font-semibold">{circuit.name}</span>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-1">
                                         <button 
                                             onClick={() => setEditingItem(circuit)} 
-                                            className="p-3 text-zinc-400 hover:text-zinc-100 touch-target"
+                                            className="p-2 text-zinc-400 hover:text-zinc-100 transition-colors"
                                         >
-                                            <PencilIcon className="w-5 h-5"/>
+                                            <PencilIcon className="w-4 h-4"/>
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteCircuit(circuit.id)} 
-                                            className="p-3 text-zinc-400 hover:text-f1-red touch-target"
+                                            className="p-2 text-zinc-400 hover:text-f1-red transition-colors"
                                         >
-                                            <TrashIcon className="w-5 h-5"/>
+                                            <TrashIcon className="w-4 h-4"/>
                                         </button>
                                     </div>
                                 </div>
@@ -176,7 +168,6 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
                 {editingItem && <EditForm item={editingItem} onSave={handleSave} onCancel={() => setEditingItem(null)} />}
             </Modal>
             </div>
-        </div>
     );
 };
 
