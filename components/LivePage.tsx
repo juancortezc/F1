@@ -19,6 +19,14 @@ const formatTime = (ms: number | null | undefined): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 };
 
+const formatDelta = (ms: number): string => {
+  if (ms === null || ms === undefined || ms === Infinity || !isFinite(ms)) return '-.---';
+  const totalSeconds = ms / 1000;
+  const seconds = Math.floor(totalSeconds);
+  const milliseconds = Math.round((totalSeconds - seconds) * 1000);
+  return `${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+};
+
 const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameId = 'active-game' }) => {
   // Use circuit from gameState to ensure consistency with RaceView
   const currentCircuit = gameState.circuits[gameState.currentCircuitIndex];
@@ -40,6 +48,57 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
     bestLapPlayerId: null,
     bestAverage: null,
     bestAveragePlayerId: null
+  };
+
+  // Calculate session best from live data if not available
+  const getSessionBestLap = () => {
+    if (circuitSessionBests.bestLap) {
+      return circuitSessionBests.bestLap;
+    }
+    
+    // Calculate from current live data
+    const allLapTimes = liveData?.data?.liveLapTimes
+      ?.filter((lap: any) => lap.circuitId === currentCircuit?.id && lap.timeMs > 0)
+      ?.map((lap: any) => lap.timeMs) || [];
+    
+    return allLapTimes.length > 0 ? Math.min(...allLapTimes) : null;
+  };
+
+  const sessionBestLap = getSessionBestLap();
+
+  // Get player's progression delta (current best vs previous best in this turn)
+  const getPlayerProgression = (playerId: string, currentBestLap: number | null) => {
+    if (!currentBestLap) return { delta: null, isImproving: false };
+    
+    // Get all laps for this player in current turn and circuit
+    const playerLaps = liveData?.data?.liveLapTimes
+      ?.filter((lap: any) => 
+        lap.playerId === playerId && 
+        lap.circuitId === currentCircuit?.id && 
+        lap.turnNumber === gameState.currentTurn &&
+        lap.timeMs > 0
+      )
+      ?.map((lap: any) => lap.timeMs)
+      ?.sort((a: number, b: number) => a - b) || []; // Sort ascending (best first)
+    
+    if (playerLaps.length <= 1) {
+      // First lap or no comparison - delta vs session record
+      return {
+        delta: sessionBestLap ? currentBestLap - sessionBestLap : null,
+        isImproving: false,
+        isVsRecord: true
+      };
+    }
+    
+    // Compare with previous best (second best time)
+    const previousBest = playerLaps[1]; // Second best time
+    const delta = currentBestLap - previousBest;
+    
+    return {
+      delta: delta,
+      isImproving: delta < 0, // Negative delta means improvement
+      isVsRecord: false
+    };
   };
 
   // Process live data and combine with session data
@@ -149,35 +208,35 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
     if (type === 'lap') {
       // Priority: Historical > Session > Personal > Normal
       
-      // Check against historical best lap
+      // 🟣 Morado: Mejoró el récord histórico del circuito
       if (currentCircuit.historicalBestLap && timeMs <= currentCircuit.historicalBestLap) {
-        return 'bg-purple-900 text-white border-purple-500'; // Historical record
+        return 'bg-purple-500 text-white';
       }
       
-      // Check against session best lap
+      // 🟢 Verde: Mejoró el récord de la sesión y del circuito
       if (circuitSessionBests.bestLap && timeMs <= circuitSessionBests.bestLap) {
-        return 'bg-green-900 text-white border-green-500'; // Session record
+        return 'bg-green-500 text-white';
       }
       
-      // Check for personal best in this session
+      // 🟡 Amarillo: Mejoró su mejor registro personal
       if (playerBestTime && timeMs === playerBestTime) {
-        return 'bg-yellow-400 text-black border-yellow-500'; // Personal record
+        return 'bg-yellow-400 text-black';
       }
       
     } else if (type === 'average') {
-      // Check against historical best average
+      // 🟣 Morado: Mejoró el récord histórico promedio
       if (currentCircuit.historicalBestAverage && timeMs <= currentCircuit.historicalBestAverage) {
-        return 'bg-purple-900 text-white border-purple-500'; // Historical record
+        return 'bg-purple-500 text-white';
       }
       
-      // Check against session best average
+      // 🟢 Verde: Mejoró el récord de sesión promedio
       if (circuitSessionBests.bestAverage && timeMs <= circuitSessionBests.bestAverage) {
-        return 'bg-green-900 text-white border-green-500'; // Session record
+        return 'bg-green-500 text-white';
       }
       
-      // For averages, check if it's the player's personal best average (simplified)
+      // 🟡 Amarillo: Mejoró su mejor promedio personal
       if (playerBestTime && timeMs <= playerBestTime + 1000) { // Within 1 second of best lap
-        return 'bg-yellow-400 text-black border-yellow-500'; // Personal record
+        return 'bg-yellow-400 text-black';
       }
     }
     
@@ -202,7 +261,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-sm landscape:grid-cols-4 landscape:gap-3 landscape:text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 text-sm landscape:grid-cols-5 landscape:gap-3 landscape:text-xs">
           <div>
             <span className="text-zinc-400">Circuito:</span>
             <p className="text-zinc-100 font-semibold">{currentCircuit?.name}</p>
@@ -221,6 +280,12 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
             <span className="text-zinc-400">Próximo:</span>
             <p className="text-zinc-300 font-semibold">{nextPlayer?.name || 'N/A'}</p>
           </div>
+          <div className="col-span-2 md:col-span-1">
+            <span className="text-zinc-400">Récord:</span>
+            <p className="bg-red-600 text-white font-mono font-bold px-2 py-1 rounded text-xs">
+              {sessionBestLap ? formatTime(sessionBestLap) : '-:--.---'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -233,22 +298,23 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
               <p className="text-zinc-400">Esperando datos en vivo...</p>
             </div>
           ) : (
-            <table className="w-full text-sm landscape:text-xs">
+            <table className="w-full text-xs border-collapse" style={{ tableLayout: 'fixed' }}>
               {/* Header */}
               <thead>
-                <tr className="bg-zinc-800 text-zinc-200 text-xs uppercase tracking-wide landscape:text-xs">
-                  <th className="px-2 py-3 text-center font-bold">POS</th>
-                  <th className="px-4 py-3 text-left font-bold min-w-[120px]">JUGADOR</th>
-                  <th className="px-3 py-3 text-center font-bold">V1</th>
-                  <th className="px-3 py-3 text-center font-bold">V2</th>
-                  <th className="px-3 py-3 text-center font-bold">V3</th>
+                <tr className="bg-zinc-800 text-zinc-200 text-[10px] uppercase tracking-wider border-b border-zinc-700">
+                  <th className="w-10 px-1 py-2 text-center font-mono font-bold">POS</th>
+                  <th className="w-24 px-2 py-2 text-left font-mono font-bold">PILOTO</th>
+                  <th className="w-20 px-1 py-2 text-center font-mono font-bold">V1</th>
+                  <th className="w-20 px-1 py-2 text-center font-mono font-bold">V2</th>
+                  <th className="w-20 px-1 py-2 text-center font-mono font-bold">V3</th>
                   {gameState.settings.lapsPerTurn >= 4 && (
-                    <th className="px-3 py-3 text-center font-bold">V4</th>
+                    <th className="w-20 px-1 py-2 text-center font-mono font-bold">V4</th>
                   )}
                   {gameState.settings.lapsPerTurn >= 5 && (
-                    <th className="px-3 py-3 text-center font-bold">V5</th>
+                    <th className="w-20 px-1 py-2 text-center font-mono font-bold">V5</th>
                   )}
-                  <th className="px-4 py-3 text-center font-bold">PROMEDIO</th>
+                  <th className="w-20 px-1 py-2 text-center font-mono font-bold">PROM</th>
+                  <th className="w-16 px-1 py-2 text-center font-mono font-bold">DELTA</th>
                 </tr>
               </thead>
 
@@ -257,50 +323,31 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                 {playerData.map((data, index) => (
                   <tr 
                     key={data.playerId} 
-                    className={`${index % 2 === 0 ? 'bg-zinc-900' : 'bg-zinc-950'} hover:bg-zinc-800 transition-colors`}
+                    className={`${index % 2 === 0 ? 'bg-zinc-900' : 'bg-zinc-950'} hover:bg-zinc-800/50 transition-colors h-8`}
                   >
                     {/* Position */}
-                    <td className="px-2 py-3 text-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mx-auto ${
-                        data.position === 1 ? 'bg-f1-yellow text-black' :
-                        data.position <= 3 ? 'bg-zinc-600 text-zinc-100' :
+                    <td className="px-1 py-1 text-center">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-mono font-bold text-xs mx-auto ${
+                        data.position === 1 ? 'bg-amber-400 text-black' :
+                        data.position === 2 ? 'bg-zinc-300 text-black' :
+                        data.position === 3 ? 'bg-amber-600 text-white' :
                         'bg-zinc-700 text-zinc-300'
                       }`}>
                         {data.position}
                       </div>
                     </td>
 
-                    {/* Player Name and Delta */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-between min-w-[150px]">
-                        <div>
-                          <div className="font-semibold text-zinc-100 text-base landscape:text-sm">
-                            {data.player?.name}
-                          </div>
-                          <div className="text-xs text-zinc-500">
-                            {data.completedLaps}/{gameState.settings.lapsPerTurn} vueltas
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          {data.position === 1 && data.bestLap ? (
-                            // Líder: mostrar su mejor vuelta de la sesión
-                            <span className="text-f1-yellow font-mono font-bold text-sm landscape:text-xs">
-                              {formatTime(data.bestLap)}
-                            </span>
-                          ) : data.position > 1 && playerData[0]?.bestLap && data.bestLap ? (
-                            // Otros: mostrar delta con el líder
-                            <span className="text-red-400 font-mono font-bold text-base landscape:text-sm">
-                              +{formatTime(data.bestLap - playerData[0].bestLap)}
-                            </span>
-                          ) : null}
-                        </div>
+                    {/* Player Name */}
+                    <td className="px-2 py-1 text-left">
+                      <div className="font-mono font-bold text-zinc-100 text-xs truncate">
+                        {data.player?.name}
                       </div>
                     </td>
 
                     {/* Individual Lap Times */}
                     {data.lapTimes.map((lapTime, lapIndex) => (
-                      <td key={lapIndex} className={`px-3 py-3 text-center ${getCellColor(lapTime, 'lap', data.playerId)}`}>
-                        <span className="font-mono font-bold text-lg landscape:text-sm tracking-wide">
+                      <td key={lapIndex} className={`px-1 py-1 text-center ${getCellColor(lapTime, 'lap', data.playerId)}`}>
+                        <span className="font-mono font-bold text-xs">
                           {lapTime ? formatTime(lapTime) : '-:--.---'}
                         </span>
                       </td>
@@ -308,16 +355,42 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
                     {/* Fill remaining lap columns if needed */}
                     {Array.from({ length: Math.max(0, gameState.settings.lapsPerTurn - data.lapTimes.length) }).map((_, i) => (
-                      <td key={`empty-${i}`} className="px-3 py-3 text-center">
-                        <span className="font-mono font-bold text-lg landscape:text-sm tracking-wide text-zinc-600">-:--.---</span>
+                      <td key={`empty-${i}`} className="px-1 py-1 text-center">
+                        <span className="font-mono font-bold text-xs text-zinc-600">-:--.---</span>
                       </td>
                     ))}
 
                     {/* Average */}
-                    <td className={`px-4 py-3 text-center ${getCellColor(data.averageTime, 'average', data.playerId)}`}>
-                      <span className="font-mono font-bold text-xl landscape:text-base tracking-wide">
+                    <td className={`px-1 py-1 text-center ${getCellColor(data.averageTime, 'average', data.playerId)}`}>
+                      <span className="font-mono font-bold text-xs">
                         {data.averageTime ? formatTime(data.averageTime) : '-:--.---'}
                       </span>
+                    </td>
+
+                    {/* Delta */}
+                    <td className="px-1 py-1 text-center">
+                      {(() => {
+                        const progression = getPlayerProgression(data.playerId, data.bestLap);
+                        
+                        if (!progression.delta) {
+                          return <span className="text-zinc-600 font-mono font-bold text-xs">-.---</span>;
+                        }
+                        
+                        // Color logic: Green = improving, Yellow = getting worse
+                        const colorClass = progression.isVsRecord 
+                          ? "text-red-400" // vs session record
+                          : progression.isImproving 
+                            ? "text-green-400" // improving
+                            : "text-yellow-400"; // getting worse
+                        
+                        const sign = progression.delta >= 0 ? "+" : "";
+                        
+                        return (
+                          <span className={`${colorClass} font-mono font-bold text-xs`}>
+                            {sign}{formatDelta(Math.abs(progression.delta))}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -328,22 +401,22 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       </div>
 
       {/* Legend */}
-      <div className="p-3 border-t border-zinc-800 landscape:p-1 landscape:fixed landscape:bottom-0 landscape:left-0 landscape:right-0 landscape:bg-zinc-900">
-        <div className="flex flex-wrap gap-4 text-xs text-zinc-400 landscape:gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-purple-900 border border-purple-500"></div>
+      <div className="p-2 border-t border-zinc-800 landscape:p-1 landscape:fixed landscape:bottom-0 landscape:left-0 landscape:right-0 landscape:bg-zinc-900">
+        <div className="flex flex-wrap gap-3 text-[10px] text-zinc-400 landscape:gap-2 justify-center">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-purple-500 rounded-sm"></div>
             <span>Récord Histórico</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-900 border border-green-500"></div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-green-500 rounded-sm"></div>
             <span>Récord de Sesión</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-yellow-400 border border-yellow-500"></div>
-            <span>Récord Personal</span>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-yellow-400 rounded-sm"></div>
+            <span>Mejor Personal</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-f1-yellow"></div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-amber-400 rounded-sm"></div>
             <span>Líder</span>
           </div>
         </div>
