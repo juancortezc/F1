@@ -52,6 +52,7 @@ model Game {
 model Settings {
   id  String @id @default("singleton")
   pin String @default("2024")
+  tournamentsEnabled Boolean @default(false) // Feature flag for tournaments
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -94,4 +95,69 @@ model TurnCompletion {
 
   @@unique([gameId, playerId, circuitId, turnNumber])
   @@map("turn_completions")
+}
+
+// Tournament system models
+model Tournament {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  status      String @default("ACTIVE") // ACTIVE, COMPLETED, PAUSED
+  
+  // Tournament settings
+  maxChampionships   Int @default(5)
+  pointsForFirst     Int @default(3)
+  pointsForSecond    Int @default(2)
+  pointsForThird     Int @default(1)
+  
+  // Dates
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  championships Championship[]
+  participants  TournamentParticipant[]
+  
+  @@map("tournaments")
+}
+
+model Championship {
+  id           String @id @default(cuid())
+  tournamentId String
+  name         String
+  gameState    Json
+  status       String @default("ACTIVE") // ACTIVE, COMPLETED
+  position     Int    // Order within tournament (1st championship, 2nd, etc.)
+  
+  // Relations
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("championships")
+}
+
+model TournamentParticipant {
+  id           String @id @default(cuid())
+  tournamentId String
+  playerId     String
+  totalPoints  Int @default(0)
+  
+  // Stats across all championships
+  championshipsWon    Int @default(0)
+  championshipsSecond Int @default(0) 
+  championshipsThird  Int @default(0)
+  championshipsTotal  Int @default(0)
+  
+  // Relations
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([tournamentId, playerId])
+  @@map("tournament_participants")
 }

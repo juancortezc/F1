@@ -116,3 +116,67 @@ export interface AuthenticationRequest {
   role: UserRole;
   adminName?: string; // Optional name for admin/organizer role
 }
+
+// Tournament System Types
+export interface Tournament {
+  id: string;
+  name: string;
+  description?: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'PAUSED';
+  maxChampionships: number;
+  pointsForFirst: number;
+  pointsForSecond: number;
+  pointsForThird: number;
+  startDate: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  championships: Championship[];
+  participants: TournamentParticipant[];
+}
+
+export interface Championship {
+  id: string;
+  tournamentId: string;
+  name: string;
+  gameState: any; // GameState object
+  status: 'ACTIVE' | 'COMPLETED';
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentParticipant {
+  id: string;
+  tournamentId: string;
+  playerId: string;
+  totalPoints: number;
+  championshipsWon: number;
+  championshipsSecond: number;
+  championshipsThird: number;
+  championshipsTotal: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TournamentStanding {
+  position: number;
+  player: {
+    id: string;
+    name: string;
+    imageUrl: string;
+  };
+  totalPoints: number;
+  championshipsWon: number;
+  championshipsSecond: number;
+  championshipsThird: number;
+  championshipsTotal: number;
+  participationRate: number;
+}
+
+export interface TournamentGameState extends GameState {
+  tournamentId?: string;
+  championshipId?: string;
+  championshipName?: string;
+  championshipPosition?: number;
+}
