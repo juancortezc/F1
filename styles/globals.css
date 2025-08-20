@@ -165,3 +165,49 @@ a {
 .safe-right {
   padding-right: env(safe-area-inset-right);
 }
+
+/* Landscape optimizations for LIVE tab */
+@media (orientation: landscape) {
+  /* Reduce header height in landscape */
+  .landscape\:compact-header {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  /* Better table display in landscape */
+  .landscape\:max-h-screen {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  /* Adjust font sizes for landscape */
+  .landscape\:text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .landscape\:text-base {
+    font-size: 1rem;
+  }
+  
+  /* Force horizontal layout */
+  .landscape\:overflow-x-auto {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  
+  /* Prevent body scroll in landscape */
+  body {
+    overflow: hidden;
+    height: 100vh;
+  }
+  
+  /* Table optimizations */
+  table {
+    table-layout: fixed;
+  }
+  
+  /* Ensure minimum widths for table cells */
+  td, th {
+    white-space: nowrap;
+  }
+}

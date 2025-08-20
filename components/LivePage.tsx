@@ -185,24 +185,24 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
   };
 
   return (
-    <div className="min-h-screen bg-f1-black">
+    <div className="min-h-screen bg-f1-black landscape:h-screen landscape:overflow-hidden">
       {/* Header */}
-      <div className="bg-zinc-900 border-b border-zinc-800 p-3">
-        <div className="flex justify-between items-center mb-2">
-          <h1 className="text-xl font-bold text-f1-red">F1 NIGHT - LIVE</h1>
+      <div className="bg-zinc-900 border-b border-zinc-800 p-3 landscape:py-2">
+        <div className="flex justify-between items-center mb-2 landscape:mb-1">
+          <h1 className="text-xl font-bold text-f1-red landscape:text-lg">F1 NIGHT - LIVE</h1>
           <div className="flex items-center gap-2">
             {liveError ? (
               <span className="text-f1-red text-sm">●</span>
             ) : (
               <span className="text-green-500 text-sm animate-pulse">●</span>
             )}
-            <span className="text-zinc-300 text-sm">
+            <span className="text-zinc-300 text-sm landscape:text-xs">
               {liveError ? 'Desconectado' : 'En Vivo'}
             </span>
           </div>
         </div>
         
-        <div className="grid grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-sm landscape:grid-cols-4 landscape:gap-3 landscape:text-xs">
           <div>
             <span className="text-zinc-400">Circuito:</span>
             <p className="text-zinc-100 font-semibold">{currentCircuit?.name}</p>
@@ -225,7 +225,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       </div>
 
       {/* Table Container - Horizontal Scroll */}
-      <div className="p-2 overflow-x-auto">
+      <div className="p-2 overflow-x-auto landscape:overflow-auto landscape:h-[calc(100vh-100px)]">
         <div className="min-w-full">
           {playerData.length === 0 ? (
             <div className="text-center py-8">
@@ -233,10 +233,10 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
               <p className="text-zinc-400">Esperando datos en vivo...</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm landscape:text-xs">
               {/* Header */}
               <thead>
-                <tr className="bg-zinc-800 text-zinc-200 text-xs uppercase tracking-wide">
+                <tr className="bg-zinc-800 text-zinc-200 text-xs uppercase tracking-wide landscape:text-xs">
                   <th className="px-2 py-3 text-center font-bold">POS</th>
                   <th className="px-4 py-3 text-left font-bold min-w-[120px]">JUGADOR</th>
                   <th className="px-3 py-3 text-center font-bold">V1</th>
@@ -274,7 +274,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-between min-w-[150px]">
                         <div>
-                          <div className="font-semibold text-zinc-100 text-base">
+                          <div className="font-semibold text-zinc-100 text-base landscape:text-sm">
                             {data.player?.name}
                           </div>
                           <div className="text-xs text-zinc-500">
@@ -284,12 +284,12 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                         <div className="ml-4">
                           {data.position === 1 && data.bestLap ? (
                             // Líder: mostrar su mejor vuelta de la sesión
-                            <span className="text-f1-yellow font-mono font-bold text-sm">
+                            <span className="text-f1-yellow font-mono font-bold text-sm landscape:text-xs">
                               {formatTime(data.bestLap)}
                             </span>
                           ) : data.position > 1 && playerData[0]?.bestLap && data.bestLap ? (
                             // Otros: mostrar delta con el líder
-                            <span className="text-red-400 font-mono font-bold text-base">
+                            <span className="text-red-400 font-mono font-bold text-base landscape:text-sm">
                               +{formatTime(data.bestLap - playerData[0].bestLap)}
                             </span>
                           ) : null}
@@ -300,7 +300,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                     {/* Individual Lap Times */}
                     {data.lapTimes.map((lapTime, lapIndex) => (
                       <td key={lapIndex} className={`px-3 py-3 text-center ${getCellColor(lapTime, 'lap', data.playerId)}`}>
-                        <span className="font-mono font-bold text-lg tracking-wide">
+                        <span className="font-mono font-bold text-lg landscape:text-sm tracking-wide">
                           {lapTime ? formatTime(lapTime) : '-:--.---'}
                         </span>
                       </td>
@@ -309,13 +309,13 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                     {/* Fill remaining lap columns if needed */}
                     {Array.from({ length: Math.max(0, gameState.settings.lapsPerTurn - data.lapTimes.length) }).map((_, i) => (
                       <td key={`empty-${i}`} className="px-3 py-3 text-center">
-                        <span className="font-mono font-bold text-lg tracking-wide text-zinc-600">-:--.---</span>
+                        <span className="font-mono font-bold text-lg landscape:text-sm tracking-wide text-zinc-600">-:--.---</span>
                       </td>
                     ))}
 
                     {/* Average */}
                     <td className={`px-4 py-3 text-center ${getCellColor(data.averageTime, 'average', data.playerId)}`}>
-                      <span className="font-mono font-bold text-xl tracking-wide">
+                      <span className="font-mono font-bold text-xl landscape:text-base tracking-wide">
                         {data.averageTime ? formatTime(data.averageTime) : '-:--.---'}
                       </span>
                     </td>
@@ -328,8 +328,8 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       </div>
 
       {/* Legend */}
-      <div className="p-3 border-t border-zinc-800">
-        <div className="flex flex-wrap gap-4 text-xs text-zinc-400">
+      <div className="p-3 border-t border-zinc-800 landscape:p-1 landscape:fixed landscape:bottom-0 landscape:left-0 landscape:right-0 landscape:bg-zinc-900">
+        <div className="flex flex-wrap gap-4 text-xs text-zinc-400 landscape:gap-3">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-purple-900 border border-purple-500"></div>
             <span>Récord Histórico</span>

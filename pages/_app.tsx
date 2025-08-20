@@ -28,7 +28,8 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+        <meta name="screen-orientation" content="any" />
         <meta name="theme-color" content="#FF1801" />
         <meta name="description" content="Professional F1 racing session tracker and championship manager" />
         
