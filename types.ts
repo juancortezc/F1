@@ -103,7 +103,7 @@ export interface GameHistoryEntry {
 }
 
 // User roles and authentication
-export type UserRole = 'organizer' | 'player';
+export type UserRole = 'organizer' | 'player' | 'spectator';
 
 export interface UserSession {
   userId: string;

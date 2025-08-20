@@ -13,6 +13,28 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Auto-login for spectators
+  React.useEffect(() => {
+    if (selectedRole === 'spectator') {
+      handleSpectatorLogin();
+    }
+  }, [selectedRole]);
+
+  const handleSpectatorLogin = async () => {
+    setIsLoading(true);
+    // Create a spectator session without PIN
+    const spectatorSession: UserSession = {
+      userId: 'spectator',
+      name: 'Espectador',
+      role: 'spectator'
+    };
+    
+    // Small delay for UX
+    setTimeout(() => {
+      onLoginSuccess(spectatorSession);
+    }, 500);
+  };
+
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (/^\d*$/.test(value) && value.length <= 4) {
@@ -80,59 +102,69 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
           />
           <h1 className="text-2xl font-bold text-zinc-100 mb-6 tracking-wider">F1 NIGHT</h1>
           <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">
-            {selectedRole === 'organizer' ? 'ORGANIZADOR' : 'JUGADOR'}
+            {selectedRole === 'organizer' ? 'ORGANIZADOR' : 
+             selectedRole === 'player' ? 'JUGADOR' : 'ESPECTADOR'}
           </p>
         </div>
         
-        {/* Login Form */}
+        {/* Login Form or Loading for Spectators */}
         <div className="space-y-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-zinc-500 font-mono text-xs uppercase tracking-wider mb-3">
-                PIN
-              </label>
-              <input
-                type="password"
-                value={pin}
-                onChange={handlePinChange}
-                maxLength={4}
-                className="w-full text-3xl font-mono tracking-[0.8em] text-center bg-transparent border-b-2 border-zinc-700 py-3 text-zinc-100 focus:border-f1-red focus:outline-none transition-colors"
-                placeholder="————"
-                autoFocus
-              />
+          {selectedRole === 'spectator' ? (
+            <div className="text-center py-12">
+              <LoadingSpinner size="lg" className="mx-auto mb-6" />
+              <p className="text-zinc-400 text-sm">Ingresando como espectador...</p>
             </div>
-            
-            {error && (
-              <div className="py-2">
-                <p className="text-red-400 text-center text-sm">{error}</p>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-zinc-500 font-mono text-xs uppercase tracking-wider mb-3">
+                  PIN
+                </label>
+                <input
+                  type="password"
+                  value={pin}
+                  onChange={handlePinChange}
+                  maxLength={4}
+                  className="w-full text-3xl font-mono tracking-[0.8em] text-center bg-transparent border-b-2 border-zinc-700 py-3 text-zinc-100 focus:border-f1-red focus:outline-none transition-colors"
+                  placeholder="————"
+                  autoFocus
+                />
               </div>
-            )}
-            
-            <button
-              type="submit"
-              disabled={pin.length !== 4 || isLoading}
-              className="w-full bg-f1-red text-white font-semibold text-sm py-3 disabled:bg-zinc-700 disabled:cursor-not-allowed transition-colors hover:bg-red-700 tracking-wider"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <LoadingSpinner size="sm" />
-                  VERIFICANDO
-                </span>
-              ) : (
-                'INGRESAR'
+              
+              {error && (
+                <div className="py-2">
+                  <p className="text-red-400 text-center text-sm">{error}</p>
+                </div>
               )}
-            </button>
-          </form>
+              
+              <button
+                type="submit"
+                disabled={pin.length !== 4 || isLoading}
+                className="w-full bg-f1-red text-white font-semibold text-sm py-3 disabled:bg-zinc-700 disabled:cursor-not-allowed transition-colors hover:bg-red-700 tracking-wider"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    VERIFICANDO
+                  </span>
+                ) : (
+                  'INGRESAR'
+                )}
+              </button>
+            </form>
+          )}
         </div>
         
         {/* Footer Info */}
-        <div className="text-center mt-12">
-          <p className="text-zinc-600 text-xs">
-            {selectedRole === 'organizer' 
-              ? 'PIN de administrador'
-              : 'PIN personal de 4 dígitos'}
-          </p>
-        </div>
+        {selectedRole !== 'spectator' && (
+          <div className="text-center mt-12">
+            <p className="text-zinc-600 text-xs">
+              {selectedRole === 'organizer' 
+                ? 'PIN de administrador'
+                : 'PIN personal de 4 dígitos'}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
