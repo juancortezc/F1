@@ -122,7 +122,7 @@ export interface Tournament {
   id: string;
   name: string;
   description?: string;
-  status: 'ACTIVE' | 'COMPLETED' | 'PAUSED';
+  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   maxChampionships: number;
   pointsForFirst: number;
   pointsForSecond: number;

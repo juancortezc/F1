@@ -102,7 +102,7 @@ model Tournament {
   id          String @id @default(cuid())
   name        String
   description String?
-  status      String @default("ACTIVE") // ACTIVE, COMPLETED, PAUSED
+  status      String @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
   
   // Tournament settings
   maxChampionships   Int @default(5)

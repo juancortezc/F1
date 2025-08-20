@@ -17,8 +17,12 @@ import LivePage from '../components/LivePage';
 import PlayerStatsComponent from '../components/PlayerStats';
 import UserAvatar from '../components/UserAvatar';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
+import { useTournament } from '../contexts/TournamentContext';
+import TournamentSetup from '../components/TournamentSetup';
+import TournamentStandings from '../components/TournamentStandings';
+import TournamentManagement from '../components/TournamentManagement';
 
-type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'stats' | 'modify';
+type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'stats' | 'modify' | 'tournament-setup' | 'tournament-standings' | 'tournament-management';
 
 // API data fetching hook
 function useApiData() {
@@ -44,6 +48,7 @@ function App() {
   const { mutate } = useSWRConfig();
   const { addToast } = useToast();
   const { players, circuits, activeGame, pinCode, gameHistory, isLoading, error } = useApiData();
+  const { activeTournament, isInTournamentMode, currentChampionshipPosition } = useTournament();
 
   // Get current player data
   const currentPlayer = currentUser && players ? players.find(p => p.id === currentUser.userId || p.name === currentUser.name) : null;
@@ -162,7 +167,7 @@ function App() {
     setGamePhase('landing');
   };
 
-  const handleSetupComplete = async (settings: GameSettings) => {
+  const handleSetupComplete = async (settings: GameSettings & { tournamentMode?: boolean }) => {
     try {
       addToast({
         type: 'info',
@@ -213,24 +218,78 @@ function App() {
         participantUsers,
       };
       
-      const response = await fetch('/api/game/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: newGameState }),
-      });
+      // Check if we're in tournament mode AND user chose tournament mode
+      if (isInTournamentMode && activeTournament && settings.tournamentMode) {
+        // Create a championship within the tournament
+        const championshipResponse = await fetch(`/api/tournaments/${activeTournament.id}/championships`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `Campeonato ${currentChampionshipPosition}`,
+            gameState: {
+              ...newGameState,
+              tournamentId: activeTournament.id,
+              championshipPosition: currentChampionshipPosition
+            }
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to create game');
+        if (!championshipResponse.ok) {
+          throw new Error('Failed to create championship');
+        }
+
+        const { championship } = await championshipResponse.json();
+        
+        // Create the game with tournament info
+        const response = await fetch('/api/game/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            state: {
+              ...newGameState,
+              tournamentId: activeTournament.id,
+              championshipId: championship.id,
+              championshipName: championship.name,
+              championshipPosition: currentChampionshipPosition
+            }
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create game');
+        }
+
+        addToast({
+          type: 'success',
+          title: '🏆 ¡Campeonato de Torneo creado!',
+          message: `${championship.name} del ${activeTournament.name} iniciado - Los puntos contarán para el torneo`
+        });
+      } else {
+        // Normal game creation (not in tournament)
+        const response = await fetch('/api/game/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: newGameState }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create game');
+        }
+
+        const title = isInTournamentMode ? '🎮 ¡Campeonato Individual creado!' : '¡Campeonato creado!';
+        const message = isInTournamentMode 
+          ? `Campeonato de práctica iniciado - No afecta el torneo activo`
+          : `Carrera iniciada con ${settings.players.length} pilotos`;
+          
+        addToast({
+          type: 'success',
+          title,
+          message
+        });
       }
 
       await mutate('/api/game/active');
       setGamePhase('race');
-      
-      addToast({
-        type: 'success',
-        title: '¡Juego creado!',
-        message: `Carrera iniciada con ${settings.players.length} pilotos`
-      });
     } catch(err) {
       console.error("Failed to create game", err);
       addToast({
@@ -297,6 +356,36 @@ function App() {
     } else {
       setGamePhase('hub');
     }
+  };
+
+  // Tournament handlers
+  const handleTournamentSetup = () => setGamePhase('tournament-setup');
+  const handleTournamentStandings = () => setGamePhase('tournament-standings');
+  const handleTournamentManagement = () => setGamePhase('tournament-management');
+  
+  const handleTournamentCreated = () => {
+    addToast({
+      type: 'success',
+      title: '¡Torneo creado!',
+      message: 'El torneo se ha creado exitosamente'
+    });
+    setGamePhase('hub');
+  };
+
+  const handleTournamentUpdated = async () => {
+    // Refresh tournament data
+    await mutate('/api/tournaments/active');
+    
+    addToast({
+      type: 'success',
+      title: 'Torneo actualizado',
+      message: 'El estado del torneo ha sido modificado'
+    });
+    setGamePhase('hub');
+  };
+
+  const handleBackFromTournament = () => {
+    setGamePhase('hub');
   };
 
   const updateGameState = async (newState: GameState) => {
@@ -665,17 +754,80 @@ function App() {
       
       try {
         mutate('/api/game/active', { game: { ...activeGame, state: newGameState } }, false);
+        
+        // Update the game as completed
         await fetch(`/api/game/update`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ id: activeGame.id, state: newGameState, status: 'COMPLETED' })
         });
+
+        // If this game is part of a tournament, award tournament points
+        const gameState = activeGame.state as any;
+        if (gameState.tournamentId && gameState.championshipId) {
+          addToast({
+            type: 'info',
+            title: 'Procesando puntos de torneo...',
+            message: 'Calculando resultados del campeonato'
+          });
+
+          // Calculate final results for tournament points
+          const playerStats = newGameState.playerStats;
+          const finalResults = Object.entries(playerStats)
+            .sort((a, b) => (b[1] as PlayerStats).totalScore - (a[1] as PlayerStats).totalScore)
+            .map(([playerId, stats], index) => ({
+              playerId,
+              position: index + 1,
+              totalScore: (stats as PlayerStats).totalScore
+            }));
+
+          // Complete the championship and award points
+          const championshipResponse = await fetch(`/api/championships/${gameState.championshipId}/complete`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              gameState: newGameState,
+              finalResults
+            })
+          });
+
+          if (championshipResponse.ok) {
+            const tournamentData = await championshipResponse.json();
+            
+            addToast({
+              type: 'success',
+              title: 'Puntos de torneo otorgados',
+              message: `Campeonato completado en ${gameState.tournamentName || 'Torneo'}`
+            });
+
+            // Check if tournament is completed
+            if (tournamentData.tournament?.isCompleted) {
+              addToast({
+                type: 'success',
+                title: '🏆 ¡Torneo completado!',
+                message: `El ${gameState.tournamentName || 'Torneo'} ha finalizado`
+              });
+            }
+          } else {
+            addToast({
+              type: 'warning',
+              title: 'Error en puntos de torneo',
+              message: 'El juego se completó pero hubo un problema con los puntos del torneo'
+            });
+          }
+        }
+
         mutate('/api/game/active');
         mutate('/api/game/history');
         setGamePhase('results');
         setActiveTab('stats');
       } catch (err) {
-        console.error('Failed to end game:', err)
+        console.error('Failed to end game:', err);
+        addToast({
+          type: 'error',
+          title: 'Error al finalizar',
+          message: 'Hubo un problema al terminar el juego'
+        });
       }
   };
   
@@ -729,6 +881,9 @@ function App() {
           currentUser={currentUser} 
           onLogout={handleLogout}
           onViewStats={handleBackToLanding}
+          onTournamentSetup={handleTournamentSetup}
+          onTournamentStandings={handleTournamentStandings}
+          onTournamentManagement={handleTournamentManagement}
         />;
       case 'setup':
         return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
@@ -771,6 +926,11 @@ function App() {
                         className="w-10 h-8 object-contain"
                       />
                       <h1 className="text-xl font-bold">F1 Night</h1>
+                      {isInTournamentMode && activeTournament && (
+                        <span className="bg-amber-700 text-white text-sm font-bold px-2 py-1 rounded ml-2">
+                          TORNEO
+                        </span>
+                      )}
                       <span className="text-lg text-slate-400 ml-2">/ Modificar Campeonato</span>
                     </div>
                     
@@ -820,6 +980,11 @@ function App() {
                                     className="w-8 h-6 object-contain"
                                 />
                                 <h1 className="text-lg font-bold">F1 Night</h1>
+                                {isInTournamentMode && activeTournament && (
+                                  <span className="bg-amber-700 text-white text-xs font-bold px-2 py-1 rounded">
+                                    TORNEO
+                                  </span>
+                                )}
                                 <button
                                     onClick={handleGameModify}
                                     className="p-1 text-f1-red hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors ml-2"
@@ -898,6 +1063,11 @@ function App() {
                                     className="w-10 h-8 object-contain"
                                 />
                                 <h1 className="text-xl font-bold">F1 Night</h1>
+                                {isInTournamentMode && activeTournament && (
+                                  <span className="bg-amber-700 text-white text-sm font-bold px-2 py-1 rounded ml-2">
+                                    TORNEO
+                                  </span>
+                                )}
                                 {/* Gear icon - Solo para organizadores */}
                                 {currentUser?.role === 'organizer' && (
                                     <button
@@ -995,6 +1165,31 @@ function App() {
         }
         
         return <div className="text-center p-8">Loading game... Please wait.</div>;
+      case 'tournament-setup':
+        return <TournamentSetup 
+          players={players!} 
+          onTournamentCreated={handleTournamentCreated}
+          onCancel={handleBackFromTournament}
+        />;
+      case 'tournament-standings':
+        return activeTournament ? (
+          <TournamentStandings 
+            tournamentId={activeTournament.id}
+            onBack={handleBackFromTournament}
+          />
+        ) : (
+          <div className="text-center p-8">No active tournament found</div>
+        );
+      case 'tournament-management':
+        return activeTournament ? (
+          <TournamentManagement 
+            tournament={activeTournament}
+            onTournamentUpdated={handleTournamentUpdated}
+            onClose={handleBackFromTournament}
+          />
+        ) : (
+          <div className="text-center p-8">No active tournament found</div>
+        );
       default:
         return <div>Something went wrong</div>;
     }

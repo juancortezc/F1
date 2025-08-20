@@ -1,21 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Player, Circuit, GameSettings } from '../types';
 import { ArrowUpIcon, ArrowDownIcon } from './icons';
 import NavigationBar from './NavigationBar';
+import { useTournament } from '../contexts/TournamentContext';
 
 interface GameSetupProps {
   players: Player[];
   circuits: Circuit[];
-  onSetupComplete: (settings: GameSettings) => void;
+  onSetupComplete: (settings: GameSettings & { tournamentMode?: boolean }) => void;
   onCancel?: () => void;
 }
 
 const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: allCircuits, onSetupComplete, onCancel }) => {
-  const [step, setStep] = useState(1);
+  const { activeTournament, isInTournamentMode, currentChampionshipPosition } = useTournament();
+  const [step, setStep] = useState(isInTournamentMode ? 0 : 1);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [orderedPlayers, setOrderedPlayers] = useState<Player[]>([]);
   const [selectedCircuits, setSelectedCircuits] = useState<Circuit[]>([]);
   const [controllerIds, setControllerIds] = useState<string[]>([]);
+  
+  // Tournament mode selection
+  const [tournamentMode, setTournamentMode] = useState(isInTournamentMode);
   
   const [lapsPerTurn, setLapsPerTurn] = useState<3 | 5>(3);
   const [turnsPerCircuit, setTurnsPerCircuit] = useState(2);
@@ -112,13 +117,124 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
       awardBestTimeFor,
       useBest4Of5Laps,
     };
-    onSetupComplete(settings);
+    onSetupComplete({ ...settings, tournamentMode });
   };
   
   // Don't auto-select all players - let user choose
 
   const renderStep = () => {
     switch (step) {
+      case 0: // Tournament Mode Selection (only show if tournament is active)
+        if (!isInTournamentMode || !activeTournament) {
+          // Skip to player selection if no active tournament
+          setStep(1);
+          return null;
+        }
+
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Tipo de Campeonato</h2>
+              <p className="text-zinc-400 mb-6">
+                Hay un torneo activo. ¿Este campeonato debe ser parte del torneo o individual?
+              </p>
+            </div>
+
+            {/* Tournament Info */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                <span className="text-sm font-medium text-zinc-400">TORNEO ACTIVO</span>
+              </div>
+              <h3 className="text-lg font-bold text-zinc-100 mb-2">{activeTournament.name}</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <div className="text-zinc-400">Progreso</div>
+                  <div className="font-mono text-zinc-100">
+                    {((activeTournament.championships?.filter((c: any) => c.status === 'COMPLETED').length) || 0)}/{activeTournament.maxChampionships}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-zinc-400">Puntos 1°</div>
+                  <div className="font-mono text-amber-400">{activeTournament.pointsForFirst}</div>
+                </div>
+                <div>
+                  <div className="text-zinc-400">Puntos 2°</div>
+                  <div className="font-mono text-zinc-300">{activeTournament.pointsForSecond}</div>
+                </div>
+                <div>
+                  <div className="text-zinc-400">Puntos 3°</div>
+                  <div className="font-mono text-amber-500">{activeTournament.pointsForThird}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mode Selection */}
+            <div className="space-y-3">
+              <label className={`flex items-center gap-3 p-4 border rounded-md cursor-pointer transition-colors ${
+                tournamentMode 
+                  ? 'border-amber-500 bg-amber-500/10' 
+                  : 'border-zinc-700 hover:border-zinc-600'
+              }`}>
+                <input
+                  type="radio"
+                  name="tournamentMode"
+                  checked={tournamentMode}
+                  onChange={() => setTournamentMode(true)}
+                  className="w-4 h-4 text-amber-500 bg-zinc-800 border-zinc-600 focus:ring-amber-500 focus:ring-2"
+                />
+                <div className="flex-1">
+                  <div className="font-semibold text-zinc-100">
+                    🏆 Campeonato de Torneo
+                  </div>
+                  <div className="text-sm text-zinc-400">
+                    Será el Campeonato {currentChampionshipPosition} del {activeTournament.name}. Los resultados otorgan puntos para el torneo.
+                  </div>
+                </div>
+              </label>
+
+              <label className={`flex items-center gap-3 p-4 border rounded-md cursor-pointer transition-colors ${
+                !tournamentMode 
+                  ? 'border-zinc-500 bg-zinc-500/10' 
+                  : 'border-zinc-700 hover:border-zinc-600'
+              }`}>
+                <input
+                  type="radio"
+                  name="tournamentMode"
+                  checked={!tournamentMode}
+                  onChange={() => setTournamentMode(false)}
+                  className="w-4 h-4 text-zinc-500 bg-zinc-800 border-zinc-600 focus:ring-zinc-500 focus:ring-2"
+                />
+                <div className="flex-1">
+                  <div className="font-semibold text-zinc-100">
+                    🎮 Campeonato Individual
+                  </div>
+                  <div className="text-sm text-zinc-400">
+                    Campeonato independiente para práctica o diversión. No afecta el torneo activo.
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex gap-4">
+              {onCancel && (
+                <button
+                  onClick={onCancel}
+                  className="flex-1 bg-zinc-700 text-zinc-100 font-bold py-3 px-6 rounded-md hover:bg-zinc-600 transition-colors"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                onClick={handleNext}
+                className="flex-1 bg-f1-red text-white font-bold py-3 px-6 rounded-md hover:bg-red-700 transition-colors"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        );
+      
       case 1: // Select Players
         // Verificar que hay jugadores disponibles
         if (!allPlayers || allPlayers.length === 0) {

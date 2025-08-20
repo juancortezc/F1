@@ -9,6 +9,7 @@ import { ToastProvider } from '../components/Toast';
 import OfflineIndicator from '../components/OfflineIndicator';
 import PWAInstallPrompt from '../components/PWAInstallPrompt';
 import { swrConfig } from '../lib/fetcher';
+import { TournamentProvider } from '../contexts/TournamentContext';
 
 function MyApp({ Component, pageProps }: AppProps) {
   useEffect(() => {
@@ -58,9 +59,11 @@ function MyApp({ Component, pageProps }: AppProps) {
       <ErrorBoundary>
         <ToastProvider>
           <SWRConfig value={swrConfig}>
-            <Component {...pageProps} />
-            <OfflineIndicator />
-            <PWAInstallPrompt />
+            <TournamentProvider>
+              <Component {...pageProps} />
+              <OfflineIndicator />
+              <PWAInstallPrompt />
+            </TournamentProvider>
           </SWRConfig>
         </ToastProvider>
       </ErrorBoundary>
