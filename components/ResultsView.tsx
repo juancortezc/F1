@@ -210,25 +210,39 @@ const TopStats: React.FC<TopStatsProps> = ({ circuits, players, gameHistory }) =
                         <div className="space-y-6">
                             <div>
                                 <p className="text-zinc-400 text-base mb-2">Vuelta más rápida</p>
-                                <p className="text-green-400 font-mono text-2xl font-bold">
-                                    {formatTime(selectedCircuit.historicalBestLap)}
-                                </p>
-                                {selectedCircuit.bestLapHolderId && (
-                                    <p className="text-zinc-100 mt-2 text-lg">
-                                        {players.find(p => p.id === selectedCircuit.bestLapHolderId)?.name || 'Desconocido'}
-                                    </p>
+                                {selectedCircuit.historicalBestLap ? (
+                                    <>
+                                        <p className="text-green-400 font-mono text-2xl font-bold">
+                                            {formatTime(selectedCircuit.historicalBestLap)}
+                                        </p>
+                                        <p className="text-zinc-100 mt-2 text-lg">
+                                            {selectedCircuit.bestLapHolderId 
+                                                ? (players.find(p => p.id === selectedCircuit.bestLapHolderId)?.name || 'Desconocido')
+                                                : 'Récord Histórico'
+                                            }
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="text-zinc-500 text-xl font-semibold">Sin récord</p>
                                 )}
                             </div>
 
                             <div>
                                 <p className="text-zinc-400 text-base mb-2">Mejor promedio</p>
-                                <p className="text-yellow-400 font-mono text-2xl font-bold">
-                                    {formatTime(selectedCircuit.historicalBestAverage)}
-                                </p>
-                                {selectedCircuit.bestAverageHolderId && (
-                                    <p className="text-zinc-100 mt-2 text-lg">
-                                        {players.find(p => p.id === selectedCircuit.bestAverageHolderId)?.name || 'Desconocido'}
-                                    </p>
+                                {selectedCircuit.historicalBestAverage ? (
+                                    <>
+                                        <p className="text-yellow-400 font-mono text-2xl font-bold">
+                                            {formatTime(selectedCircuit.historicalBestAverage)}
+                                        </p>
+                                        <p className="text-zinc-100 mt-2 text-lg">
+                                            {selectedCircuit.bestAverageHolderId 
+                                                ? (players.find(p => p.id === selectedCircuit.bestAverageHolderId)?.name || 'Desconocido')
+                                                : 'Récord Histórico'
+                                            }
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="text-zinc-500 text-xl font-semibold">Sin récord</p>
                                 )}
                             </div>
                         </div>
