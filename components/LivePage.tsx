@@ -31,26 +31,32 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
   // Fetch live lap times with simplified polling
   const { data: liveData, error: liveError } = useSWR(
-    `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`,
+    currentCircuit?.id ? `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${gameState.currentTurn}` : null,
     {
       refreshInterval: 3000,
-      revalidateOnFocus: true
+      revalidateOnFocus: true,
+      onError: (error) => {
+        console.warn('Live data fetch error:', error);
+      }
     }
   );
 
   // Calculate session bests from live data
   const circuitSessionBests = {
     bestLap: (() => {
-      const allLapTimes = liveData?.data?.liveLapTimes
-        ?.filter((lap: any) => lap.circuitId === currentCircuit?.id && lap.timeMs > 0)
-        ?.map((lap: any) => lap.timeMs) || [];
+      if (!liveData?.data?.liveLapTimes || !currentCircuit?.id) return null;
+      const allLapTimes = liveData.data.liveLapTimes
+        .filter((lap: any) => lap.circuitId === currentCircuit.id && lap.timeMs > 0)
+        .map((lap: any) => lap.timeMs);
       return allLapTimes.length > 0 ? Math.min(...allLapTimes) : null;
     })(),
     bestAverage: (() => {
       // Calculate best average from all players' averages this session
-      const playerAverages = liveData?.data?.liveLapTimes
-        ?.filter((lap: any) => lap.circuitId === currentCircuit?.id && lap.timeMs > 0)
-        ?.reduce((acc: Record<string, number[]>, lap: any) => {
+      if (!liveData?.data?.liveLapTimes || !currentCircuit?.id) return null;
+      
+      const playerAverages = liveData.data.liveLapTimes
+        .filter((lap: any) => lap.circuitId === currentCircuit.id && lap.timeMs > 0)
+        .reduce((acc: Record<string, number[]>, lap: any) => {
           if (!acc[lap.playerId]) acc[lap.playerId] = [];
           acc[lap.playerId].push(lap.timeMs);
           return acc;
@@ -102,7 +108,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
   // Process live data and combine with session data
   const processPlayerData = () => {
-    if (!liveData?.success || !liveData.data?.liveLapTimes) {
+    if (!liveData?.success || !liveData.data?.liveLapTimes || !currentCircuit) {
       return [];
     }
 
@@ -294,7 +300,17 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       {/* Table Container - Horizontal Scroll */}
       <div className="p-2 overflow-x-auto landscape:overflow-auto landscape:h-[calc(100vh-100px)]">
         <div className="min-w-full">
-          {playerData.length === 0 ? (
+          {liveError ? (
+            <div className="text-center py-8">
+              <div className="text-red-400 mb-4">
+                <svg className="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="text-zinc-400 mb-2">Error al cargar datos en vivo</p>
+              <p className="text-zinc-500 text-sm">Reintentando automáticamente...</p>
+            </div>
+          ) : playerData.length === 0 ? (
             <div className="text-center py-8">
               <LoadingSpinner size="lg" className="mx-auto mb-4" />
               <p className="text-zinc-400">Esperando datos en vivo...</p>
