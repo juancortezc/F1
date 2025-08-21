@@ -193,6 +193,9 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
   const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.playerOrder.length;
   const nextPlayer = players.find(p => p.id === gameState.playerOrder[nextPlayerIndex]);
 
+  // Get current circuit info for historical records
+  const currentCircuitInfo = circuits.find(c => c.id === currentCircuit?.id);
+
   // Function to get cell color based on record type
   const getCellColor = (timeMs: number | null, type: 'lap' | 'average', playerId?: string): string => {
     if (!timeMs || timeMs <= 0) return '';
@@ -394,6 +397,93 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
               </tbody>
             </table>
           )}
+        </div>
+      </div>
+
+      {/* Historical Records Card */}
+      <div className="p-2 landscape:pb-16">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="px-4 py-3 bg-zinc-800 border-b border-zinc-700">
+            <h3 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+              RÉCORDS {currentCircuit?.name?.toUpperCase()}
+            </h3>
+          </div>
+          
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Best Lap Record */}
+              <div className="bg-zinc-950 border border-zinc-700 rounded-md p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono uppercase tracking-wide text-zinc-400">VUELTA RÁPIDA</span>
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                </div>
+                
+                {currentCircuitInfo?.historicalBestLap ? (
+                  <>
+                    <div className="font-mono font-bold text-xl text-green-400 mb-1">
+                      {formatTime(currentCircuitInfo.historicalBestLap)}
+                    </div>
+                    <div className="text-sm text-zinc-300 font-semibold">
+                      {currentCircuitInfo.bestLapHolderId 
+                        ? (players.find(p => p.id === currentCircuitInfo.bestLapHolderId)?.name || 'Desconocido')
+                        : 'Récord Histórico'
+                      }
+                    </div>
+                  </>
+                ) : (
+                  <div className="font-mono font-bold text-lg text-zinc-500">Sin récord</div>
+                )}
+              </div>
+
+              {/* Best Average Record */}
+              <div className="bg-zinc-950 border border-zinc-700 rounded-md p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono uppercase tracking-wide text-zinc-400">MEJOR PROMEDIO</span>
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                </div>
+                
+                {currentCircuitInfo?.historicalBestAverage ? (
+                  <>
+                    <div className="font-mono font-bold text-xl text-yellow-400 mb-1">
+                      {formatTime(currentCircuitInfo.historicalBestAverage)}
+                    </div>
+                    <div className="text-sm text-zinc-300 font-semibold">
+                      {currentCircuitInfo.bestAverageHolderId 
+                        ? (players.find(p => p.id === currentCircuitInfo.bestAverageHolderId)?.name || 'Desconocido')
+                        : 'Récord Histórico'
+                      }
+                    </div>
+                  </>
+                ) : (
+                  <div className="font-mono font-bold text-lg text-zinc-500">Sin récord</div>
+                )}
+              </div>
+            </div>
+
+            {/* Session Records */}
+            <div className="mt-4 pt-4 border-t border-zinc-700">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-mono uppercase tracking-wide text-zinc-400">RÉCORDS DE SESIÓN</span>
+                <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-xs font-mono uppercase text-zinc-500 mb-1">SESIÓN</div>
+                  <div className="font-mono font-bold text-base text-red-400">
+                    {sessionBestLap ? formatTime(sessionBestLap) : 'N/A'}
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-xs font-mono uppercase text-zinc-500 mb-1">ACTUAL</div>
+                  <div className="font-mono font-bold text-base text-zinc-300">
+                    Turno {gameState.currentTurn}/{gameState.settings.turnsPerCircuit}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
