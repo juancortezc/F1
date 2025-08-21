@@ -7,6 +7,7 @@ import TransferControlDialog from './TransferControlDialog';
 interface RaceViewProps {
   gameState: GameState;
   players: Player[];
+  gameId: string;
   onTurnComplete: (playerId: string, lapTimes: number[], newControllerId?: string) => void;
   onNextCircuit: () => void;
   onGameEnd: () => void;
@@ -52,7 +53,7 @@ const TimeInput: React.FC<{
     );
 };
 
-const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete, onNextCircuit, onGameEnd, currentUser }) => {
+const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnComplete, onNextCircuit, onGameEnd, currentUser }) => {
   const { 
     settings, 
     circuits, 
@@ -144,7 +145,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gameId: 'active-game',
+          gameId: gameId,
           playerId: currentPlayerId,
           circuitId: currentCircuit.id,
           turnNumber: currentTurn,
@@ -157,7 +158,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, onTurnComplete,
         setSavedLapTimes(prev => ({ ...prev, [lapIndex]: true }));
         
         // Invalidate live lap times cache to refresh LIVE page immediately
-        mutate(key => typeof key === 'string' && key.includes('/api/lap-times/live'));
+        mutate(`/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${currentTurn}`);
         
         // Check and update historical records immediately
         try {

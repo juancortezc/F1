@@ -8,41 +8,37 @@ datasource db {
 }
 
 model Player {
-  id       String @id @default(cuid())
-  name     String
-  imageUrl String
-  pin      String @default("0000") // Store PIN securely in database
-  isActive Boolean @default(true)
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  pin       String   @default("0000")
 
   @@map("players")
 }
 
 model Circuit {
-  id       String @id @default(cuid())
-  name     String
-  imageUrl String
-  
-  // Historical record tracking
-  historicalBestLap        Int?      // Best lap time in milliseconds
-  historicalBestLapDate    DateTime? // When the record was set
-  bestLapHolderId         String?   // Player who holds the record
-  
-  historicalBestAverage      Int?      // Best average time in milliseconds
-  historicalBestAverageDate  DateTime? // When the record was set
-  bestAverageHolderId       String?   // Player who holds the record
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                        String    @id @default(cuid())
+  name                      String
+  imageUrl                  String
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  bestAverageHolderId       String?
+  bestLapHolderId           String?
+  historicalBestAverage     Int?
+  historicalBestAverageDate DateTime?
+  historicalBestLap         Int?
+  historicalBestLapDate     DateTime?
 
   @@map("circuits")
 }
 
 model Game {
-  id       String @id @default(cuid())
-  state    Json
-  status   String @default("ACTIVE")
+  id        String   @id @default(cuid())
+  state     Json
+  status    String   @default("ACTIVE")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -50,114 +46,96 @@ model Game {
 }
 
 model Settings {
-  id  String @id @default("singleton")
-  pin String @default("2024")
-  tournamentsEnabled Boolean @default(false) // Feature flag for tournaments
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default("singleton")
+  pin                String   @default("2024")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  tournamentsEnabled Boolean  @default(false)
 
   @@map("settings")
 }
 
-// Individual lap times for real-time registration
 model IndividualLapTime {
-  id          String @id @default(cuid())
-  gameId      String
-  playerId    String
-  circuitId   String
-  turnNumber  Int
-  lapNumber   Int    // 1, 2, 3, 4, 5
-  timeMs      Int    // Time in milliseconds
-  isSaved     Boolean @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  gameId     String
+  playerId   String
+  circuitId  String
+  turnNumber Int
+  lapNumber  Int
+  timeMs     Int
+  isSaved    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  // Indexes for fast queries
+  @@unique([gameId, playerId, circuitId, turnNumber, lapNumber])
   @@index([gameId, circuitId, turnNumber])
   @@index([gameId, playerId, circuitId, turnNumber])
-  @@unique([gameId, playerId, circuitId, turnNumber, lapNumber])
   @@map("individual_lap_times")
 }
 
-// Turn completion tracking
 model TurnCompletion {
-  id              String @id @default(cuid())
-  gameId          String
-  playerId        String
-  circuitId       String
-  turnNumber      Int
-  averageTimeMs   Int?   // Calculated average time
-  turnScore       Int?   // Points scored for this turn
-  isCompleted     Boolean @default(false)
-  completedAt     DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String    @id @default(cuid())
+  gameId        String
+  playerId      String
+  circuitId     String
+  turnNumber    Int
+  averageTimeMs Int?
+  turnScore     Int?
+  isCompleted   Boolean   @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@unique([gameId, playerId, circuitId, turnNumber])
   @@map("turn_completions")
 }
 
-// Tournament system models
 model Tournament {
-  id          String @id @default(cuid())
-  name        String
-  description String?
-  status      String @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
-  
-  // Tournament settings
-  maxChampionships   Int @default(5)
-  pointsForFirst     Int @default(3)
-  pointsForSecond    Int @default(2)
-  pointsForThird     Int @default(1)
-  
-  // Dates
-  startDate   DateTime @default(now())
-  endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  championships Championship[]
-  participants  TournamentParticipant[]
-  
+  id               String                  @id @default(cuid())
+  name             String
+  description      String?
+  status           String                  @default("ACTIVE")
+  maxChampionships Int                     @default(5)
+  pointsForFirst   Int                     @default(3)
+  pointsForSecond  Int                     @default(2)
+  pointsForThird   Int                     @default(1)
+  startDate        DateTime                @default(now())
+  endDate          DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  championships    Championship[]
+  participants     TournamentParticipant[]
+
   @@map("tournaments")
 }
 
 model Championship {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   tournamentId String
   name         String
   gameState    Json
-  status       String @default("ACTIVE") // ACTIVE, COMPLETED
-  position     Int    // Order within tournament (1st championship, 2nd, etc.)
-  
-  // Relations
+  status       String     @default("ACTIVE")
+  position     Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+
   @@map("championships")
 }
 
 model TournamentParticipant {
-  id           String @id @default(cuid())
-  tournamentId String
-  playerId     String
-  totalPoints  Int @default(0)
-  
-  // Stats across all championships
-  championshipsWon    Int @default(0)
-  championshipsSecond Int @default(0) 
-  championshipsThird  Int @default(0)
-  championshipsTotal  Int @default(0)
-  
-  // Relations
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  id                  String     @id @default(cuid())
+  tournamentId        String
+  playerId            String
+  totalPoints         Int        @default(0)
+  championshipsWon    Int        @default(0)
+  championshipsSecond Int        @default(0)
+  championshipsThird  Int        @default(0)
+  championshipsTotal  Int        @default(0)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  tournament          Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
   @@unique([tournamentId, playerId])
   @@map("tournament_participants")
 }
