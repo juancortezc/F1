@@ -157,6 +157,20 @@ npx prisma migrate dev  # Migrar esquema
 - **Solución**: Flujo directo - jugadores van a LIVE (si hay juego) o Acumulados (sin juego)
 - **Aprendizaje**: Menos pantallas = mejor UX para usuarios 50+
 
+### Errores SWR y Manejo de Estados
+**Problema**: `SWR Error: Error: API request failed` en LivePage
+- **Causa**: Llamadas API con parámetros undefined/null (circuitId, gameId)
+- **Solución**: Conditional fetching con validación de parámetros antes de llamada
+- **Mejora**: Estados de error visuales con iconos y mensajes claros
+- **Aprendizaje**: Siempre validar parámetros antes de fetch, manejar estados gracefully
+
+### Base de Datos Inconsistente
+**Problema**: Récords históricos sin jugador, IDs de circuitos mezclados
+- **Causa**: Datos acumulativos de múltiples sesiones y hardcoding de IDs
+- **Solución**: Script de limpieza completa manteniendo estructura base
+- **Resultado**: Base de datos prístina con integridad referencial completa
+- **Aprendizaje**: Limpiezas periódicas necesarias para mantener calidad de datos
+
 ## 📊 Nuevas Funcionalidades Implementadas
 
 ### Sistema de Puntaje Unificado
@@ -178,6 +192,23 @@ npx prisma migrate dev  # Migrar esquema
   - Con campeonato activo → LIVE tab
   - Sin campeonato → Acumulados tab
 - **Menos clics**: Acceso directo a contenido relevante
+
+### Sistema de Tiempos Detallados - TimesPage
+- **Nueva pestaña TIEMPOS**: Disponible junto a LIVE, Puntaje, STATS para todos los usuarios
+- **Tabla luxury completa**: Jugador, Circuito, Turno, Vuelta, Tiempo, **Promedio del Turno**
+- **Filtros avanzados**: Por juego, circuito y jugador con selectores elegantes
+- **Cálculo automático**: Promedio por turno calculado desde vueltas individuales
+- **Diseño 50+**: Fuentes grandes (18px+), contraste alto, spacing generoso
+- **Datos 100% reales**: Integración directa con base de datos Neon PostgreSQL
+- **Estados manejados**: Loading, error, sin datos con feedback visual claro
+
+### Live Page con Récords Históricos
+- **Card de récords históricos**: Bajo la tabla de timing en vivo
+- **Información del circuito activo**: Récord de vuelta rápida y mejor promedio
+- **Récords de sesión**: Mejor tiempo actual y turno en curso
+- **Diseño luxury F1**: Cards compactos con colores semánticos
+- **Responsive**: Grid 1 columna móvil, 2 columnas desktop
+- **Estados robustos**: Manejo de récords sin jugador, circuitos sin récords
 
 ## 🗄️ Estructura de Base de Datos
 
@@ -206,8 +237,33 @@ model Game {
 ### APIs Críticas
 - `/api/players/[id]/stats` - Estadísticas individuales de jugador
 - `/api/circuits` - Lista de circuitos con récords
+- `/api/circuits/update-records` - Actualización de récords históricos
+- `/api/lap-times/all` - Historial completo de vueltas por juego/circuito/jugador
+- `/api/lap-times/live` - Datos en tiempo real con polling cada 3s
 - `/api/settings` - Configuración global (PIN admin)
 - `/api/game/active` - Estado del juego activo
+
+## 🧹 Limpieza y Mantenimiento de Base de Datos
+
+### Script de Limpieza Completa
+- **Ubicación**: `scripts/cleanup-database.js`
+- **Propósito**: Limpieza completa de datos transaccionales manteniendo estructura base
+- **Datos eliminados**: 
+  - Todos los lap times individuales
+  - Todas las turn completions
+  - Todos los games activos/históricos
+  - Todos los récords históricos de circuitos
+  - Datos de torneos y championships
+- **Datos preservados**:
+  - 3 jugadores: Juan, Berna, Borgia
+  - 21 circuitos con nombres e imágenes
+  - Configuraciones de la aplicación
+
+### Problemas Resueltos
+- **IDs inconsistentes**: Circuito "monaco" vs ID real corregido
+- **Récords huérfanos**: Récords sin jugador asociado limpiados
+- **Integridad referencial**: Referencias cruzadas rotas eliminadas
+- **Datos contaminados**: Multiple juegos mezclados separados
 
 ## 🎨 F1 Luxury Look - Sistema de Diseño Refinado
 
@@ -368,11 +424,14 @@ El **F1 Luxury Look** es un sistema de diseño inspirado en interfaces profesion
 - ✅ **AdminView.tsx** - Listas compactas con hover states
 - ✅ **Modal.tsx** - Modal elevation con borders y typography
 - ✅ **ResultsView.tsx** - Navegación por tabs y secciones organizadas
+- ✅ **LivePage.tsx** - Timing table con colores semánticos + card récords históricos
+- ✅ **TimesPage.tsx** - Tabla detallada con filtros y diseño luxury 50+
 
-#### **Próximos a Implementar**
-- 🔄 **LivePage.tsx** - Timing table con colores semánticos
-- 🔄 **SpectatorDashboard.tsx** - Vista simplificada luxury
-- 🔄 **Navigation components** - Consistency en toda la app
+#### **Manejo de Errores Mejorado**
+- ✅ **SWR Error Handling** - Conditional fetching y null safety
+- ✅ **Error States UI** - Estados visuales para errores de API
+- ✅ **Robust Data Processing** - Validaciones comprehensivas
+- ✅ **User Feedback** - Loading, error y retry messaging
 
 ## 🔄 Polling y Actualizaciones en Tiempo Real
 
@@ -388,3 +447,48 @@ const interval = setInterval(() => {
 - **Revalidar en focus**: Datos frescos al cambiar de tab
 - **Revalidar en reconexión**: Sincronización automática
 - **Optimistic updates**: UI responde antes de confirmación del servidor
+
+## 📈 Estado Actual del Proyecto (Agosto 2025)
+
+### ✅ Funcionalidades Completadas
+
+#### **Core Racing System**
+- ✅ **Sistema completo de cronometraje** con F1 Night branding
+- ✅ **Live timing** con tabla compacta F1 y delta dinámico
+- ✅ **Cálculo automático de promedios** con best 4 of 5 support
+- ✅ **Sistema de puntuación** configurable por posición
+- ✅ **Manejo de turnos y circuitos** con flujo automático
+
+#### **UI/UX Optimized for 50+**
+- ✅ **Dark mode luxury** con esquema de colores F1 professional
+- ✅ **Fuentes grandes** (18px+ móvil) con alta legibilidad
+- ✅ **Touch targets 48px+** para interacción móvil cómoda
+- ✅ **Navigation simplificada** sin pantallas intermedias innecesarias
+- ✅ **Estados visuales claros** para loading, error y success
+
+#### **Data Management**
+- ✅ **Base de datos limpia** con integridad referencial completa
+- ✅ **Récords históricos** por circuito con tracking de poseedores
+- ✅ **APIs robustas** con manejo de errores comprehensivo
+- ✅ **Real-time updates** con SWR y polling cada 3 segundos
+- ✅ **Data validation** y null safety en todos los componentes
+
+#### **Views y Navigation**
+- ✅ **5 pestañas principales**: LIVE, Puntaje, STATS, TIEMPOS, Admin
+- ✅ **TimesPage completa** con filtros avanzados y tabla luxury
+- ✅ **ResultsView mejorada** con manejo de récords huérfanos
+- ✅ **LivePage enhanced** con card de récords históricos integrado
+- ✅ **Error handling visual** en todas las interfaces
+
+### 🚀 Ready for Production
+- ✅ **Build exitoso** sin errores TypeScript
+- ✅ **Deploy funcionando** en master branch
+- ✅ **Database prístina** lista para uso en vivo
+- ✅ **Error resilience** para conexión inestable
+- ✅ **Mobile-first responsive** para dispositivos 50+
+
+### 🎯 Próximas Mejoras Sugeridas
+- **Fase 3**: Sistema de notificaciones push para eventos importantes
+- **Fase 4**: Hall of Fame con estadísticas de temporada completa
+- **PWA**: Service worker para uso offline básico
+- **Backup**: Sistema automatizado de respaldo de datos
