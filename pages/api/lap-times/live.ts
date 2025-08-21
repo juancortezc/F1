@@ -24,7 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Get all individual lap times for live updates
-    const liveLapTimes = await prisma.individualLapTime.findMany({
+    // Try both the specific gameId and 'active-game' for backward compatibility
+    const liveLapTimes1 = await prisma.individualLapTime.findMany({
       where,
       orderBy: [
         { turnNumber: 'desc' },
@@ -32,6 +33,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ],
       take: 50 // Limit to last 50 lap times for performance
     });
+    
+    // Also try with 'active-game' as fallback
+    const liveLapTimes2 = await prisma.individualLapTime.findMany({
+      where: {
+        ...where,
+        gameId: 'active-game'
+      },
+      orderBy: [
+        { turnNumber: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      take: 50
+    });
+    
+    // Combine and deduplicate results
+    const allLapTimes = [...liveLapTimes1, ...liveLapTimes2];
+    const uniqueLapTimes = allLapTimes.filter((lap, index, arr) => 
+      arr.findIndex(l => l.id === lap.id) === index
+    );
+    
+    const liveLapTimes = uniqueLapTimes.sort((a, b) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    ).slice(0, 50);
 
     // Get turn completions for progress tracking
     const turnCompletions = await prisma.turnCompletion.findMany({

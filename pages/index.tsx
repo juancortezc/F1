@@ -14,6 +14,7 @@ import AdminView from '../components/AdminView';
 import GameModify from '../components/GameModify';
 import RaceProgress from '../components/RaceProgress';
 import LivePage from '../components/LivePage';
+import TimesPage from '../components/TimesPage';
 import PlayerStatsComponent from '../components/PlayerStats';
 import UserAvatar from '../components/UserAvatar';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
@@ -34,22 +35,6 @@ function useApiData() {
     
     const isLoading = playersLoading || circuitsLoading || gameLoading || settingsLoading || historyLoading;
     const error = playersError || circuitsError || gameError || settingsError || historyError;
-
-    // Debug logging
-    console.log('API Debug:', {
-        players: !!players,
-        circuits: !!circuits,
-        activeGame: !!activeGame,
-        settings: !!settings,
-        history: !!history,
-        playersLoading,
-        circuitsLoading,
-        gameLoading,
-        settingsLoading,
-        historyLoading,
-        isLoading,
-        error
-    });
 
     return { players, circuits, activeGame: activeGame?.game, pinCode: settings?.pin, gameHistory: history, isLoading, error };
 }
@@ -615,6 +600,43 @@ function App() {
         finalPlayerStats = newPlayerStats;
         nextPlayerIndex = 0;
         nextTurn = gameState.currentTurn + 1;
+        
+        // Check if we need to move to the next circuit
+        if (nextTurn > gameState.settings.turnsPerCircuit) {
+            // Apply circuit bonus points before moving to next circuit
+            if (gameState.settings.pointsForCircuit && gameState.settings.pointsForCircuit.length > 0) {
+                // Calculate circuit standings
+                const circuitStandings = new Map<string, number>();
+                gameState.settings.players.forEach(player => {
+                    circuitStandings.set(player.id, 0);
+                });
+                
+                newCircuitResults[gameState.currentCircuitIndex].turns.forEach(turn => {
+                    turn.forEach(result => {
+                        const currentPoints = circuitStandings.get(result.playerId) || 0;
+                        circuitStandings.set(result.playerId, currentPoints + result.turnScore);
+                    });
+                });
+                
+                // Sort players by circuit points and award bonus points
+                const sortedPlayers = Array.from(circuitStandings.entries())
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sortedPlayers.forEach(([playerId], index) => {
+                    const pointsForCircuit = gameState.settings.pointsForCircuit || [];
+                    if (index < pointsForCircuit.length) {
+                        const bonusPoints = pointsForCircuit[index];
+                        if (bonusPoints > 0) {
+                            finalPlayerStats[playerId].totalScore += bonusPoints;
+                        }
+                    }
+                });
+            }
+            
+            // Move to next circuit
+            nextTurn = 1;
+            // Note: currentCircuitIndex will be incremented after this block
+        }
 
         // Calculate current circuit standings for turn order
         const currentCircuitResults = newCircuitResults[gameState.currentCircuitIndex];
@@ -641,6 +663,10 @@ function App() {
             .map(([playerId]) => playerId);
     }
     
+    // Check if we should move to the next circuit
+    const shouldMoveToNextCircuit = isLastPlayerOfTurn && nextTurn > gameState.settings.turnsPerCircuit;
+    const nextCircuitIndex = shouldMoveToNextCircuit ? gameState.currentCircuitIndex + 1 : gameState.currentCircuitIndex;
+    
     const newGameState = {
       ...gameState,
       circuitResults: newCircuitResults,
@@ -650,6 +676,7 @@ function App() {
       playerStats: finalPlayerStats,
       currentPlayerIndex: nextPlayerIndex,
       currentTurn: nextTurn,
+      currentCircuitIndex: nextCircuitIndex,
       playerOrder: newPlayerOrder,
       lapTimesLog: newLapTimesLog,
       currentController: newControllerId || gameState.currentController,
@@ -1130,6 +1157,12 @@ function App() {
                                 >
                                     STATS
                                 </button>
+                                <button 
+                                    onClick={() => setActiveTab('tiempos')} 
+                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'tiempos' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    TIEMPOS
+                                </button>
                             </div>
                             
                             {/* Right: Action Buttons */}
@@ -1157,6 +1190,7 @@ function App() {
                             {activeTab === 'live' && <LivePage gameState={gameStateFromDB} players={players} circuits={circuits} gameId={activeGame!.id} />}
                             {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                             {activeTab === 'stats' && <StatsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
+                            {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} currentGameId={activeGame?.id} />}
                             {activeTab === 'admin' && <AdminView players={players} circuits={circuits} />}
                             {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to STATS tab to see the final standings.</div>}
                         </>
@@ -1177,6 +1211,7 @@ function App() {
                                     onNewGame={handleNewGame} 
                                 />
                             )}
+                            {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} />}
                             {activeTab === 'admin' && <AdminView players={players} circuits={circuits} />}
                             {(activeTab === 'race' || activeTab === 'live' || activeTab === 'puntaje') && (
                                 <div className="text-center p-8">

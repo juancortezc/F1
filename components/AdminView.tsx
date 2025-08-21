@@ -173,6 +173,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <Modal 
@@ -182,6 +183,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack }) => {
             >
                 {editingItem && <EditForm item={editingItem} onSave={handleSave} onCancel={() => setEditingItem(null)} />}
             </Modal>
+
             </div>
     );
 };

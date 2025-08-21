@@ -43,6 +43,12 @@ export interface GameSettings {
   pointsForBestAverage: number;
   awardBestTimeFor: 'turn' | 'circuit' | 'both';
   useBest4Of5Laps: boolean;
+  
+  // Points system settings
+  pointsForFirst?: number;
+  pointsForSecond?: number;
+  pointsForThird?: number;
+  pointsForCircuit?: number[]; // Array of bonus points per circuit position
 }
 
 export interface TurnResult {

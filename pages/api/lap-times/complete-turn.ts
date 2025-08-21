@@ -73,11 +73,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       });
 
-      // Calculate points based on scoring method
+      // Calculate points based on scoring method and game settings
       const getPoints = (rank: number): number => {
-        if (rank === 0) return 3;
-        if (rank === 1) return 2; 
-        if (rank === 2) return 1;
+        const pointsForFirst = gameState.settings.pointsForFirst || 3;
+        const pointsForSecond = gameState.settings.pointsForSecond || 2;
+        const pointsForThird = gameState.settings.pointsForThird || 1;
+        
+        if (rank === 0) return pointsForFirst;
+        if (rank === 1) return pointsForSecond; 
+        if (rank === 2) return pointsForThird;
         return 0;
       };
 
@@ -97,8 +101,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-      // TODO: Add best lap scoring if scoringMethod includes 'lap'
-      // This would require more complex logic to compare individual lap times
+      if (scoringMethod === 'lap' || scoringMethod === 'both') {
+        // Get all individual lap times for this turn
+        const allLapTimes = await prisma.individualLapTime.findMany({
+          where: {
+            gameId,
+            circuitId,
+            turnNumber
+          },
+          select: {
+            playerId: true,
+            timeMs: true
+          }
+        });
+
+        // Find best lap time for each player
+        const playerBestLaps = new Map<string, number>();
+        allLapTimes.forEach(lap => {
+          if (!playerBestLaps.has(lap.playerId) || lap.timeMs < playerBestLaps.get(lap.playerId)!) {
+            playerBestLaps.set(lap.playerId, lap.timeMs);
+          }
+        });
+
+        // Sort players by best lap time
+        const sortedByBestLap = Array.from(playerBestLaps.entries())
+          .sort((a, b) => a[1] - b[1]);
+
+        // Find current player's rank
+        const lapRank = sortedByBestLap.findIndex(([pid]) => pid === playerId);
+        if (lapRank !== -1) {
+          turnScore += getPoints(lapRank);
+        }
+      }
     }
 
     // Update turn completion
