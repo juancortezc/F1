@@ -42,7 +42,7 @@ function useApiData() {
 
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('landing');
-  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'stats' | 'live' | 'admin'>('race');
+  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'stats' | 'live' | 'admin' | 'tiempos'>('race');
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
