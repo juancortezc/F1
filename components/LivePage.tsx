@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import useSWR from 'swr';
 import { GameState, Player, Circuit } from '../types';
 import LoadingSpinner from './LoadingSpinner';
@@ -20,34 +20,54 @@ const formatTime = (ms: number | null | undefined): string => {
 };
 
 const formatDelta = (ms: number): string => {
-  if (ms === null || ms === undefined || ms === Infinity || !isFinite(ms)) return '-.---';
   const totalSeconds = ms / 1000;
-  const seconds = Math.floor(totalSeconds);
-  const milliseconds = Math.round((totalSeconds - seconds) * 1000);
-  return `${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+  return totalSeconds.toFixed(3);
 };
 
+
 const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameId = 'active-game' }) => {
-  // Use circuit from gameState to ensure consistency with RaceView
   const currentCircuit = gameState.circuits[gameState.currentCircuitIndex];
   const currentPlayer = players.find(p => p.id === gameState.playerOrder[gameState.currentPlayerIndex]);
 
-  // Fetch live lap times with polling
+  // Fetch live lap times with simplified polling
   const { data: liveData, error: liveError } = useSWR(
     `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit?.id}&turnNumber=${gameState.currentTurn}`,
     {
-      refreshInterval: 2000,
-      revalidateOnFocus: true,
-      errorRetryCount: 3
+      refreshInterval: 3000,
+      revalidateOnFocus: true
     }
   );
 
-  // Get circuit-specific session best times
-  const circuitSessionBests = gameState.sessionBestTimes?.[currentCircuit?.id] || {
-    bestLap: null,
-    bestLapPlayerId: null,
-    bestAverage: null,
-    bestAveragePlayerId: null
+  // Calculate session bests from live data
+  const circuitSessionBests = {
+    bestLap: (() => {
+      const allLapTimes = liveData?.data?.liveLapTimes
+        ?.filter((lap: any) => lap.circuitId === currentCircuit?.id && lap.timeMs > 0)
+        ?.map((lap: any) => lap.timeMs) || [];
+      return allLapTimes.length > 0 ? Math.min(...allLapTimes) : null;
+    })(),
+    bestAverage: (() => {
+      // Calculate best average from all players' averages this session
+      const playerAverages = liveData?.data?.liveLapTimes
+        ?.filter((lap: any) => lap.circuitId === currentCircuit?.id && lap.timeMs > 0)
+        ?.reduce((acc: Record<string, number[]>, lap: any) => {
+          if (!acc[lap.playerId]) acc[lap.playerId] = [];
+          acc[lap.playerId].push(lap.timeMs);
+          return acc;
+        }, {})
+      
+      if (!playerAverages) return null;
+      
+      const averages = Object.values(playerAverages)
+        .map((times) => {
+          const timesArray = times as number[];
+          if (timesArray.length < 3) return null;
+          return timesArray.reduce((sum, time) => sum + time, 0) / timesArray.length;
+        })
+        .filter((avg): avg is number => avg !== null);
+      
+      return averages.length > 0 ? Math.min(...averages) : null;
+    })()
   };
 
   // Calculate session best from live data if not available
@@ -66,38 +86,17 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
   const sessionBestLap = getSessionBestLap();
 
-  // Get player's progression delta (current best vs previous best in this turn)
+  // Get player's progression delta (best lap of current turn vs session record)
   const getPlayerProgression = (playerId: string, currentBestLap: number | null) => {
-    if (!currentBestLap) return { delta: null, isImproving: false };
+    if (!currentBestLap || !sessionBestLap) return { delta: null, isImproving: false };
     
-    // Get all laps for this player in current turn and circuit
-    const playerLaps = liveData?.data?.liveLapTimes
-      ?.filter((lap: any) => 
-        lap.playerId === playerId && 
-        lap.circuitId === currentCircuit?.id && 
-        lap.turnNumber === gameState.currentTurn &&
-        lap.timeMs > 0
-      )
-      ?.map((lap: any) => lap.timeMs)
-      ?.sort((a: number, b: number) => a - b) || []; // Sort ascending (best first)
-    
-    if (playerLaps.length <= 1) {
-      // First lap or no comparison - delta vs session record
-      return {
-        delta: sessionBestLap ? currentBestLap - sessionBestLap : null,
-        isImproving: false,
-        isVsRecord: true
-      };
-    }
-    
-    // Compare with previous best (second best time)
-    const previousBest = playerLaps[1]; // Second best time
-    const delta = currentBestLap - previousBest;
+    // Always compare player's best lap of current turn vs session record
+    const delta = currentBestLap - sessionBestLap;
     
     return {
       delta: delta,
-      isImproving: delta < 0, // Negative delta means improvement
-      isVsRecord: false
+      isImproving: delta < 0, // Negative delta means faster than session record
+      isVsRecord: true
     };
   };
 
@@ -376,12 +375,10 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                           return <span className="text-zinc-600 font-mono font-bold text-xs">-.---</span>;
                         }
                         
-                        // Color logic: Green = improving, Yellow = getting worse
-                        const colorClass = progression.isVsRecord 
-                          ? "text-red-400" // vs session record
-                          : progression.isImproving 
-                            ? "text-green-400" // improving
-                            : "text-yellow-400"; // getting worse
+                        // Color logic: Green = faster than record, Red = slower than record
+                        const colorClass = progression.isImproving 
+                          ? "text-green-400" // faster than session record
+                          : "text-red-400"; // slower than session record
                         
                         const sign = progression.delta >= 0 ? "+" : "";
                         
