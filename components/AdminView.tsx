@@ -1,10 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Player, Circuit, UserSession } from '../types';
-import { PlusIcon, PencilIcon, TrashIcon } from './icons';
+import { PlusIcon, PencilIcon, TrashIcon, UserGroupIcon } from './icons';
 import { useSWRConfig } from 'swr';
 import Modal from './Modal';
 import CircuitImage from './CircuitImage';
 import LoadingSpinner from './LoadingSpinner';
+
+// Arrow Left Icon for navigation
+const ArrowLeftIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M7.82843 10.9999H20V12.9999H7.82843L13.1924 18.3639L11.7782 19.7781L4 11.9999L11.7782 4.22168L13.1924 5.63589L7.82843 10.9999Z"/>
+    </svg>
+);
+
+// Road Circuit Icon for circuits tab  
+const CircuitIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C17.52 2 22 6.48 22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12C2 6.48 6.48 2 12 2ZM12 4C7.59 4 4 7.59 4 12C4 16.41 7.59 20 12 20C16.41 20 20 16.41 20 12C20 7.59 16.41 4 12 4ZM12 6C15.31 6 18 8.69 18 12C18 15.31 15.31 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6Z"/>
+    </svg>
+);
+
+// Guest User Icon
+const GuestIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C13.1046 2 14 2.89543 14 4C14 5.10457 13.1046 6 12 6C10.8954 6 10 5.10457 10 4C10 2.89543 10.8954 2 12 2ZM21 9V7H15C14.4477 7 14 7.44772 14 8V10C14 10.5523 14.4477 11 15 11H16V19H8V11H9C9.55228 11 10 10.5523 10 10V8C10 7.44772 9.55228 7 9 7H3V9H8V19H6V21H18V19H16V9H21Z"/>
+    </svg>
+);
 
 interface AdminViewProps {
     players: Player[];
@@ -236,80 +257,221 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     }
 
     return (
-        <div className="space-y-4">
-            {/* Tab Navigation */}
-            <div className="flex border-b border-zinc-700">
-                <button
-                    onClick={() => setActiveTab('players')}
-                    className={`flex-1 py-3 px-4 font-semibold text-center transition-colors ${
-                        activeTab === 'players'
-                            ? 'text-f1-red border-b-2 border-f1-red'
-                            : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                >
-                    Jugadores
-                </button>
-                <button
-                    onClick={() => setActiveTab('guests')}
-                    className={`flex-1 py-3 px-4 font-semibold text-center transition-colors ${
-                        activeTab === 'guests'
-                            ? 'text-f1-red border-b-2 border-f1-red'
-                            : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                >
-                    Invitados
-                </button>
-                <button
-                    onClick={() => setActiveTab('circuits')}
-                    className={`flex-1 py-3 px-4 font-semibold text-center transition-colors ${
-                        activeTab === 'circuits'
-                            ? 'text-f1-red border-b-2 border-f1-red'
-                            : 'text-zinc-400 hover:text-zinc-200'
-                    }`}
-                >
-                    Circuitos
-                </button>
-            </div>
-
-            {/* Tab Content */}
-            {activeTab === 'players' && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-md">
-                    <div className="px-3 py-2 border-b border-zinc-700 flex justify-between items-center bg-zinc-800">
-                        <h2 className="text-lg font-bold text-zinc-100">Jugadores ({regularPlayers.length})</h2>
-                        <button 
-                            onClick={() => setEditingItem('new-player')} 
-                            className="bg-f1-red text-white p-2 rounded hover:bg-red-700 transition-colors"
-                        >
-                            <PlusIcon className="w-4 h-4"/>
-                        </button>
-                    </div>
-                    <div className="divide-y divide-zinc-800">
-                        {regularPlayers.map(player => (
-                            <div key={player.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
-                                <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full"/>
-                                <div className="flex-grow">
-                                    <div className="text-zinc-100 font-semibold">{player.name}</div>
-                                    <div className="text-zinc-400 text-xs font-mono">PIN: ****</div>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button 
-                                        onClick={() => setEditingItem(player)} 
-                                        className="p-2 text-zinc-400 hover:text-zinc-100 transition-colors"
-                                    >
-                                        <PencilIcon className="w-4 h-4"/>
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeletePlayer(player.id)} 
-                                        className="p-2 text-zinc-400 hover:text-f1-red transition-colors"
-                                    >
-                                        <TrashIcon className="w-4 h-4"/>
-                                    </button>
-                                </div>
+        <div className="min-h-screen bg-black">
+            {/* F1 Luxury Navigation Header */}
+            <div className="bg-zinc-950 border-b border-zinc-800 sticky top-0 z-20">
+                <div className="max-w-6xl mx-auto px-4 py-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            {onBack && (
+                                <button 
+                                    onClick={onBack}
+                                    className="flex items-center justify-center w-10 h-10 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition-colors duration-200"
+                                    title="Volver al menú principal"
+                                >
+                                    <ArrowLeftIcon className="w-5 h-5" />
+                                </button>
+                            )}
+                            <div>
+                                <h1 className="text-xl font-bold text-zinc-100 tracking-wide">PANEL DE ADMINISTRACIÓN</h1>
+                                <p className="text-sm font-mono text-zinc-400 uppercase tracking-widest">
+                                    Sistema de Gestión • F1 Night
+                                </p>
                             </div>
-                        ))}
+                        </div>
+                        {currentUser && (
+                            <div className="text-right">
+                                <div className="text-sm font-semibold text-zinc-100">{currentUser.name}</div>
+                                <div className="text-xs font-mono text-zinc-500 uppercase tracking-wide">Administrador</div>
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
+            </div>
+
+            <div className="max-w-6xl mx-auto p-4 space-y-6">
+                {/* Luxury Tab Navigation - Mobile First */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+                    <div className="flex overflow-x-auto scrollbar-hide">
+                        <button
+                            onClick={() => setActiveTab('players')}
+                            className={`flex-1 min-w-[120px] px-4 py-4 flex items-center justify-center gap-2 font-semibold text-sm uppercase tracking-wide transition-all duration-200 ${
+                                activeTab === 'players'
+                                    ? 'bg-f1-red text-white shadow-lg'
+                                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700'
+                            }`}
+                        >
+                            <UserGroupIcon className="w-4 h-4" />
+                            <span className="hidden sm:inline">Jugadores</span>
+                            <span className="sm:hidden">({regularPlayers.length})</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('guests')}
+                            className={`flex-1 min-w-[120px] px-4 py-4 flex items-center justify-center gap-2 font-semibold text-sm uppercase tracking-wide transition-all duration-200 ${
+                                activeTab === 'guests'
+                                    ? 'bg-amber-600 text-white shadow-lg'
+                                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700'
+                            }`}
+                        >
+                            <GuestIcon className="w-4 h-4" />
+                            <span className="hidden sm:inline">Invitados</span>
+                            <span className="sm:hidden">({guestPlayers.length})</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('circuits')}
+                            className={`flex-1 min-w-[120px] px-4 py-4 flex items-center justify-center gap-2 font-semibold text-sm uppercase tracking-wide transition-all duration-200 ${
+                                activeTab === 'circuits'
+                                    ? 'bg-f1-red text-white shadow-lg'
+                                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700'
+                            }`}
+                        >
+                            <CircuitIcon className="w-4 h-4" />
+                            <span className="hidden sm:inline">Circuitos</span>
+                            <span className="sm:hidden">({circuits.length})</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Tab Content */}
+                {activeTab === 'players' && (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+                        {/* Luxury Table Header */}
+                        <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+                                        JUGADORES HABITUALES
+                                    </h2>
+                                    <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
+                                        {regularPlayers.length} Registrados • Acceso con PIN
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={() => setEditingItem('new-player')} 
+                                    className="flex items-center gap-2 px-4 py-2 bg-f1-red text-white font-bold text-sm uppercase tracking-wide rounded hover:bg-red-700 transition-colors duration-200 min-h-[48px]"
+                                >
+                                    <PlusIcon className="w-4 h-4"/>
+                                    <span className="hidden sm:inline">NUEVO</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-zinc-800 border-b border-zinc-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Avatar</th>
+                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Jugador</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">PIN</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Estado</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-800">
+                                    {regularPlayers.map(player => (
+                                        <tr key={player.id} className="hover:bg-zinc-800/30 transition-colors duration-200">
+                                            <td className="px-4 py-3">
+                                                <img 
+                                                    src={player.imageUrl} 
+                                                    alt={player.name} 
+                                                    className="w-12 h-12 rounded-full border-2 border-zinc-700"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="font-semibold text-zinc-100 text-lg">{player.name}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="inline-block px-3 py-1 bg-zinc-800 border border-zinc-700 rounded font-mono text-sm text-zinc-300">
+                                                    ••••
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                                                    player.isActive 
+                                                        ? 'bg-green-900/30 text-green-400 border border-green-800'
+                                                        : 'bg-red-900/30 text-red-400 border border-red-800'
+                                                }`}>
+                                                    {player.isActive ? 'Activo' : 'Inactivo'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => setEditingItem(player)} 
+                                                        className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 rounded transition-colors duration-200"
+                                                        title="Editar jugador"
+                                                    >
+                                                        <PencilIcon className="w-4 h-4"/>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeletePlayer(player.id)} 
+                                                        className="p-2 text-zinc-400 hover:text-f1-red hover:bg-red-900/20 rounded transition-colors duration-200"
+                                                        title="Eliminar jugador"
+                                                    >
+                                                        <TrashIcon className="w-4 h-4"/>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="md:hidden divide-y divide-zinc-800">
+                            {regularPlayers.map(player => (
+                                <div key={player.id} className="p-4 hover:bg-zinc-800/30 transition-colors duration-200">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <img 
+                                            src={player.imageUrl} 
+                                            alt={player.name} 
+                                            className="w-14 h-14 rounded-full border-2 border-zinc-700"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-zinc-100 text-lg">{player.name}</div>
+                                            <div className="text-zinc-400 text-sm font-mono">PIN: ••••</div>
+                                        </div>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                                            player.isActive 
+                                                ? 'bg-green-900/30 text-green-400 border border-green-800'
+                                                : 'bg-red-900/30 text-red-400 border border-red-800'
+                                        }`}>
+                                            {player.isActive ? 'Activo' : 'Inactivo'}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                                        <button 
+                                            onClick={() => setEditingItem(player)} 
+                                            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-zinc-800 border border-zinc-700 text-zinc-100 rounded hover:bg-zinc-700 transition-colors duration-200 min-h-[48px]"
+                                        >
+                                            <PencilIcon className="w-4 h-4"/>
+                                            <span className="font-semibold text-sm">Editar</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeletePlayer(player.id)} 
+                                            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-zinc-800 border border-zinc-700 text-zinc-100 rounded hover:bg-red-900/50 hover:text-f1-red hover:border-f1-red transition-colors duration-200 min-h-[48px]"
+                                        >
+                                            <TrashIcon className="w-4 h-4"/>
+                                            <span className="font-semibold text-sm">Eliminar</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {regularPlayers.length === 0 && (
+                            <div className="p-8 text-center">
+                                <div className="text-zinc-500 mb-4">
+                                    <UserGroupIcon className="w-16 h-16 mx-auto opacity-50" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-zinc-400 mb-2">No hay jugadores registrados</h3>
+                                <p className="text-zinc-500 text-sm">Crear el primer jugador para empezar</p>
+                            </div>
+                        )}
+                    </div>
+                )}
 
             {activeTab === 'guests' && (
                 <div className="bg-zinc-900 border border-zinc-800 rounded-md">
@@ -421,6 +583,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                     />
                 </Modal>
             )}
+            </div>
         </div>
     );
 }
