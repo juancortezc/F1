@@ -437,7 +437,7 @@ const EditForm: React.FC<{
         if (item === 'new-player') {
             return { name: '', imageUrl: '', pin: '0000' };
         } else if (item === 'new-guest') {
-            return { name: '', imageUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest&backgroundColor=zinc', pin: 'GUEST', isGuest: true };
+            return { name: '', imageUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest&backgroundColor=zinc', isGuest: true };
         } else if (item === 'new-circuit') {
             return { name: '', imageUrl: '' };
         } else {
