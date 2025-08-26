@@ -9,7 +9,7 @@ import LoginScreen from '../components/LoginScreen';
 import GameSetup from '../components/GameSetup';
 import RaceView from '../components/RaceView';
 import StatsView from '../components/StatsView';
-import HubScreen from '../components/HubScreen';
+import AdminHub from '../components/AdminHub';
 import AdminView from '../components/AdminView';
 import GameModify from '../components/GameModify';
 import RaceProgress from '../components/RaceProgress';
@@ -343,6 +343,11 @@ function App() {
   
   const handleAdmin = () => {
     setGamePhase('admin');
+  };
+
+  const handleBackToLive = () => {
+    setGamePhase(activeGame ? 'race' : 'results');
+    setActiveTab('live');
   };
   const handleGameModify = () => setGamePhase('modify');
   const handleExitAdmin = () => {
@@ -925,15 +930,13 @@ function App() {
           onBack={handleBackToLanding}
         />;
       case 'hub':
-        return <HubScreen 
+        return <AdminHub 
           onNewGame={handleNewGame} 
           onAdmin={handleAdmin} 
+          onTournamentSetup={handleTournamentSetup}
+          onBackToLive={handleBackToLive}
           currentUser={currentUser} 
           onLogout={handleLogout}
-          onViewStats={handleBackToLanding}
-          onTournamentSetup={handleTournamentSetup}
-          onTournamentStandings={handleTournamentStandings}
-          onTournamentManagement={handleTournamentManagement}
         />;
       case 'setup':
         return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
