@@ -65,17 +65,17 @@ const StatsView: React.FC<StatsViewProps> = ({
     // Process completed games
     gameHistory.forEach(game => {
       if (game.state && game.state.playerStats) {
-        // Find winner (player with highest total score)
-        const playerStatsEntries = Object.entries(game.state.playerStats);
-        if (playerStatsEntries.length > 0) {
-          const winner = playerStatsEntries.reduce((prev, current) => 
-            (current[1] as PlayerStats).totalScore > (prev[1] as PlayerStats).totalScore ? current : prev
-          );
-          
-          // Add championship
-          if (playerAccStats[winner[0]]) {
-            playerAccStats[winner[0]].championships++;
-          }
+        // Find winner (player with highest total score) - using same logic as API
+        const standings = Object.entries(game.state.playerStats)
+          .map(([playerId, stats]) => ({
+            playerId,
+            totalScore: (stats as PlayerStats).totalScore || 0
+          }))
+          .sort((a, b) => b.totalScore - a.totalScore);
+        
+        // Add championship to winner (first in standings)
+        if (standings.length > 0 && playerAccStats[standings[0].playerId]) {
+          playerAccStats[standings[0].playerId].championships++;
         }
 
         // Calculate victories from circuitResults (correct approach)
