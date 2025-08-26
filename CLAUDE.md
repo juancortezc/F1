@@ -448,7 +448,105 @@ const interval = setInterval(() => {
 - **Revalidar en reconexión**: Sincronización automática
 - **Optimistic updates**: UI responde antes de confirmación del servidor
 
-## 📈 Estado Actual del Proyecto (Agosto 2025)
+## 🎭 Sistema de Invitados Completo (Guest System)
+
+### Propósito del Sistema
+Sistema diseñado para **jugadores ocasionales** que:
+- No necesitan estadísticas históricas permanentes
+- Participan normalmente en campeonatos (tiempos, puntos, podio)
+- Sus lap times **SÍ se registran** tanto para sesión actual como histórico
+- Solo se excluyen de la vista **STATS** (campeonatos ganados, récords globales)
+
+### Implementación Técnica
+
+#### **Base de Datos - Schema Prisma**
+```prisma
+model Player {
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String
+  pin       String   @default("0000")
+  isGuest   Boolean  @default(false)  // ← Campo crítico
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  @@map("players")
+}
+```
+
+#### **Types.ts - Interfaces TypeScript**
+```typescript
+export interface Player {
+  id: string;
+  name: string;
+  imageUrl: string;
+  pin: string;
+  isActive: boolean;
+  isGuest: boolean;  // ← Diferenciador principal
+}
+
+export type UserRole = 'organizer' | 'player' | 'spectator' | 'guest';
+```
+
+#### **AdminView.tsx - Gestión de Invitados**
+- **Pestaña dedicada**: "GUESTS" junto a Players y Circuits
+- **Creación simplificada**: Solo nombre, avatar genérico automático
+- **PIN auto-generado**: Rango 9000+ para evitar conflictos
+- **Visual distintivo**: Badge "INVITADO" y icono 👤
+```typescript
+const regularPlayers = players.filter(p => !p.isGuest);
+const guestPlayers = players.filter(p => p.isGuest);
+```
+
+#### **API - Auto-generación de PINs**
+```typescript
+// /pages/api/players/index.ts
+if (isGuest) {
+  let guestPin = '9000';
+  let attempts = 0;
+  while (await isPinTaken(guestPin) && attempts < 1000) {
+    const pinNumber = 9000 + attempts;
+    guestPin = pinNumber.toString();
+    attempts++;
+  }
+  finalPin = guestPin;
+}
+```
+
+#### **Filtrado de Estadísticas**
+```typescript
+// StatsView.tsx - Exclusión de guests
+const eligiblePlayers = players.filter(p => !p.isGuest);
+```
+
+### ✅ Estado del Sistema
+- ✅ **Schema DB completo** con campo isGuest
+- ✅ **AdminView luxury** con gestión CRUD de guests
+- ✅ **Auto-login funcional** para guests
+- ✅ **GameSetup separado** visualmente guests vs players
+- ✅ **StatsView filtrado** excluye guests correctamente
+- ✅ **APIs robustas** manejan guests sin PIN manual
+
+### 🎯 Importante: Simplificación UI Landing
+- **INVITADO button REMOVIDO** del landing page
+- **Backend 100% funcional** y preservado
+- **Guests acceden via LIVE** (renombrado de Espectador)
+- **Administradores crean guests** via AdminView
+
+## 🏎️ Terminología F1 en Landing Page
+
+### Cambios de Nomenclatura (26/08/2025)
+- ✅ **PILOTO → PARC FERMÉ**: "Acceso con credenciales • Área segura"
+- ✅ **ESPECTADOR → LIVE**: "Timing en vivo • Solo visualización"
+- ✅ **Loading messages**: "Accediendo al Parc Fermé..." / "Conectando a live timing..."
+- ✅ **INVITADO button**: Completamente removido del UI
+
+### Flujos de Acceso Actualizados
+1. **PARC FERMÉ** → Login con PIN → Hub personal
+2. **LIVE** → Auto-login espectador → Vista timing público
+3. **Invitados** → Creados por admin → Acceso vía LIVE automático
+
+## 📈 Estado Actual del Proyecto (26/08/2025)
 
 ### ✅ Funcionalidades Completadas
 
@@ -458,6 +556,7 @@ const interval = setInterval(() => {
 - ✅ **Cálculo automático de promedios** con best 4 of 5 support
 - ✅ **Sistema de puntuación** configurable por posición
 - ✅ **Manejo de turnos y circuitos** con flujo automático
+- ✅ **Sistema de invitados completo** para jugadores ocasionales
 
 #### **UI/UX Optimized for 50+**
 - ✅ **Dark mode luxury** con esquema de colores F1 professional
@@ -465,6 +564,7 @@ const interval = setInterval(() => {
 - ✅ **Touch targets 48px+** para interacción móvil cómoda
 - ✅ **Navigation simplificada** sin pantallas intermedias innecesarias
 - ✅ **Estados visuales claros** para loading, error y success
+- ✅ **Landing page con terminología F1** (PARC FERMÉ / LIVE)
 
 #### **Data Management**
 - ✅ **Base de datos limpia** con integridad referencial completa
@@ -472,6 +572,14 @@ const interval = setInterval(() => {
 - ✅ **APIs robustas** con manejo de errores comprehensivo
 - ✅ **Real-time updates** con SWR y polling cada 3 segundos
 - ✅ **Data validation** y null safety en todos los componentes
+- ✅ **Guest system** con separación lógica y visual
+
+#### **Admin Panel & Management**
+- ✅ **AdminView luxury mobile-first** con navegación profesional
+- ✅ **Triple tab system**: Players, Circuits, Guests
+- ✅ **Admin locking system** previene conflictos concurrentes
+- ✅ **CRUD completo** para todas las entidades
+- ✅ **Auto-generación de assets** para guests
 
 #### **Views y Navigation**
 - ✅ **5 pestañas principales**: LIVE, Puntaje, STATS, TIEMPOS, Admin
@@ -523,8 +631,41 @@ const interval = setInterval(() => {
 - ✅ **Mobile-first responsive** para dispositivos 50+
 - ✅ **Una sola branch** (master) para evitar confusión
 
+#### **5. Guest System - Errores de Implementación**
+- **Error TypeScript**: `Type 'string' is not assignable to type 'object'` al verificar PIN
+- **Solución**: `typeof editingItem === 'object' && 'pin' in editingItem`
+- **Error Build**: Property 'isGuest' is missing in type 'Player'
+- **Solución**: Agregado isGuest a todos los return objects en players-db.ts
+- **Error PIN validation**: "PIN must be exactly 4 digits" al crear guest
+- **Solución**: Auto-generación de PINs únicos en rango 9000-9999
+- **Error form logic**: PIN field mostrado para guests
+- **Solución**: Reordenada lógica `isGuest` antes que `isPlayer`
+- **Error PUT undefined**: `PUT /api/players/undefined` al salvar guest
+- **Solución**: `const isNew = editingItem === 'new-player' || editingItem === 'new-guest'`
+
+#### **6. Landing Page UI Simplificación**
+- **Problema**: Redundancia entre sistema Guest y Espectador
+- **Solución**: Mantener backend Guest completo, simplificar solo UI
+- **Cambios**:
+  - INVITADO button completamente removido
+  - ESPECTADOR → LIVE con descripción F1
+  - PILOTO → PARC FERMÉ con descripción F1
+  - Loading messages actualizados con terminología F1
+
+### 🚀 Ready for Production
+- ✅ **Build exitoso** sin errores TypeScript
+- ✅ **Deploy funcionando** en master branch
+- ✅ **Database prístina** lista para uso en vivo
+- ✅ **Error resilience** para conexión inestable
+- ✅ **Mobile-first responsive** para dispositivos 50+
+- ✅ **Una sola branch** (master) para evitar confusión
+- ✅ **Guest system completo** funcionando correctamente
+- ✅ **Landing page simplificado** con terminología F1
+
 ### 🎯 Próximas Mejoras Sugeridas
 - **Fase 3**: Sistema de notificaciones push para eventos importantes
 - **Fase 4**: Hall of Fame con estadísticas de temporada completa
-- **PWA**: Service worker para uso offline básico
-- **Backup**: Sistema automatizado de respaldo de datos
+- **PWA Enhanced**: Service worker para uso offline avanzado
+- **Backup System**: Automatización de respaldos de datos
+- **Analytics**: Tracking de uso y rendimiento
+- **Multi-tournament**: Sistema de torneos paralelos
