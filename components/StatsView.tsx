@@ -62,8 +62,6 @@ const StatsView: React.FC<StatsViewProps> = ({
       });
     });
 
-    console.log('GameHistory received:', gameHistory.length, 'games');
-    
     // Process completed games
     gameHistory.forEach((game, gameIndex) => {
       if (game.state && game.state.playerStats) {
@@ -75,16 +73,8 @@ const StatsView: React.FC<StatsViewProps> = ({
           }))
           .sort((a, b) => b.totalScore - a.totalScore);
         
-        console.log(`Game ${gameIndex + 1} standings:`, standings.map(s => ({ 
-          playerId: s.playerId, 
-          name: players.find(p => p.id === s.playerId)?.name, 
-          totalScore: s.totalScore 
-        })));
-        
         // Add championship to winner (first in standings)
         if (standings.length > 0 && playerAccStats[standings[0].playerId]) {
-          const winnerName = players.find(p => p.id === standings[0].playerId)?.name;
-          console.log(`Championship awarded to: ${winnerName} (${standings[0].playerId}) with ${standings[0].totalScore} points`);
           playerAccStats[standings[0].playerId].championships++;
         }
 
@@ -155,14 +145,6 @@ const StatsView: React.FC<StatsViewProps> = ({
 
     // Add current game stats ONLY if game is still active (not finished)
     const isGameFinished = gameState ? gameState.currentCircuitIndex >= gameState.settings.circuits.length : false;
-    
-    console.log('Current game status:', {
-      hasGameState: !!gameState,
-      currentCircuitIndex: gameState?.currentCircuitIndex,
-      totalCircuits: gameState?.settings?.circuits?.length,
-      isGameFinished,
-      playersCount: gameState?.settings?.players?.length
-    });
     
     if (gameState && gameState.circuitResults && !isGameFinished) {
       gameState.circuitResults.forEach((circuitResult: any) => {
