@@ -900,8 +900,69 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         </div>
       </div>
       
-      <div className="max-w-4xl mx-auto p-4 pb-32">
-        {renderStep()}
+      <div className="max-w-4xl mx-auto p-4 pb-8">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          {/* Step Content */}
+          <div className="p-6">
+            {renderStep()}
+          </div>
+          
+          {/* Navigation Buttons */}
+          <div className="border-t border-zinc-700 bg-zinc-800/50 p-6">
+            <div className="flex justify-between items-center">
+              {onCancel && step === (isInTournamentMode ? 0 : 1) && (
+                <button 
+                  onClick={onCancel} 
+                  className="bg-zinc-700 text-zinc-100 font-bold py-3 px-6 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg"
+                >
+                  Cancelar
+                </button>
+              )}
+              
+              {step > (isInTournamentMode ? 0 : 1) && (
+                <button 
+                  onClick={handleBack} 
+                  className="bg-zinc-700 text-zinc-100 font-bold py-3 px-6 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Regresar
+                </button>
+              )}
+              
+              <div className="ml-auto">
+                {step < totalSteps - 1 ? (
+                  <button 
+                    onClick={handleNext} 
+                    disabled={
+                      (step === 1 && selectedPlayers.length < 2) ||
+                      (step === 3 && controllerIds.length < 1) || 
+                      (step === 4 && selectedCircuits.length < 1)
+                    } 
+                    className="relative overflow-hidden group min-h-[48px] bg-f1-red border-2 border-red-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 hover:bg-red-700 hover:border-red-600 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 touch-target text-lg font-mono uppercase tracking-wide"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-400/20 to-red-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    <span className="relative flex items-center gap-2">
+                      SIGUIENTE
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleSubmit} 
+                    className="relative overflow-hidden group min-h-[48px] bg-green-600 border-2 border-green-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 hover:bg-green-700 hover:border-green-600 transform hover:scale-[1.02] active:scale-[0.98] touch-target text-xl font-mono uppercase tracking-wide"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-600/0 via-green-400/20 to-green-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    <span className="relative">🏁 INICIAR CAMPEONATO</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
