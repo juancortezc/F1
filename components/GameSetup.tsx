@@ -452,7 +452,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-bold text-xl text-zinc-100 mb-4">Circuitos Disponibles</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3">
                   {availableCircuits.map(circuit => (
                     <div 
                       key={circuit.id} 
@@ -467,7 +467,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
               
               <div>
                 <h3 className="font-bold text-xl text-zinc-100 mb-4">Orden de Carrera</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3">
                   {selectedCircuits.map((circuit, index) => (
                     <div key={circuit.id} className="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-4 rounded-md">
                       <span 
@@ -814,7 +814,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
   const totalSteps = 7;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black flex flex-col">
       <NavigationBar 
         title="Configuración de Campeonato"
         subtitle={`Paso ${step} de ${totalSteps}`}
@@ -822,64 +822,66 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
         onCancel={onCancel}
       />
       
-      <div className="max-w-4xl mx-auto p-4 pb-24">
-        <div className="bg-zinc-900 border border-zinc-800 p-6 md:p-8 rounded-md shadow-2xl">
-          {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="w-full bg-zinc-700 rounded-full h-3">
-              <div 
-                className="bg-f1-red h-3 rounded-full transition-all duration-500" 
-                style={{ width: `${(step / totalSteps) * 100}%` }}
-              ></div>
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto p-4 pb-32">
+          <div className="bg-zinc-900 border border-zinc-800 p-6 md:p-8 rounded-md shadow-2xl">
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <div className="w-full bg-zinc-700 rounded-full h-3">
+                <div 
+                  className="bg-f1-red h-3 rounded-full transition-all duration-500" 
+                  style={{ width: `${(step / totalSteps) * 100}%` }}
+                ></div>
+              </div>
             </div>
-          </div>
-          
-          {/* Step Content */}
-          <div className="min-h-[400px]">
-            {renderStep()}
-          </div>
-          
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-zinc-700">
-            {onCancel && (
-              <button 
-                onClick={onCancel} 
-                className="bg-zinc-700 text-zinc-100 font-bold py-4 px-8 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg"
-              >
-                Cancelar
-              </button>
-            )}
             
-            {step > (isInTournamentMode ? 0 : 1) && (
-              <button 
-                onClick={handleBack} 
-                className="bg-zinc-700 text-zinc-100 font-bold py-4 px-8 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg"
-              >
-                Regresar
-              </button>
-            )}
+            {/* Step Content */}
+            <div>
+              {renderStep()}
+            </div>
             
-            <div className="ml-auto">
-              {step < totalSteps ? (
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8 pt-6 border-t border-zinc-700">
+              {onCancel && (
                 <button 
-                  onClick={handleNext} 
-                  disabled={
-                    (step === 1 && selectedPlayers.length < 2) ||
-                    (step === 3 && controllerIds.length < 1) || 
-                    (step === 4 && selectedCircuits.length < 1)
-                  } 
-                  className="bg-f1-red text-white font-bold py-4 px-8 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-target text-lg"
+                  onClick={onCancel} 
+                  className="bg-zinc-700 text-zinc-100 font-bold py-4 px-8 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg"
                 >
-                  Siguiente
-                </button>
-              ) : (
-                <button 
-                  onClick={handleSubmit} 
-                  className="bg-green-600 text-white font-bold py-4 px-8 rounded-md hover:bg-green-700 transition-colors touch-target text-lg"
-                >
-                  INICIAR CAMPEONATO!
+                  Cancelar
                 </button>
               )}
+              
+              {step > (isInTournamentMode ? 0 : 1) && (
+                <button 
+                  onClick={handleBack} 
+                  className="bg-zinc-700 text-zinc-100 font-bold py-4 px-8 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg"
+                >
+                  Regresar
+                </button>
+              )}
+              
+              <div className="ml-auto">
+                {step < totalSteps ? (
+                  <button 
+                    onClick={handleNext} 
+                    disabled={
+                      (step === 1 && selectedPlayers.length < 2) ||
+                      (step === 3 && controllerIds.length < 1) || 
+                      (step === 4 && selectedCircuits.length < 1)
+                    } 
+                    className="bg-f1-red text-white font-bold py-4 px-8 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-target text-lg"
+                  >
+                    Siguiente
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleSubmit} 
+                    className="bg-green-600 text-white font-bold py-4 px-8 rounded-md hover:bg-green-700 transition-colors touch-target text-lg"
+                  >
+                    INICIAR CAMPEONATO!
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
