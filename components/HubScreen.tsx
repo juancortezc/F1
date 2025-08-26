@@ -45,7 +45,7 @@ const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, 
                         Bienvenido, {currentUser?.name}
                     </h1>
                     <p className="text-lg text-zinc-300">
-                        {isOrganizer ? 'Organizador' : 'Jugador'}
+                        Piloto
                     </p>
                 </div>
 

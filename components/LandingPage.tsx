@@ -6,111 +6,151 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
-  const [selectedRole, setSelectedRole] = useState<'organizer' | 'player' | 'spectator' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'piloto' | 'espectador' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRoleSelect = (role: 'organizer' | 'player' | 'spectator') => {
+  const handleRoleSelect = (role: 'piloto' | 'espectador') => {
     setSelectedRole(role);
-    setTimeout(() => onRoleSelect(role), 100);
+    setIsLoading(true);
+    
+    // Map roles - Piloto can be either player or organizer (determined by PIN)
+    const mappedRole = role === 'piloto' ? 'player' : 'spectator';
+    setTimeout(() => onRoleSelect(mappedRole), 800);
   };
 
   return (
-    <div className="min-h-screen bg-f1-black flex items-center justify-center p-4">
-      <div className="max-w-md mx-auto w-full space-y-8">
-        {/* Logo */}
-        <div className="text-center">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Subtle gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-950 to-black opacity-50"></div>
+      
+      {/* Content */}
+      <div className="relative z-10 max-w-sm mx-auto w-full">
+        {/* Logo Section */}
+        <div className="text-center mb-12">
           <img 
             src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
             alt="F1" 
-            className="h-20 mx-auto mb-4"
+            className="h-16 mx-auto mb-8 opacity-90"
           />
-          <h1 className="text-f1-3xl font-bold text-primary">
+          
+          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-wide mb-2">
             F1 NIGHT
           </h1>
+          
+          <div className="h-1 w-24 bg-gradient-to-r from-transparent via-red-600 to-transparent mx-auto mb-3"></div>
+          
+          <p className="text-zinc-400 text-sm font-light tracking-widest uppercase">
+            Racing Experience
+          </p>
         </div>
 
-        {/* Role Selection */}
+        {/* Buttons */}
         <div className="space-y-4">
           <button
-            onClick={() => handleRoleSelect('player')}
-            disabled={selectedRole === 'player'}
-            className={`w-full touch-target surface-primary border-2 rounded-md font-bold text-f1-lg transition-all ${
-              selectedRole === 'player' 
-                ? 'border-f1-red text-f1-red' 
-                : 'border-subtle text-primary hover:border-f1-red'
-            } disabled:opacity-50`}
+            onClick={() => handleRoleSelect('piloto')}
+            disabled={isLoading}
+            className={`
+              w-full relative overflow-hidden group
+              ${selectedRole === 'piloto' 
+                ? 'bg-red-600 border-red-500' 
+                : 'bg-zinc-900/50 border-zinc-800 hover:border-red-600/50'
+              }
+              border backdrop-blur-sm
+              rounded-lg py-6 px-8
+              transition-all duration-300 ease-out
+              transform hover:scale-[1.02] active:scale-[0.98]
+              disabled:cursor-not-allowed disabled:opacity-50
+            `}
           >
-            {selectedRole === 'player' ? (
-              <span className="flex items-center justify-center gap-2">
-                <LoadingSpinner size="sm" />
-                Ingresando...
-              </span>
-            ) : (
-              'JUGADOR'
-            )}
+            {/* Hover effect */}
+            <div className={`
+              absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/20 to-red-600/0
+              translate-x-[-100%] group-hover:translate-x-[100%]
+              transition-transform duration-1000
+              ${selectedRole === 'piloto' ? 'opacity-0' : ''}
+            `}></div>
+            
+            <div className="relative">
+              {selectedRole === 'piloto' && isLoading ? (
+                <div className="flex items-center justify-center gap-3">
+                  <LoadingSpinner size="sm" />
+                  <span className="text-white font-semibold text-lg animate-pulse">
+                    Preparando Pits...
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    PILOTO
+                  </div>
+                  <div className="text-sm text-zinc-300/80 font-light">
+                    Ingresar con PIN de acceso
+                  </div>
+                </>
+              )}
+            </div>
           </button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-subtle"></div>
-            </div>
-            <div className="relative flex justify-center text-f1-sm">
-              <span className="px-2 bg-f1-black text-secondary">o</span>
-            </div>
-          </div>
-
           <button
-            onClick={() => handleRoleSelect('organizer')}
-            disabled={selectedRole === 'organizer'}
-            className={`w-full touch-target surface-secondary border border-subtle rounded-md font-semibold text-f1-base transition-all ${
-              selectedRole === 'organizer' 
-                ? 'border-f1-red text-f1-red' 
-                : 'text-secondary hover:text-primary hover:border-f1-border'
-            } disabled:opacity-50`}
+            onClick={() => handleRoleSelect('espectador')}
+            disabled={isLoading}
+            className={`
+              w-full relative overflow-hidden group
+              ${selectedRole === 'espectador' 
+                ? 'bg-zinc-700 border-zinc-600' 
+                : 'bg-zinc-900/30 border-zinc-800/50 hover:border-zinc-600/50'
+              }
+              border backdrop-blur-sm
+              rounded-lg py-6 px-8
+              transition-all duration-300 ease-out
+              transform hover:scale-[1.02] active:scale-[0.98]
+              disabled:cursor-not-allowed disabled:opacity-50
+            `}
           >
-            {selectedRole === 'organizer' ? (
-              <span className="flex items-center justify-center gap-2">
-                <LoadingSpinner size="sm" />
-                Ingresando...
-              </span>
-            ) : (
-              'Administrador'
-            )}
-          </button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-subtle"></div>
+            {/* Hover effect */}
+            <div className={`
+              absolute inset-0 bg-gradient-to-r from-zinc-600/0 via-zinc-600/10 to-zinc-600/0
+              translate-x-[-100%] group-hover:translate-x-[100%]
+              transition-transform duration-1000
+              ${selectedRole === 'espectador' ? 'opacity-0' : ''}
+            `}></div>
+            
+            <div className="relative">
+              {selectedRole === 'espectador' && isLoading ? (
+                <div className="flex items-center justify-center gap-3">
+                  <LoadingSpinner size="sm" />
+                  <span className="text-white font-semibold text-lg animate-pulse">
+                    Accediendo a paddock...
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-zinc-100 mb-1">
+                    ESPECTADOR
+                  </div>
+                  <div className="text-sm text-zinc-400 font-light">
+                    Ver tiempos en vivo
+                  </div>
+                </>
+              )}
             </div>
-            <div className="relative flex justify-center text-f1-sm">
-              <span className="px-2 bg-f1-black text-secondary">o</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => handleRoleSelect('spectator')}
-            disabled={selectedRole === 'spectator'}
-            className={`w-full touch-target surface-primary border border-subtle rounded-md font-semibold text-f1-base transition-all ${
-              selectedRole === 'spectator' 
-                ? 'border-f1-red text-f1-red' 
-                : 'text-zinc-400 hover:text-zinc-100 hover:border-zinc-600'
-            } disabled:opacity-50`}
-          >
-            {selectedRole === 'spectator' ? (
-              <span className="flex items-center justify-center gap-2">
-                <LoadingSpinner size="sm" />
-                Ingresando...
-              </span>
-            ) : (
-              'ESPECTADOR'
-            )}
           </button>
         </div>
 
         {/* Footer */}
-        <div className="text-center text-f1-sm text-muted pt-8">
-          <p>Creado por Black Mamba 2025</p>
+        <div className="text-center mt-16">
+          <div className="flex items-center justify-center gap-2 text-zinc-600 text-xs">
+            <div className="w-8 h-px bg-zinc-800"></div>
+            <span className="font-mono tracking-wider">BLACK MAMBA</span>
+            <div className="w-8 h-px bg-zinc-800"></div>
+          </div>
+          <div className="text-zinc-700 text-xs font-mono mt-1">2025</div>
         </div>
       </div>
+
+      {/* Decorative elements */}
+      <div className="absolute top-0 left-0 w-32 h-32 bg-red-600/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-48 h-48 bg-red-600/5 rounded-full blur-3xl"></div>
     </div>
   );
 };
