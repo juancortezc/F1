@@ -196,38 +196,6 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
           </div>
         </div>
 
-        {/* Statistics */}
-        {statistics && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-zinc-900 border border-zinc-800 rounded-md">
-            <div className="text-center">
-              <div className="luxury-label">TOTAL VUELTAS</div>
-              <div className="luxury-data text-lg">{statistics.totalLaps}</div>
-            </div>
-            <div className="text-center">
-              <div className="luxury-label">VUELTA MÁS RÁPIDA</div>
-              <div className="luxury-data text-lg text-luxury-first">{formatTimeMs(statistics.fastestLap)}</div>
-              {statistics.fastestLapPlayer && (
-                <div className="text-xs text-zinc-400 mt-1">
-                  {statistics.fastestLapPlayer}
-                </div>
-              )}
-            </div>
-            <div className="text-center">
-              <div className="luxury-label">VUELTA MÁS LENTA</div>
-              <div className="luxury-data text-lg">{formatTimeMs(statistics.slowestLap)}</div>
-            </div>
-            <div className="text-center">
-              <div className="luxury-label">PROMEDIO</div>
-              <div className="luxury-data text-lg">{formatTimeMs(Math.round(statistics.averageTime))}</div>
-            </div>
-            <div className="text-center">
-              <div className="luxury-label">CIRCUITO RÉCORD</div>
-              <div className="luxury-data text-sm">
-                {statistics.fastestLapCircuit || 'N/A'}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Loading and Error States */}
         {isLoading && (

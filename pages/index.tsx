@@ -1110,6 +1110,12 @@ function App() {
                                 >
                                     STATS
                                 </button>
+                                <button 
+                                    onClick={() => setActiveTab('tiempos')} 
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'tiempos' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    TIEMPOS
+                                </button>
                                 {/* Admin - Solo para organizadores */}
                                 {hasAdminPrivileges(currentUser) && (
                                     <button

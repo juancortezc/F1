@@ -866,77 +866,42 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
   const totalSteps = 7;
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
-      <NavigationBar 
-        title="Configuración de Campeonato"
-        subtitle={`Paso ${step} de ${totalSteps}`}
-        onBack={step > (isInTournamentMode ? 0 : 1) ? handleBack : undefined}
-        onCancel={onCancel}
-      />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-4 pb-32">
-          <div className="bg-zinc-900 border border-zinc-800 p-6 md:p-8 rounded-md shadow-2xl">
-            {/* Progress Bar */}
-            <div className="mb-8">
-              <div className="w-full bg-zinc-700 rounded-full h-3">
-                <div 
-                  className="bg-f1-red h-3 rounded-full transition-all duration-500" 
-                  style={{ width: `${(step / totalSteps) * 100}%` }}
-                ></div>
+    <div className="min-h-screen bg-black">
+      {/* F1 Luxury Header */}
+      <div className="bg-zinc-900 border-b-2 border-f1-red sticky top-0 z-20 shadow-lg">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {(step > (isInTournamentMode ? 0 : 1) || onCancel) && (
+                <button 
+                  onClick={step > (isInTournamentMode ? 0 : 1) ? handleBack : onCancel}
+                  className="flex items-center justify-center w-12 h-12 rounded-md bg-f1-red border border-red-700 text-white hover:bg-red-700 transition-colors duration-200 shadow-md"
+                  title={step > (isInTournamentMode ? 0 : 1) ? "Paso anterior" : "Cancelar"}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-white tracking-wide font-mono">CONFIGURACIÓN DE CAMPEONATO</h1>
+                <p className="text-sm font-mono text-zinc-300 uppercase tracking-widest">
+                  F1 Night Championship Setup
+                </p>
               </div>
             </div>
-            
-            {/* Step Content */}
-            <div>
-              {renderStep()}
-            </div>
-            
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-zinc-700">
-              {onCancel && (
-                <button 
-                  onClick={onCancel} 
-                  className="bg-zinc-700 text-zinc-100 font-bold py-4 px-8 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg"
-                >
-                  Cancelar
-                </button>
-              )}
-              
-              {step > (isInTournamentMode ? 0 : 1) && (
-                <button 
-                  onClick={handleBack} 
-                  className="bg-zinc-700 text-zinc-100 font-bold py-4 px-8 rounded-md hover:bg-zinc-600 transition-colors touch-target text-lg"
-                >
-                  Regresar
-                </button>
-              )}
-              
-              <div className="ml-auto">
-                {step < totalSteps ? (
-                  <button 
-                    onClick={handleNext} 
-                    disabled={
-                      (step === 1 && selectedPlayers.length < 2) ||
-                      (step === 3 && controllerIds.length < 1) || 
-                      (step === 4 && selectedCircuits.length < 1)
-                    } 
-                    className="bg-f1-red text-white font-bold py-4 px-8 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-target text-lg"
-                  >
-                    Siguiente
-                  </button>
-                ) : (
-                  <button 
-                    onClick={handleSubmit} 
-                    className="bg-green-600 text-white font-bold py-4 px-8 rounded-md hover:bg-green-700 transition-colors touch-target text-lg"
-                  >
-                    INICIAR CAMPEONATO!
-                  </button>
-                )}
+            <div className="text-right">
+              <div className="text-lg font-bold text-white font-mono">PASO {step + 1}/{totalSteps}</div>
+              <div className="text-sm font-mono text-zinc-300 uppercase tracking-wide">
+                {step === 0 ? 'MODALIDAD' : step === 1 ? 'JUGADORES' : step === 2 ? 'ORDEN' : step === 3 ? 'CONTROL' : step === 4 ? 'CIRCUITOS' : step === 5 ? 'REGLAS' : 'PUNTAJE'}
               </div>
             </div>
           </div>
         </div>
+      </div>
+      
+      <div className="max-w-4xl mx-auto p-4 pb-32">
+        {renderStep()}
       </div>
     </div>
   );
