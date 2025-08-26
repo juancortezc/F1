@@ -14,7 +14,8 @@ export async function getPlayers(): Promise<Player[]> {
       name: player.name,
       imageUrl: player.imageUrl,
       pin: '', // PIN not returned for security
-      isActive: player.isActive
+      isActive: player.isActive,
+      isGuest: player.isGuest
     }));
   } catch (error) {
     console.error('Error reading players:', error);
@@ -30,6 +31,7 @@ export async function createPlayer(playerData: Omit<Player, 'id' | 'isActive'>):
         name: playerData.name,
         imageUrl: playerData.imageUrl,
         pin: playerData.pin,
+        isGuest: playerData.isGuest || false,
         isActive: true
       }
     });
@@ -39,7 +41,8 @@ export async function createPlayer(playerData: Omit<Player, 'id' | 'isActive'>):
       name: newPlayer.name,
       imageUrl: newPlayer.imageUrl,
       pin: '', // Don't return PIN for security
-      isActive: newPlayer.isActive
+      isActive: newPlayer.isActive,
+      isGuest: newPlayer.isGuest
     };
   } catch (error) {
     console.error('Error creating player:', error);
@@ -56,7 +59,8 @@ export async function updatePlayer(id: string, playerData: Partial<Omit<Player, 
         ...(playerData.name && { name: playerData.name }),
         ...(playerData.imageUrl && { imageUrl: playerData.imageUrl }),
         ...(playerData.pin && { pin: playerData.pin }),
-        ...(playerData.isActive !== undefined && { isActive: playerData.isActive })
+        ...(playerData.isActive !== undefined && { isActive: playerData.isActive }),
+        ...(playerData.isGuest !== undefined && { isGuest: playerData.isGuest })
       }
     });
     
@@ -65,7 +69,8 @@ export async function updatePlayer(id: string, playerData: Partial<Omit<Player, 
       name: updatedPlayer.name,
       imageUrl: updatedPlayer.imageUrl,
       pin: '', // Don't return PIN for security
-      isActive: updatedPlayer.isActive
+      isActive: updatedPlayer.isActive,
+      isGuest: updatedPlayer.isGuest
     };
   } catch (error) {
     console.error('Error updating player:', error);
@@ -128,7 +133,8 @@ export async function getPlayerById(playerId: string): Promise<Player | null> {
       name: player.name,
       imageUrl: player.imageUrl,
       pin: '', // Don't return PIN for security
-      isActive: player.isActive
+      isActive: player.isActive,
+      isGuest: player.isGuest
     };
   } catch (error) {
     console.error('Error getting player by ID:', error);

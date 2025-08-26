@@ -14,7 +14,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
   } else if (req.method === 'POST') {
     try {
-      const { name, imageUrl, pin } = req.body;
+      const { name, imageUrl, pin, isGuest = false } = req.body;
       
       // Validate required fields
       if (!name || !imageUrl || !pin) {
@@ -46,7 +46,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const newPlayer = await createPlayer({
         name: name.trim(),
         imageUrl,
-        pin
+        pin,
+        isGuest
       });
       
       res.status(201).json(newPlayer);

@@ -254,37 +254,89 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
             
             <p className="text-zinc-400 mb-6 text-lg">Selecciona los jugadores que participarán:</p>
             
-            <div className="space-y-3">
-              {allPlayers.map((player) => {
-                const isSelected = selectedPlayers.find(p => p.id === player.id);
-                return (
-                  <div 
-                    key={player.id} 
-                    onClick={() => handlePlayerToggle(player)}
-                    className={`flex items-center gap-4 p-4 rounded-md cursor-pointer transition-all touch-target ${
-                      isSelected 
-                        ? 'bg-zinc-800 border-2 border-f1-red' 
-                        : 'bg-zinc-900 border-2 border-zinc-700 hover:border-zinc-600'
-                    }`}
-                  >
-                    <img src={player.imageUrl} alt={player.name} className="w-12 h-12 rounded-full object-cover" />
-                    <div className="flex-grow">
-                      <div className="font-bold text-xl text-zinc-100">{player.name}</div>
-                      <div className="text-lg text-zinc-400">
-                        {isSelected ? 'Participará en el campeonato' : 'No participará'}
+            {/* Regular Players */}
+            {allPlayers.filter(p => !p.isGuest).length > 0 && (
+              <>
+                <h3 className="font-bold text-xl text-zinc-100 mb-4">Jugadores Habituales</h3>
+                <div className="space-y-3 mb-6">
+                  {allPlayers.filter(p => !p.isGuest).map((player) => {
+                    const isSelected = selectedPlayers.find(p => p.id === player.id);
+                    return (
+                      <div 
+                        key={player.id} 
+                        onClick={() => handlePlayerToggle(player)}
+                        className={`flex items-center gap-4 p-4 rounded-md cursor-pointer transition-all touch-target ${
+                          isSelected 
+                            ? 'bg-zinc-800 border-2 border-f1-red' 
+                            : 'bg-zinc-900 border-2 border-zinc-700 hover:border-zinc-600'
+                        }`}
+                      >
+                        <img src={player.imageUrl} alt={player.name} className="w-12 h-12 rounded-full object-cover" />
+                        <div className="flex-grow">
+                          <div className="font-bold text-xl text-zinc-100">{player.name}</div>
+                          <div className="text-lg text-zinc-400">
+                            {isSelected ? 'Participará en el campeonato' : 'No participará'}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="text-f1-red">
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    {isSelected && (
-                      <div className="text-f1-red">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            
+            {/* Guest Players */}
+            {allPlayers.filter(p => p.isGuest).length > 0 && (
+              <>
+                <h3 className="font-bold text-xl text-zinc-100 mb-4 flex items-center gap-2">
+                  <span className="text-amber-400">👤</span>
+                  Invitados
+                </h3>
+                <div className="space-y-3">
+                  {allPlayers.filter(p => p.isGuest).map((player) => {
+                    const isSelected = selectedPlayers.find(p => p.id === player.id);
+                    return (
+                      <div 
+                        key={player.id} 
+                        onClick={() => handlePlayerToggle(player)}
+                        className={`flex items-center gap-4 p-4 rounded-md cursor-pointer transition-all touch-target ${
+                          isSelected 
+                            ? 'bg-zinc-800 border-2 border-amber-500' 
+                            : 'bg-zinc-900 border-2 border-zinc-700 hover:border-amber-600/50'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center">
+                          <span className="text-amber-400 text-xl">👤</span>
+                        </div>
+                        <div className="flex-grow">
+                          <div className="font-bold text-xl text-zinc-100 flex items-center gap-2">
+                            {player.name}
+                            <span className="text-xs text-amber-500 bg-amber-500/20 px-2 py-1 rounded">INVITADO</span>
+                          </div>
+                          <div className="text-lg text-zinc-400">
+                            {isSelected ? 'Participará en el campeonato' : 'No participará'}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="text-amber-500">
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
             
             <div className="mt-6 p-4 bg-zinc-800 border border-zinc-700 rounded-md">
               <p className="text-lg text-zinc-100 font-mono">

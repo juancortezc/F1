@@ -37,9 +37,12 @@ const StatsView: React.FC<StatsViewProps> = ({
   onNewGame 
 }) => {
   const { accumulatedStats } = useMemo(() => {
-    // Initialize accumulated stats for each player
+    // Filter out guest players from stats
+    const eligiblePlayers = players.filter(p => !p.isGuest);
+    
+    // Initialize accumulated stats for each eligible player
     const playerAccStats: Record<string, AccumulatedStats> = {};
-    players.forEach(player => {
+    eligiblePlayers.forEach(player => {
       playerAccStats[player.id] = {
         player,
         championships: 0,

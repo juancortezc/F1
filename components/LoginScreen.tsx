@@ -13,10 +13,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Auto-login for spectators
+  // Auto-login for spectators and guests
   React.useEffect(() => {
     if (selectedRole === 'spectator') {
       handleSpectatorLogin();
+    } else if (selectedRole === 'guest') {
+      handleGuestLogin();
     }
   }, [selectedRole]);
 
@@ -33,6 +35,47 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ selectedRole, onLoginSuccess,
     setTimeout(() => {
       onLoginSuccess(spectatorSession);
     }, 500);
+  };
+
+  const handleGuestLogin = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch guest players from API
+      const response = await fetch('/api/players');
+      if (!response.ok) {
+        throw new Error('Failed to load players');
+      }
+      
+      const players = await response.json();
+      const guestPlayers = players.filter((p: any) => p.isGuest);
+      
+      if (guestPlayers.length === 0) {
+        setError('No hay invitados registrados. Contacta un administrador.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // For now, if there's only one guest, auto-select it
+      // If multiple guests, we'd need a selection screen
+      if (guestPlayers.length === 1) {
+        const guestSession: UserSession = {
+          userId: guestPlayers[0].id,
+          name: guestPlayers[0].name,
+          role: 'guest'
+        };
+        
+        setTimeout(() => {
+          onLoginSuccess(guestSession);
+        }, 500);
+      } else {
+        // Show guest selection (we'll implement this later if needed)
+        setError('Múltiples invitados disponibles. Implementar selección.');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      setError('Error al cargar invitados');
+      setIsLoading(false);
+    }
   };
 
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -13,8 +13,8 @@ interface AdminViewProps {
     currentUser?: UserSession | null;
 }
 
-type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | null;
-type TabType = 'players' | 'circuits';
+type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | 'new-guest' | null;
+type TabType = 'players' | 'circuits' | 'guests';
 
 interface AdminLock {
     userId: string;
@@ -26,6 +26,10 @@ interface AdminLock {
 const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, currentUser }) => {
     const [editingItem, setEditingItem] = useState<EditingItem>(null);
     const [activeTab, setActiveTab] = useState<TabType>('players');
+    
+    // Separate regular players and guests
+    const regularPlayers = players.filter(p => !p.isGuest);
+    const guestPlayers = players.filter(p => p.isGuest);
     const [isLocked, setIsLocked] = useState(false);
     const [lockInfo, setLockInfo] = useState<AdminLock | null>(null);
     const [isCheckingLock, setIsCheckingLock] = useState(true);
@@ -246,6 +250,16 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                     Jugadores
                 </button>
                 <button
+                    onClick={() => setActiveTab('guests')}
+                    className={`flex-1 py-3 px-4 font-semibold text-center transition-colors ${
+                        activeTab === 'guests'
+                            ? 'text-f1-red border-b-2 border-f1-red'
+                            : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                >
+                    Invitados
+                </button>
+                <button
                     onClick={() => setActiveTab('circuits')}
                     className={`flex-1 py-3 px-4 font-semibold text-center transition-colors ${
                         activeTab === 'circuits'
@@ -261,7 +275,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
             {activeTab === 'players' && (
                 <div className="bg-zinc-900 border border-zinc-800 rounded-md">
                     <div className="px-3 py-2 border-b border-zinc-700 flex justify-between items-center bg-zinc-800">
-                        <h2 className="text-lg font-bold text-zinc-100">Jugadores ({players.length})</h2>
+                        <h2 className="text-lg font-bold text-zinc-100">Jugadores ({regularPlayers.length})</h2>
                         <button 
                             onClick={() => setEditingItem('new-player')} 
                             className="bg-f1-red text-white p-2 rounded hover:bg-red-700 transition-colors"
@@ -270,7 +284,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                         </button>
                     </div>
                     <div className="divide-y divide-zinc-800">
-                        {players.map(player => (
+                        {regularPlayers.map(player => (
                             <div key={player.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
                                 <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full"/>
                                 <div className="flex-grow">
@@ -293,6 +307,55 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'guests' && (
+                <div className="bg-zinc-900 border border-zinc-800 rounded-md">
+                    <div className="px-3 py-2 border-b border-zinc-700 flex justify-between items-center bg-zinc-800">
+                        <h2 className="text-lg font-bold text-zinc-100">Invitados ({guestPlayers.length})</h2>
+                        <button 
+                            onClick={() => setEditingItem('new-guest')} 
+                            className="bg-f1-red text-white p-2 rounded hover:bg-red-700 transition-colors"
+                        >
+                            <PlusIcon className="w-4 h-4"/>
+                        </button>
+                    </div>
+                    <div className="divide-y divide-zinc-800">
+                        {guestPlayers.map(player => (
+                            <div key={player.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
+                                <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
+                                    <span className="text-zinc-400 text-lg">👤</span>
+                                </div>
+                                <div className="flex-grow">
+                                    <div className="text-zinc-100 font-semibold flex items-center gap-2">
+                                        {player.name}
+                                        <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">INVITADO</span>
+                                    </div>
+                                    <div className="text-zinc-400 text-xs font-mono">Sin PIN - Acceso directo</div>
+                                </div>
+                                <div className="flex gap-1">
+                                    <button 
+                                        onClick={() => setEditingItem(player)} 
+                                        className="p-2 text-zinc-400 hover:text-zinc-100 transition-colors"
+                                    >
+                                        <PencilIcon className="w-4 h-4"/>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDeletePlayer(player.id)} 
+                                        className="p-2 text-zinc-400 hover:text-f1-red transition-colors"
+                                    >
+                                        <TrashIcon className="w-4 h-4"/>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {guestPlayers.length === 0 && (
+                            <div className="px-3 py-8 text-center text-zinc-500">
+                                No hay invitados registrados
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -341,13 +404,14 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
             {editingItem && (
                 <Modal isOpen={true} onClose={() => setEditingItem(null)} title={
                     editingItem === 'new-player' ? 'Nuevo Jugador' :
+                    editingItem === 'new-guest' ? 'Nuevo Invitado' :
                     editingItem === 'new-circuit' ? 'Nuevo Circuito' :
                     'name' in editingItem ? `Editar ${editingItem.name}` : 'Editar'
                 }>
                     <EditForm 
                         item={editingItem} 
                         onSave={(data) => {
-                            if (editingItem === 'new-player' || (editingItem && typeof editingItem === 'object' && 'pin' in editingItem)) {
+                            if (editingItem === 'new-player' || editingItem === 'new-guest' || (editingItem && typeof editingItem === 'object' && 'pin' in editingItem)) {
                                 handleSavePlayer(data as Partial<Player>);
                             } else {
                                 handleSaveCircuit(data as Partial<Circuit>);
@@ -368,9 +432,12 @@ const EditForm: React.FC<{
     onCancel: () => void;
 }> = ({ item, onSave, onCancel }) => {
     const isPlayer = item === 'new-player' || (item && typeof item === 'object' && 'pin' in item);
+    const isGuest = item === 'new-guest' || (item && typeof item === 'object' && 'isGuest' in item && item.isGuest);
     const [formData, setFormData] = useState<Partial<Player> | Partial<Circuit>>(() => {
         if (item === 'new-player') {
             return { name: '', imageUrl: '', pin: '0000' };
+        } else if (item === 'new-guest') {
+            return { name: '', imageUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest&backgroundColor=zinc', pin: 'GUEST', isGuest: true };
         } else if (item === 'new-circuit') {
             return { name: '', imageUrl: '' };
         } else {
@@ -399,7 +466,7 @@ const EditForm: React.FC<{
                 className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
             />
             
-            {isPlayer && (
+            {isPlayer && !isGuest && (
                 <>
                     <input 
                         type="text" 
@@ -424,7 +491,18 @@ const EditForm: React.FC<{
                 </>
             )}
             
-            {!isPlayer && (
+            {isGuest && (
+                <div className="p-4 bg-zinc-800 border border-zinc-700 rounded-md">
+                    <p className="text-zinc-300 text-sm mb-2">
+                        <span className="font-semibold">Invitado:</span> Avatar genérico automático, acceso sin PIN
+                    </p>
+                    <p className="text-zinc-500 text-xs">
+                        Los invitados participan normalmente pero no aparecen en estadísticas históricas
+                    </p>
+                </div>
+            )}
+            
+            {!isPlayer && !isGuest && (
                 <input 
                     type="url" 
                     name="imageUrl" 

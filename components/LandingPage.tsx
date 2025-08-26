@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
 interface LandingPageProps {
-  onRoleSelect: (role: 'organizer' | 'player' | 'spectator') => void;
+  onRoleSelect: (role: 'organizer' | 'player' | 'spectator' | 'guest') => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
-  const [selectedRole, setSelectedRole] = useState<'piloto' | 'espectador' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'piloto' | 'espectador' | 'invitado' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRoleSelect = (role: 'piloto' | 'espectador') => {
+  const handleRoleSelect = (role: 'piloto' | 'espectador' | 'invitado') => {
     setSelectedRole(role);
     setIsLoading(true);
     
     // Map roles - Piloto can be either player or organizer (determined by PIN)
-    const mappedRole = role === 'piloto' ? 'player' : 'spectator';
+    const mappedRole = role === 'piloto' ? 'player' : role === 'espectador' ? 'spectator' : 'guest';
     setTimeout(() => onRoleSelect(mappedRole), 800);
   };
 
@@ -85,6 +85,51 @@ const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                   </div>
                   <div className="text-sm text-zinc-300/80 font-light">
                     Ingresar con PIN de acceso
+                  </div>
+                </>
+              )}
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleRoleSelect('invitado')}
+            disabled={isLoading}
+            className={`
+              w-full relative overflow-hidden group
+              ${selectedRole === 'invitado' 
+                ? 'bg-zinc-700 border-zinc-600' 
+                : 'bg-zinc-900/30 border-zinc-800/50 hover:border-zinc-600/50'
+              }
+              border backdrop-blur-sm
+              rounded-lg py-6 px-8
+              transition-all duration-300 ease-out
+              transform hover:scale-[1.02] active:scale-[0.98]
+              disabled:cursor-not-allowed disabled:opacity-50
+            `}
+          >
+            {/* Hover effect */}
+            <div className={`
+              absolute inset-0 bg-gradient-to-r from-amber-600/0 via-amber-600/10 to-amber-600/0
+              translate-x-[-100%] group-hover:translate-x-[100%]
+              transition-transform duration-1000
+              ${selectedRole === 'invitado' ? 'opacity-0' : ''}
+            `}></div>
+            
+            <div className="relative">
+              {selectedRole === 'invitado' && isLoading ? (
+                <div className="flex items-center justify-center gap-3">
+                  <LoadingSpinner size="sm" />
+                  <span className="text-white font-semibold text-lg animate-pulse">
+                    Accediendo como invitado...
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-amber-400 mb-1 flex items-center justify-center gap-2">
+                    👤 INVITADO
+                  </div>
+                  <div className="text-sm text-amber-500/80 font-light">
+                    Acceso directo sin PIN
                   </div>
                 </>
               )}

@@ -16,6 +16,7 @@ export interface Player {
   imageUrl: string;
   pin: string;
   isActive: boolean;
+  isGuest: boolean;
 }
 
 export type LapTime = {
@@ -109,7 +110,7 @@ export interface GameHistoryEntry {
 }
 
 // User roles and authentication
-export type UserRole = 'organizer' | 'player' | 'spectator';
+export type UserRole = 'organizer' | 'player' | 'spectator' | 'guest';
 
 export interface UserSession {
   userId: string;

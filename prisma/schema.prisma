@@ -15,6 +15,7 @@ model Player {
   updatedAt DateTime @updatedAt
   isActive  Boolean  @default(true)
   pin       String   @default("0000")
+  isGuest   Boolean  @default(false)
 
   @@map("players")
 }
