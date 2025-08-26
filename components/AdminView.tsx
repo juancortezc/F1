@@ -431,8 +431,8 @@ const EditForm: React.FC<{
     onSave: (data: Partial<Player> | Partial<Circuit>) => void;
     onCancel: () => void;
 }> = ({ item, onSave, onCancel }) => {
-    const isPlayer = item === 'new-player' || (item && typeof item === 'object' && 'pin' in item);
     const isGuest = item === 'new-guest' || (item && typeof item === 'object' && 'isGuest' in item && item.isGuest);
+    const isPlayer = (item === 'new-player' || (item && typeof item === 'object' && 'pin' in item)) && !isGuest;
     const [formData, setFormData] = useState<Partial<Player> | Partial<Circuit>>(() => {
         if (item === 'new-player') {
             return { name: '', imageUrl: '', pin: '0000' };
