@@ -347,7 +347,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                     <EditForm 
                         item={editingItem} 
                         onSave={(data) => {
-                            if (editingItem === 'new-player' || (editingItem && 'pin' in editingItem)) {
+                            if (editingItem === 'new-player' || (editingItem && typeof editingItem === 'object' && 'pin' in editingItem)) {
                                 handleSavePlayer(data as Partial<Player>);
                             } else {
                                 handleSaveCircuit(data as Partial<Circuit>);
@@ -367,7 +367,7 @@ const EditForm: React.FC<{
     onSave: (data: Partial<Player> | Partial<Circuit>) => void;
     onCancel: () => void;
 }> = ({ item, onSave, onCancel }) => {
-    const isPlayer = item === 'new-player' || (item && 'pin' in item);
+    const isPlayer = item === 'new-player' || (item && typeof item === 'object' && 'pin' in item);
     const [formData, setFormData] = useState<Partial<Player> | Partial<Circuit>>(() => {
         if (item === 'new-player') {
             return { name: '', imageUrl: '', pin: '0000' };
