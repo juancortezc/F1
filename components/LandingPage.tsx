@@ -75,66 +75,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                 <div className="flex items-center justify-center gap-3">
                   <LoadingSpinner size="sm" />
                   <span className="text-white font-semibold text-lg animate-pulse">
-                    Preparando Pits...
+                    Accediendo al Parc Fermé...
                   </span>
                 </div>
               ) : (
                 <>
                   <div className="text-2xl font-bold text-white mb-1">
-                    PILOTO
+                    PARC FERMÉ
                   </div>
                   <div className="text-sm text-zinc-300/80 font-light">
-                    Ingresar con PIN de acceso
+                    Acceso con credenciales • Área segura
                   </div>
                 </>
               )}
             </div>
           </button>
 
-          <button
-            onClick={() => handleRoleSelect('invitado')}
-            disabled={isLoading}
-            className={`
-              w-full relative overflow-hidden group
-              ${selectedRole === 'invitado' 
-                ? 'bg-zinc-700 border-zinc-600' 
-                : 'bg-zinc-900/30 border-zinc-800/50 hover:border-zinc-600/50'
-              }
-              border backdrop-blur-sm
-              rounded-lg py-6 px-8
-              transition-all duration-300 ease-out
-              transform hover:scale-[1.02] active:scale-[0.98]
-              disabled:cursor-not-allowed disabled:opacity-50
-            `}
-          >
-            {/* Hover effect */}
-            <div className={`
-              absolute inset-0 bg-gradient-to-r from-amber-600/0 via-amber-600/10 to-amber-600/0
-              translate-x-[-100%] group-hover:translate-x-[100%]
-              transition-transform duration-1000
-              ${selectedRole === 'invitado' ? 'opacity-0' : ''}
-            `}></div>
-            
-            <div className="relative">
-              {selectedRole === 'invitado' && isLoading ? (
-                <div className="flex items-center justify-center gap-3">
-                  <LoadingSpinner size="sm" />
-                  <span className="text-white font-semibold text-lg animate-pulse">
-                    Accediendo como invitado...
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div className="text-2xl font-bold text-amber-400 mb-1 flex items-center justify-center gap-2">
-                    👤 INVITADO
-                  </div>
-                  <div className="text-sm text-amber-500/80 font-light">
-                    Acceso directo sin PIN
-                  </div>
-                </>
-              )}
-            </div>
-          </button>
 
           <button
             onClick={() => handleRoleSelect('espectador')}
@@ -165,16 +121,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                 <div className="flex items-center justify-center gap-3">
                   <LoadingSpinner size="sm" />
                   <span className="text-white font-semibold text-lg animate-pulse">
-                    Accediendo a paddock...
+                    Conectando a live timing...
                   </span>
                 </div>
               ) : (
                 <>
                   <div className="text-2xl font-bold text-zinc-100 mb-1">
-                    ESPECTADOR
+                    LIVE
                   </div>
                   <div className="text-sm text-zinc-400 font-light">
-                    Ver tiempos en vivo
+                    Timing en vivo • Solo visualización
                   </div>
                 </>
               )}
