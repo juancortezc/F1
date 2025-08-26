@@ -480,12 +480,48 @@ const interval = setInterval(() => {
 - ✅ **LivePage enhanced** con card de récords históricos integrado
 - ✅ **Error handling visual** en todas las interfaces
 
+### 🔧 Problemas Críticos Resueltos (26/08/2025)
+
+#### **1. Registros falsos al cambiar de jugador**
+- **Problema**: El segundo jugador veía/modificaba datos del jugador anterior
+- **Causa**: LocalStorage compartía claves entre diferentes jugadores
+- **Solución**: 
+  - Agregado `gameId` a claves localStorage para aislamiento
+  - Implementada validación de `playerId` en carga de datos
+  - Función `cleanupStaleLocalStorage` elimina datos obsoletos
+  - Limpieza completa al completar turnos
+
+#### **2. Récords históricos no funcionaban**
+- **Problema**: Los récords no se actualizaban ni mostraban correctamente
+- **Causa**: Actualización durante auto-save individual no capturaba todos los tiempos
+- **Solución**:
+  - Actualización movida al momento de completar turno completo
+  - Se actualizan tanto `bestLap` como `bestAverage` juntos
+  - Garantiza captura de todos los tiempos del turno
+
+#### **3. Cambio de circuito no funcionaba**
+- **Problema**: Al terminar todos los turnos, no avanzaba al siguiente circuito
+- **Causa**: `nextTurn` se reseteaba a 1 antes de verificar si debía cambiar circuito
+- **Solución**:
+  - Guardamos `currentTurnBeforeReset` antes del reseteo
+  - Verificación usa el valor guardado: `currentTurnBeforeReset >= turnsPerCircuit`
+  - Lógica reordenada para flujo correcto
+
+#### **4. Vista horizontal PWA deficiente**
+- **Problema**: En PWA la vista LIVE no se optimizaba para landscape
+- **Solución**:
+  - Meta tags adicionales para forzar rotación en iOS
+  - Clases `landscape:` optimizan LivePage
+  - Card de récords oculto en landscape para maximizar tabla
+  - Tamaños de fuente responsive mejorados
+
 ### 🚀 Ready for Production
 - ✅ **Build exitoso** sin errores TypeScript
 - ✅ **Deploy funcionando** en master branch
 - ✅ **Database prístina** lista para uso en vivo
 - ✅ **Error resilience** para conexión inestable
 - ✅ **Mobile-first responsive** para dispositivos 50+
+- ✅ **Una sola branch** (master) para evitar confusión
 
 ### 🎯 Próximas Mejoras Sugeridas
 - **Fase 3**: Sistema de notificaciones push para eventos importantes
