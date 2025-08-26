@@ -663,8 +663,9 @@ function App() {
             .map(([playerId]) => playerId);
     }
     
-    // Check if we should move to the next circuit
-    const shouldMoveToNextCircuit = isLastPlayerOfTurn && nextTurn > gameState.settings.turnsPerCircuit;
+    // Check if we should move to the next circuit BEFORE resetting nextTurn
+    const currentTurnBeforeReset = isLastPlayerOfTurn ? gameState.currentTurn : nextTurn;
+    const shouldMoveToNextCircuit = isLastPlayerOfTurn && currentTurnBeforeReset >= gameState.settings.turnsPerCircuit;
     const nextCircuitIndex = shouldMoveToNextCircuit ? gameState.currentCircuitIndex + 1 : gameState.currentCircuitIndex;
     
     const newGameState = {

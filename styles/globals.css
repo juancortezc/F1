@@ -147,6 +147,15 @@ a {
   textarea {
     font-size: 18px !important; /* Larger to prevent zoom */
   }
+  
+  /* Force landscape support on iOS Safari PWA */
+  @media screen and (orientation: landscape) {
+    html, body {
+      -webkit-text-size-adjust: none;
+      transform: rotate(0deg) !important;
+      -webkit-transform: rotate(0deg) !important;
+    }
+  }
 }
 
 /* Safe area utilities */

@@ -297,8 +297,8 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
         </div>
       </div>
 
-      {/* Table Container - Horizontal Scroll */}
-      <div className="p-2 overflow-x-auto landscape:overflow-auto landscape:h-[calc(100vh-100px)]">
+      {/* Table Container - Optimized for landscape */}
+      <div className="p-2 overflow-x-auto landscape:overflow-auto landscape:h-[calc(100vh-80px)] landscape:px-4">
         <div className="min-w-full">
           {liveError ? (
             <div className="text-center py-8">
@@ -316,10 +316,10 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
               <p className="text-zinc-400">Esperando datos en vivo...</p>
             </div>
           ) : (
-            <table className="w-full text-xs border-collapse" style={{ tableLayout: 'fixed' }}>
+            <table className="w-full text-xs border-collapse landscape:text-sm" style={{ tableLayout: 'fixed' }}>
               {/* Header */}
               <thead>
-                <tr className="bg-zinc-800 text-zinc-200 text-[10px] uppercase tracking-wider border-b border-zinc-700">
+                <tr className="bg-zinc-800 text-zinc-200 text-[10px] landscape:text-xs uppercase tracking-wider border-b border-zinc-700">
                   <th className="w-10 px-1 py-2 text-center font-mono font-bold">POS</th>
                   <th className="w-24 px-2 py-2 text-left font-mono font-bold">PILOTO</th>
                   <th className="w-20 px-1 py-2 text-center font-mono font-bold">V1</th>
@@ -416,8 +416,8 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
         </div>
       </div>
 
-      {/* Historical Records Card */}
-      <div className="p-2 landscape:pb-16">
+      {/* Historical Records Card - Hidden in landscape to maximize table space */}
+      <div className="p-2 landscape:hidden">
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
           <div className="px-4 py-3 bg-zinc-800 border-b border-zinc-700">
             <h3 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">

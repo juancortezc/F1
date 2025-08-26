@@ -30,6 +30,16 @@ const timeToMs = (lapTime: LapTimeType): number => {
     return min * 60000 + sec * 1000 + ms;
 };
 
+// Helper function to clean up stale localStorage data
+const cleanupStaleLocalStorage = (gameId: string, playerId: string) => {
+  const keys = Object.keys(localStorage);
+  keys.forEach(key => {
+    if (key.startsWith('lap-times-') && !key.includes(`${gameId}-${playerId}`)) {
+      localStorage.removeItem(key);
+    }
+  });
+};
+
 const TimeInput: React.FC<{ 
   value: string; 
   onChange: (val: string) => void; 
@@ -92,18 +102,26 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
 
   const [lapTimes, setLapTimes] = useState<LapTimeType[]>(() => {
     // Try to restore lap times from localStorage first
-    const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+    // Include gameId to ensure we don't load data from previous games
+    const storageKey = `lap-times-${gameId}-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length === settings.lapsPerTurn) {
-          return parsed;
+          // Validate that this data belongs to current player
+          const validationKey = `lap-times-validation-${gameId}`;
+          const validation = localStorage.getItem(validationKey);
+          if (validation === currentPlayerId) {
+            return parsed;
+          }
         }
       } catch (e) {
         console.warn('Failed to parse saved lap times:', e);
       }
     }
+    // Clear any stale data when initializing for a new player
+    cleanupStaleLocalStorage(gameId, currentPlayerId);
     return Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' });
   });
   const [currentAverage, setCurrentAverage] = useState<number | null>(null);
@@ -159,25 +177,6 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
         
         // Invalidate live lap times cache to refresh LIVE page immediately
         mutate(`/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${currentTurn}`);
-        
-        // Check and update historical records immediately
-        try {
-          await fetch('/api/circuits/update-records', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              circuitId: currentCircuit.id,
-              bestLap: timeMs,
-              bestLapPlayerId: currentPlayerId
-            })
-          });
-          
-          // Note: Historical records are updated in database
-          // UI will refresh on next page load or component remount
-          
-        } catch (recordError) {
-          console.error('Failed to update records during auto-save:', recordError);
-        }
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
@@ -192,8 +191,10 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
     setLapTimes(newLapTimes);
     
     // Save to localStorage immediately for form persistence
-    const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+    const storageKey = `lap-times-${gameId}-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
     localStorage.setItem(storageKey, JSON.stringify(newLapTimes));
+    // Also save validation key to ensure data integrity
+    localStorage.setItem(`lap-times-validation-${gameId}`, currentPlayerId);
     
     const updatedLapTime = newLapTimes[index];
     const timeMs = timeToMs(updatedLapTime);
@@ -248,13 +249,36 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
       return;
     }
 
+    // IMPORTANT: Calculate and save best lap and average BEFORE completing turn
+    const bestLap = Math.min(...validTimes);
+    const average = validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
+
+    // Update historical records for circuit if needed
+    try {
+      await fetch('/api/circuits/update-records', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuitId: currentCircuit.id,
+          bestLap: bestLap,
+          bestLapPlayerId: currentPlayerId,
+          bestAverage: average,
+          bestAveragePlayerId: currentPlayerId
+        })
+      });
+    } catch (error) {
+      console.error('Failed to update circuit records:', error);
+    }
+
     setIsSubmitting(true);
     try {
       await onTurnComplete(currentPlayerId, validTimes);
       
       // Clear localStorage after successful submission
-      const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+      const storageKey = `lap-times-${gameId}-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
       localStorage.removeItem(storageKey);
+      // Clear validation key
+      localStorage.removeItem(`lap-times-validation-${gameId}`);
       
     } catch (error) {
       console.error('Error submitting turn:', error);
@@ -272,13 +296,36 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
       return;
     }
 
+    // IMPORTANT: Calculate and save best lap and average BEFORE completing turn
+    const bestLap = Math.min(...validTimes);
+    const average = validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
+
+    // Update historical records for circuit if needed
+    try {
+      await fetch('/api/circuits/update-records', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          circuitId: currentCircuit.id,
+          bestLap: bestLap,
+          bestLapPlayerId: currentPlayerId,
+          bestAverage: average,
+          bestAveragePlayerId: currentPlayerId
+        })
+      });
+    } catch (error) {
+      console.error('Failed to update circuit records:', error);
+    }
+
     setIsSubmitting(true);
     try {
       await onTurnComplete(currentPlayerId, validTimes, newControllerId);
       
       // Clear localStorage after successful submission
-      const storageKey = `lap-times-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+      const storageKey = `lap-times-${gameId}-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
       localStorage.removeItem(storageKey);
+      // Clear validation key
+      localStorage.removeItem(`lap-times-validation-${gameId}`);
       
       setShowTransferDialog(false);
     } catch (error) {
