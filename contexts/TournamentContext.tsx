@@ -37,8 +37,9 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
       const response = await fetch('/api/tournaments/active');
       
       if (response.status === 404) {
-        // No active tournament, this is normal
+        // No active tournament, this is normal - don't log as error
         setActiveTournament(null);
+        setIsLoading(false);
         return;
       }
       
