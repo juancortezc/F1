@@ -152,7 +152,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     }
 
     const handleSavePlayer = async (playerData: Partial<Player>) => {
-        const isNew = editingItem === 'new-player';
+        const isNew = editingItem === 'new-player' || editingItem === 'new-guest';
         const url = isNew ? '/api/players' : `/api/players/${(editingItem as Player).id}`;
         const method = isNew ? 'POST' : 'PUT';
 

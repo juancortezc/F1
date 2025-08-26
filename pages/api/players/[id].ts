@@ -13,9 +13,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   if (req.method === 'PUT') {
     try {
-      const { name, imageUrl, pin } = req.body;
+      const { name, imageUrl, pin, isGuest = false } = req.body;
       
-      const validationError = validateRequired(req.body, ['name', 'imageUrl', 'pin']);
+      // Different validation for guests vs regular players
+      const requiredFields = isGuest ? ['name', 'imageUrl'] : ['name', 'imageUrl', 'pin'];
+      const validationError = validateRequired(req.body, requiredFields);
       if (validationError) {
         return sendError(res, 400, validationError);
       }
@@ -23,11 +25,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       // Validate name length
       if (name.trim().length < 1 || name.trim().length > 50) {
         return sendError(res, 400, 'Name must be between 1 and 50 characters');
-      }
-      
-      // Validate PIN format
-      if (!/^\d{4}$/.test(pin)) {
-        return sendError(res, 400, 'PIN must be exactly 4 digits');
       }
       
       // Validate URL format
@@ -43,20 +40,33 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         return sendError(res, 404, 'Player not found');
       }
       
-      // Check for duplicate PIN (excluding current player)
-      const pinTaken = await isPinTaken(pin);
-      if (pinTaken) {
-        // Check if the PIN belongs to the current player
-        const currentPlayerWithPin = await getPlayerById(id);
-        if (!currentPlayerWithPin || currentPlayerWithPin.pin !== pin) {
-          return sendError(res, 400, 'PIN already exists. Please choose a different PIN.');
+      // Handle PIN validation for regular players only
+      let finalPin = pin;
+      if (!isGuest) {
+        // Validate PIN format for regular players
+        if (!/^\d{4}$/.test(pin)) {
+          return sendError(res, 400, 'PIN must be exactly 4 digits');
         }
+        
+        // Check for duplicate PIN (excluding current player)
+        const pinTaken = await isPinTaken(pin);
+        if (pinTaken) {
+          // Check if the PIN belongs to the current player
+          const currentPlayerWithPin = await getPlayerById(id);
+          if (!currentPlayerWithPin || currentPlayerWithPin.pin !== pin) {
+            return sendError(res, 400, 'PIN already exists. Please choose a different PIN.');
+          }
+        }
+      } else {
+        // For guests, keep existing PIN (don't change it)
+        finalPin = existingPlayer.pin;
       }
       
       const updatedPlayer = await updatePlayer(id, {
         name: name.trim(),
         imageUrl,
-        pin
+        pin: finalPin,
+        isGuest
       });
       
       if (!updatedPlayer) {
