@@ -138,10 +138,10 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
   }, [filteredLapTimes, getPlayerName, getCircuitName]);
 
   return (
-    <div className="min-h-screen bg-f1-black p-4">
+    <div className="min-h-screen bg-f1-black p-4 pb-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-f1-red mb-2">TIEMPOS DETALLADOS</h1>
+          <h1 className="text-2xl font-bold text-f1-red mb-2">Tiempos Detallados</h1>
           <p className="text-zinc-400">Historial completo de vueltas por jugador y circuito</p>
         </div>
         
@@ -244,10 +244,10 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
 
         {/* Lap Times Table */}
         {!isLoading && !error && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden max-h-[60vh] sm:max-h-[65vh] lg:max-h-[70vh]">
+            <div className="overflow-x-auto overflow-y-auto max-h-[60vh] sm:max-h-[65vh] lg:max-h-[70vh]">
               <table className="w-full">
-                <thead>
+                <thead className="sticky top-0 z-10">
                   <tr className="bg-zinc-800 text-zinc-200 text-sm uppercase tracking-wider border-b border-zinc-700">
                     <th className="px-4 py-3 text-left font-mono font-bold">JUGADOR</th>
                     <th className="px-4 py-3 text-left font-mono font-bold">CIRCUITO</th>
@@ -299,8 +299,11 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
 
         {/* Results Summary */}
         {!isLoading && !error && filteredLapTimes.length > 0 && (
-          <div className="text-center text-zinc-400 text-sm">
-            Mostrando {filteredLapTimes.length} tiempos de vuelta
+          <div className="text-center text-zinc-400 text-sm space-y-1">
+            <div>Mostrando {filteredLapTimes.length} tiempos de vuelta</div>
+            {filteredLapTimes.length > 10 && (
+              <div className="text-zinc-500 text-xs">Desplázate en la tabla para ver todos los registros</div>
+            )}
           </div>
         )}
         </div>

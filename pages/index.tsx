@@ -1162,7 +1162,7 @@ function App() {
                                     onClick={() => setActiveTab('tiempos')} 
                                     className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'tiempos' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
                                 >
-                                    TIEMPOS
+                                    Tiempos
                                 </button>
                             </div>
                             
