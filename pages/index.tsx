@@ -82,13 +82,9 @@ function App() {
             setActiveTab('live');
           }
         } else {
-          // No active game - players go directly to historical results, organizers to hub
-          if (user.role === 'player') {
-            setGamePhase('results');
-            setActiveTab('stats'); // Show historical stats
-          } else {
-            setGamePhase('hub');
-          }
+          // No active game - all users go to stats/results
+          setGamePhase('results');
+          setActiveTab('stats'); // Show historical stats
         }
       } catch (e) {
         localStorage.removeItem('f1-user');
@@ -1052,6 +1048,16 @@ function App() {
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
+                                {/* Admin Menu Button Mobile - Solo para administradores */}
+                                {hasAdminPrivileges(currentUser) && (
+                                    <button
+                                        onClick={() => setGamePhase('hub')}
+                                        className="px-3 py-1.5 bg-zinc-800 text-zinc-100 font-semibold text-xs rounded-md"
+                                        title="Menú"
+                                    >
+                                        Menú
+                                    </button>
+                                )}
                                 <UserAvatar
                                     imageUrl={currentPlayer?.imageUrl}
                                     name={currentPlayer?.name || currentUser?.name}
@@ -1178,6 +1184,16 @@ function App() {
                             
                             {/* Right: Action Buttons */}
                             <div className="flex items-center gap-3">
+                                {/* Admin Menu Button - Solo para administradores */}
+                                {hasAdminPrivileges(currentUser) && (
+                                    <button
+                                        onClick={() => setGamePhase('hub')}
+                                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-semibold text-sm rounded-md transition-colors"
+                                        title="Menú Administrador"
+                                    >
+                                        Menú Admin
+                                    </button>
+                                )}
                                 <UserAvatar
                                     imageUrl={currentPlayer?.imageUrl}
                                     name={currentPlayer?.name}

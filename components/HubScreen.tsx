@@ -84,6 +84,16 @@ const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, 
 
                 {/* Main Actions */}
                 <div className="space-y-4">
+                    {/* Return to Game Button - if there's an active game */}
+                    {activeGame?.game && (
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="w-full touch-target bg-green-600 text-white font-bold text-xl rounded-md py-4 transition-all hover:bg-green-700"
+                        >
+                            VOLVER AL JUEGO
+                        </button>
+                    )}
+                    
                     {isOrganizer ? (
                         <>
                             <button
