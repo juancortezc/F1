@@ -341,7 +341,13 @@ function App() {
       setGamePhase('hub');
   };
   
-  const handleAdmin = () => setActiveTab('admin');
+  const handleAdmin = () => {
+    setActiveTab('admin');
+    // If we're in hub, we need to go to race/results phase to see admin tab
+    if (gamePhase === 'hub') {
+      setGamePhase(activeGame ? 'race' : 'results');
+    }
+  };
   const handleGameModify = () => setGamePhase('modify');
   const handleExitAdmin = () => {
     if (activeGame) {

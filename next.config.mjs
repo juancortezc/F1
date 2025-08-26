@@ -65,6 +65,15 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/_next/static/(.*).js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+        ],
+      },
     ]
   },
 };

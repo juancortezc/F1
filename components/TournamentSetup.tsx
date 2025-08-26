@@ -69,13 +69,14 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ players, onTournament
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <NavigationBar
         onBack={onCancel}
         title="Crear Torneo"
       />
 
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto p-4 space-y-6 pb-32">
         {/* Tournament Info */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
           <h2 className="text-xl font-bold text-zinc-100 mb-4">Información del Torneo</h2>
@@ -220,6 +221,7 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ players, onTournament
           >
             {isCreating ? 'Creando...' : 'Crear Torneo'}
           </button>
+        </div>
         </div>
       </div>
     </div>
