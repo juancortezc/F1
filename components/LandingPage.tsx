@@ -47,52 +47,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
         {/* Buttons */}
         <div className="space-y-4">
           <button
-            onClick={() => handleRoleSelect('piloto')}
-            disabled={isLoading}
-            className={`
-              w-full relative overflow-hidden group
-              ${selectedRole === 'piloto' 
-                ? 'bg-red-600 border-red-500' 
-                : 'bg-zinc-900/50 border-zinc-800 hover:border-red-600/50'
-              }
-              border backdrop-blur-sm
-              rounded-lg py-6 px-8
-              transition-all duration-300 ease-out
-              transform hover:scale-[1.02] active:scale-[0.98]
-              disabled:cursor-not-allowed disabled:opacity-50
-            `}
-          >
-            {/* Hover effect */}
-            <div className={`
-              absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/20 to-red-600/0
-              translate-x-[-100%] group-hover:translate-x-[100%]
-              transition-transform duration-1000
-              ${selectedRole === 'piloto' ? 'opacity-0' : ''}
-            `}></div>
-            
-            <div className="relative">
-              {selectedRole === 'piloto' && isLoading ? (
-                <div className="flex items-center justify-center gap-3">
-                  <LoadingSpinner size="sm" />
-                  <span className="text-white font-semibold text-lg animate-pulse">
-                    Accediendo al Parc Fermé...
-                  </span>
-                </div>
-              ) : (
-                <>
-                  <div className="text-2xl font-bold text-white mb-1">
-                    PARC FERMÉ
-                  </div>
-                  <div className="text-sm text-zinc-300/80 font-light">
-                    Acceso con credenciales • Área segura
-                  </div>
-                </>
-              )}
-            </div>
-          </button>
-
-
-          <button
             onClick={() => handleRoleSelect('espectador')}
             disabled={isLoading}
             className={`
@@ -125,14 +79,49 @@ const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                   </span>
                 </div>
               ) : (
-                <>
-                  <div className="text-2xl font-bold text-zinc-100 mb-1">
-                    LIVE
-                  </div>
-                  <div className="text-sm text-zinc-400 font-light">
-                    Timing en vivo • Solo visualización
-                  </div>
-                </>
+                <div className="text-2xl font-bold text-zinc-100">
+                  LIVE
+                </div>
+              )}
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleRoleSelect('piloto')}
+            disabled={isLoading}
+            className={`
+              w-full relative overflow-hidden group
+              ${selectedRole === 'piloto' 
+                ? 'bg-red-600 border-red-500' 
+                : 'bg-zinc-900/50 border-zinc-800 hover:border-red-600/50'
+              }
+              border backdrop-blur-sm
+              rounded-lg py-6 px-8
+              transition-all duration-300 ease-out
+              transform hover:scale-[1.02] active:scale-[0.98]
+              disabled:cursor-not-allowed disabled:opacity-50
+            `}
+          >
+            {/* Hover effect */}
+            <div className={`
+              absolute inset-0 bg-gradient-to-r from-red-600/0 via-red-600/20 to-red-600/0
+              translate-x-[-100%] group-hover:translate-x-[100%]
+              transition-transform duration-1000
+              ${selectedRole === 'piloto' ? 'opacity-0' : ''}
+            `}></div>
+            
+            <div className="relative">
+              {selectedRole === 'piloto' && isLoading ? (
+                <div className="flex items-center justify-center gap-3">
+                  <LoadingSpinner size="sm" />
+                  <span className="text-white font-semibold text-lg animate-pulse">
+                    Accediendo al Parc Fermé...
+                  </span>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold text-white">
+                  PARC FERMÉ
+                </div>
               )}
             </div>
           </button>

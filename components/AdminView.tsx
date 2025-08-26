@@ -299,30 +299,30 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     return (
         <div className="min-h-screen bg-black">
             {/* F1 Luxury Navigation Header */}
-            <div className="bg-zinc-950 border-b border-zinc-800 sticky top-0 z-20">
-                <div className="max-w-6xl mx-auto px-4 py-3">
+            <div className="bg-zinc-900 border-b-2 border-f1-red sticky top-0 z-20 shadow-lg">
+                <div className="max-w-6xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                             {onBack && (
                                 <button 
                                     onClick={onBack}
-                                    className="flex items-center justify-center w-10 h-10 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition-colors duration-200"
+                                    className="flex items-center justify-center w-12 h-12 rounded-md bg-f1-red border border-red-700 text-white hover:bg-red-700 transition-colors duration-200 shadow-md"
                                     title="Volver al menú principal"
                                 >
-                                    <ArrowLeftIcon className="w-5 h-5" />
+                                    <ArrowLeftIcon className="w-6 h-6" />
                                 </button>
                             )}
                             <div>
-                                <h1 className="text-xl font-bold text-zinc-100 tracking-wide">PANEL DE ADMINISTRACIÓN</h1>
-                                <p className="text-sm font-mono text-zinc-400 uppercase tracking-widest">
+                                <h1 className="text-2xl font-bold text-white tracking-wide">PANEL DE ADMINISTRACIÓN</h1>
+                                <p className="text-sm font-mono text-zinc-300 uppercase tracking-widest">
                                     Sistema de Gestión • F1 Night
                                 </p>
                             </div>
                         </div>
                         {currentUser && (
                             <div className="text-right">
-                                <div className="text-sm font-semibold text-zinc-100">{currentUser.name}</div>
-                                <div className="text-xs font-mono text-zinc-500 uppercase tracking-wide">Administrador</div>
+                                <div className="text-lg font-bold text-white">{currentUser.name}</div>
+                                <div className="text-sm font-mono text-zinc-300 uppercase tracking-wide">Administrador</div>
                             </div>
                         )}
                     </div>
