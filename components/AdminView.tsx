@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Player, Circuit } from '../types';
+import { Player, Circuit, UserSession } from '../types';
 import { PlusIcon, PencilIcon, TrashIcon } from './icons';
 import { useSWRConfig } from 'swr';
 import Modal from './Modal';
@@ -10,7 +10,7 @@ interface AdminViewProps {
     players: Player[];
     circuits: Circuit[];
     onBack?: () => void;
-    currentUser?: { userId: string; name: string };
+    currentUser?: UserSession | null;
 }
 
 type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | null;
