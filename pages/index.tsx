@@ -342,11 +342,7 @@ function App() {
   };
   
   const handleAdmin = () => {
-    setActiveTab('admin');
-    // If we're in hub, we need to go to race/results phase to see admin tab
-    if (gamePhase === 'hub') {
-      setGamePhase(activeGame ? 'race' : 'results');
-    }
+    setGamePhase('admin');
   };
   const handleGameModify = () => setGamePhase('modify');
   const handleExitAdmin = () => {
@@ -941,6 +937,8 @@ function App() {
         />;
       case 'setup':
         return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
+      case 'admin':
+        return <AdminView players={players || []} circuits={circuits || []} currentUser={currentUser} onBack={() => setGamePhase('hub')} />;
       case 'modify':
         if (activeGame && activeGame.state && players && circuits) {
           return (
@@ -1224,7 +1222,6 @@ function App() {
                             {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                             {activeTab === 'stats' && <StatsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                             {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} currentGameId={activeGame?.id} />}
-                            {activeTab === 'admin' && <AdminView players={players} circuits={circuits} currentUser={currentUser} onBack={() => setActiveTab('live')} />}
                             {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to STATS tab to see the final standings.</div>}
                         </>
                     ) : (
@@ -1245,7 +1242,6 @@ function App() {
                                 />
                             )}
                             {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} />}
-                            {activeTab === 'admin' && <AdminView players={players} circuits={circuits} currentUser={currentUser} onBack={() => setActiveTab('live')} />}
                             {(activeTab === 'race' || activeTab === 'live' || activeTab === 'puntaje') && (
                                 <div className="text-center p-8">
                                     <p className="text-xl text-zinc-400 mb-4">No hay campeonato activo</p>
