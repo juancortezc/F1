@@ -73,6 +73,21 @@ const StatsView: React.FC<StatsViewProps> = ({
           }))
           .sort((a, b) => b.totalScore - a.totalScore);
         
+        // DEBUG: Log championship calculation
+        console.log('Processing game for championships:', {
+          gameId: game.id,
+          standings: standings.map(s => ({ 
+            playerId: s.playerId, 
+            playerName: players.find(p => p.id === s.playerId)?.name,
+            totalScore: s.totalScore 
+          })),
+          winner: standings[0] ? {
+            playerId: standings[0].playerId,
+            playerName: players.find(p => p.id === standings[0].playerId)?.name,
+            totalScore: standings[0].totalScore
+          } : 'No winner'
+        });
+        
         // Add championship to winner (first in standings)
         if (standings.length > 0 && playerAccStats[standings[0].playerId]) {
           playerAccStats[standings[0].playerId].championships++;
