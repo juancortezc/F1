@@ -143,8 +143,10 @@ const StatsView: React.FC<StatsViewProps> = ({
       }
     });
 
-    // Add current game stats if active - calculate from circuitResults
-    if (gameState && gameState.circuitResults) {
+    // Add current game stats ONLY if game is still active (not finished)
+    const isGameFinished = gameState ? gameState.currentCircuitIndex >= gameState.settings.circuits.length : false;
+    
+    if (gameState && gameState.circuitResults && !isGameFinished) {
       gameState.circuitResults.forEach((circuitResult: any) => {
         if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
           circuitResult.turns.forEach((turn: any) => {
@@ -177,8 +179,8 @@ const StatsView: React.FC<StatsViewProps> = ({
         }
       });
       
-      // Add current game total scores
-      if (gameState.playerStats) {
+      // Add current game total scores (only if game is still active)
+      if (gameState.playerStats && !isGameFinished) {
         Object.entries(gameState.playerStats).forEach(([playerId, stats]) => {
           if (playerAccStats[playerId]) {
             playerAccStats[playerId].totalScore += (stats as PlayerStats).totalScore || 0;
