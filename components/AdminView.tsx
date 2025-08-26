@@ -227,9 +227,28 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     // Show loading state
     if (isCheckingLock) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <LoadingSpinner size="lg" />
-                <span className="ml-3 text-zinc-400">Verificando acceso...</span>
+            <div className="min-h-screen bg-black flex items-center justify-center p-4">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-md p-8 max-w-md w-full text-center">
+                    <div className="mb-6">
+                        <LoadingSpinner size="lg" className="mx-auto mb-4" />
+                        <div className="text-zinc-100 font-semibold text-lg mb-2">
+                            Verificando Acceso al Sistema
+                        </div>
+                        <div className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
+                            Panel de Administración • F1 Night
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm">
+                            <div className="w-1 h-1 bg-zinc-600 rounded-full"></div>
+                            <span>Validando permisos de administrador</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm">
+                            <div className="w-1 h-1 bg-zinc-600 rounded-full"></div>
+                            <span>Verificando bloqueos activos</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -237,20 +256,41 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     // Show locked state
     if (isLocked && lockInfo) {
         return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="bg-zinc-900 border border-zinc-800 rounded-md p-8 max-w-md text-center">
-                    <div className="text-red-500 mb-4">
-                        <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
+            <div className="min-h-screen bg-black flex items-center justify-center p-4">
+                <div className="bg-zinc-900 border border-red-800 rounded-md p-8 max-w-md w-full text-center">
+                    <div className="mb-6">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-900/30 border-2 border-red-700 flex items-center justify-center">
+                            <svg className="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold text-zinc-100 mb-2 font-mono uppercase tracking-wide">
+                            Sistema Bloqueado
+                        </h2>
+                        <div className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-4">
+                            Panel de Administración • F1 Night
+                        </div>
                     </div>
-                    <h2 className="text-2xl font-bold text-zinc-100 mb-2">Panel de Administración Bloqueado</h2>
-                    <p className="text-zinc-400 mb-4">
-                        <span className="font-semibold">{lockInfo.userName}</span> está usando el panel de administración.
-                    </p>
-                    <p className="text-zinc-500 text-sm">
-                        Por favor, espera a que termine o intenta más tarde.
-                    </p>
+                    <div className="space-y-4">
+                        <div className="p-4 bg-red-900/20 border border-red-800 rounded-md">
+                            <p className="text-zinc-300 text-sm mb-2">
+                                <span className="font-bold text-red-400">{lockInfo.userName}</span> está administrando el sistema
+                            </p>
+                            <p className="text-zinc-500 text-xs font-mono">
+                                Sesión iniciada: {new Date(lockInfo.lockedAt).toLocaleTimeString()}
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm">
+                                <div className="w-1 h-1 bg-red-600 rounded-full"></div>
+                                <span>Solo un administrador puede usar el panel</span>
+                            </div>
+                            <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm">
+                                <div className="w-1 h-1 bg-red-600 rounded-full"></div>
+                                <span>Por favor espera o intenta más tarde</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -473,94 +513,267 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                     </div>
                 )}
 
-            {activeTab === 'guests' && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-md">
-                    <div className="px-3 py-2 border-b border-zinc-700 flex justify-between items-center bg-zinc-800">
-                        <h2 className="text-lg font-bold text-zinc-100">Invitados ({guestPlayers.length})</h2>
-                        <button 
-                            onClick={() => setEditingItem('new-guest')} 
-                            className="bg-f1-red text-white p-2 rounded hover:bg-red-700 transition-colors"
-                        >
-                            <PlusIcon className="w-4 h-4"/>
-                        </button>
-                    </div>
-                    <div className="divide-y divide-zinc-800">
-                        {guestPlayers.map(player => (
-                            <div key={player.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
-                                <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
-                                    <span className="text-zinc-400 text-lg">👤</span>
+                {activeTab === 'guests' && (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+                        {/* Luxury Table Header */}
+                        <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-lg font-bold text-amber-400 font-mono uppercase tracking-wide">
+                                        JUGADORES INVITADOS
+                                    </h2>
+                                    <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
+                                        {guestPlayers.length} Temporales • Acceso directo sin PIN
+                                    </p>
                                 </div>
-                                <div className="flex-grow">
-                                    <div className="text-zinc-100 font-semibold flex items-center gap-2">
-                                        {player.name}
-                                        <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">INVITADO</span>
-                                    </div>
-                                    <div className="text-zinc-400 text-xs font-mono">Sin PIN - Acceso directo</div>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button 
-                                        onClick={() => setEditingItem(player)} 
-                                        className="p-2 text-zinc-400 hover:text-zinc-100 transition-colors"
-                                    >
-                                        <PencilIcon className="w-4 h-4"/>
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeletePlayer(player.id)} 
-                                        className="p-2 text-zinc-400 hover:text-f1-red transition-colors"
-                                    >
-                                        <TrashIcon className="w-4 h-4"/>
-                                    </button>
-                                </div>
+                                <button 
+                                    onClick={() => setEditingItem('new-guest')} 
+                                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white font-bold text-sm uppercase tracking-wide rounded hover:bg-amber-700 transition-colors duration-200 min-h-[48px]"
+                                >
+                                    <PlusIcon className="w-4 h-4"/>
+                                    <span className="hidden sm:inline">NUEVO</span>
+                                </button>
                             </div>
-                        ))}
+                        </div>
+                        
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-zinc-800 border-b border-zinc-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Avatar</th>
+                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Invitado</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Tipo</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acceso</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-800">
+                                    {guestPlayers.map(player => (
+                                        <tr key={player.id} className="hover:bg-zinc-800/30 transition-colors duration-200">
+                                            <td className="px-4 py-3">
+                                                <div className="w-12 h-12 rounded-full bg-zinc-700 border-2 border-amber-600/50 flex items-center justify-center">
+                                                    <GuestIcon className="w-6 h-6 text-amber-400" />
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="font-semibold text-zinc-100 text-lg">{player.name}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="inline-block px-2 py-1 bg-amber-900/30 text-amber-400 border border-amber-700 rounded-full text-xs font-bold uppercase tracking-wide">
+                                                    Invitado
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="inline-block px-3 py-1 bg-zinc-800 border border-zinc-700 rounded font-mono text-sm text-zinc-300">
+                                                    Sin PIN
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => setEditingItem(player)} 
+                                                        className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 rounded transition-colors duration-200"
+                                                        title="Editar invitado"
+                                                    >
+                                                        <PencilIcon className="w-4 h-4"/>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeletePlayer(player.id)} 
+                                                        className="p-2 text-zinc-400 hover:text-f1-red hover:bg-red-900/20 rounded transition-colors duration-200"
+                                                        title="Eliminar invitado"
+                                                    >
+                                                        <TrashIcon className="w-4 h-4"/>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="md:hidden divide-y divide-zinc-800">
+                            {guestPlayers.map(player => (
+                                <div key={player.id} className="p-4 hover:bg-zinc-800/30 transition-colors duration-200">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-14 h-14 rounded-full bg-zinc-700 border-2 border-amber-600/50 flex items-center justify-center">
+                                            <GuestIcon className="w-7 h-7 text-amber-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-zinc-100 text-lg">{player.name}</div>
+                                            <div className="text-zinc-400 text-sm font-mono">Sin PIN • Acceso directo</div>
+                                        </div>
+                                        <span className="px-2 py-1 bg-amber-900/30 text-amber-400 border border-amber-700 rounded-full text-xs font-bold uppercase tracking-wide">
+                                            Invitado
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                                        <button 
+                                            onClick={() => setEditingItem(player)} 
+                                            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-zinc-800 border border-zinc-700 text-zinc-100 rounded hover:bg-zinc-700 transition-colors duration-200 min-h-[48px]"
+                                        >
+                                            <PencilIcon className="w-4 h-4"/>
+                                            <span className="font-semibold text-sm">Editar</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeletePlayer(player.id)} 
+                                            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-zinc-800 border border-zinc-700 text-zinc-100 rounded hover:bg-red-900/50 hover:text-f1-red hover:border-f1-red transition-colors duration-200 min-h-[48px]"
+                                        >
+                                            <TrashIcon className="w-4 h-4"/>
+                                            <span className="font-semibold text-sm">Eliminar</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
                         {guestPlayers.length === 0 && (
-                            <div className="px-3 py-8 text-center text-zinc-500">
-                                No hay invitados registrados
+                            <div className="p-8 text-center">
+                                <div className="text-zinc-500 mb-4">
+                                    <GuestIcon className="w-16 h-16 mx-auto opacity-50" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-zinc-400 mb-2">No hay invitados registrados</h3>
+                                <p className="text-zinc-500 text-sm">Los invitados pueden participar temporalmente sin PIN</p>
                             </div>
                         )}
                     </div>
-                </div>
-            )}
+                )}
 
-            {activeTab === 'circuits' && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-md">
-                    <div className="px-3 py-2 border-b border-zinc-700 flex justify-between items-center bg-zinc-800">
-                        <h2 className="text-lg font-bold text-zinc-100">Circuitos ({circuits.length})</h2>
-                        <button 
-                            onClick={() => setEditingItem('new-circuit')} 
-                            className="bg-f1-red text-white p-2 rounded hover:bg-red-700 transition-colors"
-                        >
-                            <PlusIcon className="w-4 h-4"/>
-                        </button>
-                    </div>
-                    <div className="divide-y divide-zinc-800">
-                        {circuits.map(circuit => (
-                            <div key={circuit.id} className="px-3 py-2 flex items-center gap-3 hover:bg-zinc-800/30 transition-colors">
-                                <CircuitImage 
-                                    src={circuit.imageUrl} 
-                                    alt={circuit.name} 
-                                    className="w-12 h-8 object-cover rounded"
-                                />
-                                <div className="flex-grow text-zinc-100 font-semibold">{circuit.name}</div>
-                                <div className="flex gap-1">
-                                    <button 
-                                        onClick={() => setEditingItem(circuit)} 
-                                        className="p-2 text-zinc-400 hover:text-zinc-100 transition-colors"
-                                    >
-                                        <PencilIcon className="w-4 h-4"/>
-                                    </button>
-                                    <button 
-                                        onClick={() => handleDeleteCircuit(circuit.id)} 
-                                        className="p-2 text-zinc-400 hover:text-f1-red transition-colors"
-                                    >
-                                        <TrashIcon className="w-4 h-4"/>
-                                    </button>
+                {activeTab === 'circuits' && (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+                        {/* Luxury Table Header */}
+                        <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+                                        CIRCUITOS F1
+                                    </h2>
+                                    <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
+                                        {circuits.length} Pistas • Layouts oficiales
+                                    </p>
                                 </div>
+                                <button 
+                                    onClick={() => setEditingItem('new-circuit')} 
+                                    className="flex items-center gap-2 px-4 py-2 bg-f1-red text-white font-bold text-sm uppercase tracking-wide rounded hover:bg-red-700 transition-colors duration-200 min-h-[48px]"
+                                >
+                                    <PlusIcon className="w-4 h-4"/>
+                                    <span className="hidden sm:inline">NUEVO</span>
+                                </button>
                             </div>
-                        ))}
+                        </div>
+                        
+                        {/* Desktop Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-zinc-800 border-b border-zinc-700">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Layout</th>
+                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Circuito</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Récord Vuelta</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Récord Promedio</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-800">
+                                    {circuits.map(circuit => (
+                                        <tr key={circuit.id} className="hover:bg-zinc-800/30 transition-colors duration-200">
+                                            <td className="px-4 py-3">
+                                                <CircuitImage 
+                                                    src={circuit.imageUrl} 
+                                                    alt={circuit.name} 
+                                                    className="w-16 h-12 object-cover rounded border border-zinc-700"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="font-semibold text-zinc-100 text-lg">{circuit.name}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="inline-block px-3 py-1 bg-zinc-800 border border-zinc-700 rounded font-mono text-sm text-zinc-300">
+                                                    {circuit.historicalBestLap ? `${Math.floor(circuit.historicalBestLap / 1000 / 60)}:${String(Math.floor((circuit.historicalBestLap / 1000) % 60)).padStart(2, '0')}.${String(circuit.historicalBestLap % 1000).padStart(3, '0')}` : 'Sin récord'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="inline-block px-3 py-1 bg-zinc-800 border border-zinc-700 rounded font-mono text-sm text-zinc-300">
+                                                    {circuit.historicalBestAverage ? `${Math.floor(circuit.historicalBestAverage / 1000 / 60)}:${String(Math.floor((circuit.historicalBestAverage / 1000) % 60)).padStart(2, '0')}.${String(circuit.historicalBestAverage % 1000).padStart(3, '0')}` : 'Sin récord'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => setEditingItem(circuit)} 
+                                                        className="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 rounded transition-colors duration-200"
+                                                        title="Editar circuito"
+                                                    >
+                                                        <PencilIcon className="w-4 h-4"/>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteCircuit(circuit.id)} 
+                                                        className="p-2 text-zinc-400 hover:text-f1-red hover:bg-red-900/20 rounded transition-colors duration-200"
+                                                        title="Eliminar circuito"
+                                                    >
+                                                        <TrashIcon className="w-4 h-4"/>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="md:hidden divide-y divide-zinc-800">
+                            {circuits.map(circuit => (
+                                <div key={circuit.id} className="p-4 hover:bg-zinc-800/30 transition-colors duration-200">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <CircuitImage 
+                                            src={circuit.imageUrl} 
+                                            alt={circuit.name} 
+                                            className="w-20 h-14 object-cover rounded border-2 border-zinc-700"
+                                        />
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-zinc-100 text-lg mb-1">{circuit.name}</div>
+                                            <div className="text-zinc-400 text-sm font-mono">
+                                                {circuit.historicalBestLap ? `Récord: ${Math.floor(circuit.historicalBestLap / 1000 / 60)}:${String(Math.floor((circuit.historicalBestLap / 1000) % 60)).padStart(2, '0')}.${String(circuit.historicalBestLap % 1000).padStart(3, '0')}` : 'Sin récord de vuelta'}
+                                            </div>
+                                            <div className="text-zinc-500 text-sm font-mono">
+                                                {circuit.historicalBestAverage ? `Promedio: ${Math.floor(circuit.historicalBestAverage / 1000 / 60)}:${String(Math.floor((circuit.historicalBestAverage / 1000) % 60)).padStart(2, '0')}.${String(circuit.historicalBestAverage % 1000).padStart(3, '0')}` : 'Sin récord promedio'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                                        <button 
+                                            onClick={() => setEditingItem(circuit)} 
+                                            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-zinc-800 border border-zinc-700 text-zinc-100 rounded hover:bg-zinc-700 transition-colors duration-200 min-h-[48px]"
+                                        >
+                                            <PencilIcon className="w-4 h-4"/>
+                                            <span className="font-semibold text-sm">Editar</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDeleteCircuit(circuit.id)} 
+                                            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-zinc-800 border border-zinc-700 text-zinc-100 rounded hover:bg-red-900/50 hover:text-f1-red hover:border-f1-red transition-colors duration-200 min-h-[48px]"
+                                        >
+                                            <TrashIcon className="w-4 h-4"/>
+                                            <span className="font-semibold text-sm">Eliminar</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {circuits.length === 0 && (
+                            <div className="p-8 text-center">
+                                <div className="text-zinc-500 mb-4">
+                                    <CircuitIcon className="w-16 h-16 mx-auto opacity-50" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-zinc-400 mb-2">No hay circuitos registrados</h3>
+                                <p className="text-zinc-500 text-sm">Crear el primer circuito para empezar las carreras</p>
+                            </div>
+                        )}
                     </div>
-                </div>
-            )}
+                )}
 
             {/* Edit Modal */}
             {editingItem && (
@@ -618,78 +831,129 @@ const EditForm: React.FC<{
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <input 
-                type="text" 
-                name="name" 
-                value={formData.name || ''} 
-                onChange={handleChange} 
-                placeholder="Nombre" 
-                required 
-                className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name Field */}
+            <div>
+                <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+                    {isPlayer ? 'Nombre del Jugador' : 'Nombre del Circuito'}
+                </label>
+                <input 
+                    type="text" 
+                    name="name" 
+                    value={formData.name || ''} 
+                    onChange={handleChange} 
+                    placeholder={isPlayer ? "Ingresa el nombre del jugador" : "Ingresa el nombre del circuito"}
+                    required 
+                    className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                />
+            </div>
             
             {isPlayer && !isGuest && (
                 <>
-                    <input 
-                        type="text" 
-                        name="pin" 
-                        value={(formData as Player).pin || ''} 
-                        onChange={handleChange} 
-                        placeholder="PIN (4 dígitos)" 
-                        pattern="\d{4}" 
-                        maxLength={4}
-                        required 
-                        className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
-                    />
-                    <input 
-                        type="url" 
-                        name="imageUrl" 
-                        value={(formData as Player).imageUrl || ''} 
-                        onChange={handleChange} 
-                        placeholder="URL de imagen" 
-                        required 
-                        className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
-                    />
+                    {/* PIN Field */}
+                    <div>
+                        <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+                            PIN de Acceso
+                        </label>
+                        <input 
+                            type="text" 
+                            name="pin" 
+                            value={(formData as Player).pin || ''} 
+                            onChange={handleChange} 
+                            placeholder="0000"
+                            pattern="\d{4}" 
+                            maxLength={4}
+                            required 
+                            className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg font-mono tracking-widest text-center focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">Exactamente 4 dígitos para el acceso del jugador</p>
+                    </div>
+                    
+                    {/* Avatar URL Field */}
+                    <div>
+                        <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+                            Avatar (URL)
+                        </label>
+                        <input 
+                            type="url" 
+                            name="imageUrl" 
+                            value={(formData as Player).imageUrl || ''} 
+                            onChange={handleChange} 
+                            placeholder="https://ejemplo.com/avatar.jpg"
+                            required 
+                            className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                        />
+                        <p className="text-xs text-zinc-500 mt-1">URL de la imagen del avatar del jugador</p>
+                    </div>
                 </>
             )}
             
             {isGuest && (
-                <div className="p-4 bg-zinc-800 border border-zinc-700 rounded-md">
-                    <p className="text-zinc-300 text-sm mb-2">
-                        <span className="font-semibold">Invitado:</span> Avatar genérico automático, acceso sin PIN
-                    </p>
-                    <p className="text-zinc-500 text-xs">
-                        Los invitados participan normalmente pero no aparecen en estadísticas históricas
-                    </p>
+                <div className="p-6 bg-amber-900/20 border border-amber-700 rounded-md">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-full bg-zinc-700 border-2 border-amber-600/50 flex items-center justify-center">
+                            <GuestIcon className="w-6 h-6 text-amber-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-amber-400 font-bold text-sm uppercase tracking-wide">
+                                Jugador Invitado
+                            </h3>
+                            <p className="text-zinc-400 text-xs font-mono">Configuración automática</p>
+                        </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-zinc-300">
+                            <div className="w-1 h-1 bg-amber-400 rounded-full"></div>
+                            <span>Avatar genérico automático</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                            <div className="w-1 h-1 bg-amber-400 rounded-full"></div>
+                            <span>Acceso directo sin PIN</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                            <div className="w-1 h-1 bg-amber-400 rounded-full"></div>
+                            <span>Participa normalmente en campeonatos</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-400">
+                            <div className="w-1 h-1 bg-zinc-600 rounded-full"></div>
+                            <span>No aparece en estadísticas históricas</span>
+                        </div>
+                    </div>
                 </div>
             )}
             
             {!isPlayer && !isGuest && (
-                <input 
-                    type="url" 
-                    name="imageUrl" 
-                    value={(formData as Circuit).imageUrl || ''} 
-                    onChange={handleChange} 
-                    placeholder="URL de imagen" 
-                    required 
-                    className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg touch-target"
-                />
+                <div>
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+                        Layout del Circuito (URL)
+                    </label>
+                    <input 
+                        type="url" 
+                        name="imageUrl" 
+                        value={(formData as Circuit).imageUrl || ''} 
+                        onChange={handleChange} 
+                        placeholder="https://ejemplo.com/circuito-layout.jpg"
+                        required 
+                        className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                    />
+                    <p className="text-xs text-zinc-500 mt-1">URL de la imagen del layout del circuito</p>
+                </div>
             )}
             
-            <div className="flex gap-4 pt-4">
+            {/* Form Actions */}
+            <div className="flex gap-4 pt-6 border-t border-zinc-700">
                 <button 
                     type="button" 
                     onClick={onCancel} 
-                    className="flex-1 bg-zinc-700 text-zinc-100 font-bold py-4 rounded-md hover:bg-zinc-600 touch-target text-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-zinc-700 border border-zinc-600 text-zinc-100 font-bold py-4 rounded-md hover:bg-zinc-600 transition-colors duration-200 min-h-[48px] text-sm uppercase tracking-wide"
                 >
-                    Cancelar
+                    <span>CANCELAR</span>
                 </button>
                 <button 
                     type="submit" 
-                    className="flex-1 bg-f1-red text-white font-bold py-4 rounded-md hover:bg-red-700 touch-target text-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-f1-red border border-red-600 text-white font-bold py-4 rounded-md hover:bg-red-700 transition-colors duration-200 min-h-[48px] text-sm uppercase tracking-wide shadow-lg"
                 >
-                    Guardar
+                    <span>GUARDAR</span>
                 </button>
             </div>
         </form>
