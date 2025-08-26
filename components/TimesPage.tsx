@@ -244,8 +244,8 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
 
         {/* Lap Times Table */}
         {!isLoading && !error && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden max-h-[60vh] sm:max-h-[65vh] lg:max-h-[70vh]">
-            <div className="overflow-x-auto overflow-y-auto max-h-[60vh] sm:max-h-[65vh] lg:max-h-[70vh]">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+            <div className="overflow-x-auto max-h-[65vh] overflow-y-auto">
               <table className="w-full">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-zinc-800 text-zinc-200 text-sm uppercase tracking-wider border-b border-zinc-700">

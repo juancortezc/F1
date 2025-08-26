@@ -106,8 +106,8 @@ const GameModify: React.FC<GameModifyProps> = ({ gameState, players, circuits, g
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    gameId,
-                    gameState: updatedGameState,
+                    id: gameId,
+                    state: updatedGameState,
                     status: 'ACTIVE'
                 })
             });
