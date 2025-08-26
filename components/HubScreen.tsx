@@ -20,7 +20,16 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 const HubScreen: React.FC<HubScreenProps> = ({ onNewGame, onAdmin, currentUser, onLogout, onViewStats, onTournamentSetup, onTournamentStandings, onTournamentManagement }) => {
     const { data: activeGame } = useSWR('/api/game/active', fetcher);
     const { activeTournament, isInTournamentMode } = useTournament();
-    const isOrganizer = currentUser?.role === 'organizer';
+    
+    // Helper function to check if user has admin privileges
+    const hasAdminPrivileges = (user: UserSession | null): boolean => {
+        if (!user) return false;
+        if (user.role === 'organizer') return true;
+        // Grant admin privileges to Juan and Berna
+        return user.name === 'Juan' || user.name === 'Berna';
+    };
+    
+    const isOrganizer = hasAdminPrivileges(currentUser);
     
     return (
         <div className="min-h-screen bg-black flex items-center justify-center p-4">

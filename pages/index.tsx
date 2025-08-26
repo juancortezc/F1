@@ -53,6 +53,14 @@ function App() {
 
   // Get current player data
   const currentPlayer = currentUser && players ? players.find(p => p.id === currentUser.userId || p.name === currentUser.name) : null;
+  
+  // Helper function to check if user has admin privileges
+  const hasAdminPrivileges = (user: UserSession | null): boolean => {
+    if (!user) return false;
+    if (user.role === 'organizer') return true;
+    // Grant admin privileges to Juan and Berna
+    return user.name === 'Juan' || user.name === 'Berna';
+  };
 
   // Verificar sesión guardada al cargar
   useEffect(() => {
@@ -1090,7 +1098,7 @@ function App() {
                                     STATS
                                 </button>
                                 {/* Admin - Solo para organizadores */}
-                                {currentUser?.role === 'organizer' && (
+                                {hasAdminPrivileges(currentUser) && (
                                     <button
                                         onClick={handleAdmin}
                                         className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'admin' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'}`}
@@ -1115,8 +1123,8 @@ function App() {
                                     TORNEO
                                   </span>
                                 )}
-                                {/* Gear icon - Solo para organizadores y juegos no terminados */}
-                                {currentUser?.role === 'organizer' && !isFinished && (
+                                {/* Gear icon - Solo para administradores y juegos no terminados */}
+                                {hasAdminPrivileges(currentUser) && !isFinished && (
                                     <button
                                         onClick={handleGameModify}
                                         className="p-2 text-f1-red hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors ml-2"
@@ -1219,7 +1227,7 @@ function App() {
                             {(activeTab === 'race' || activeTab === 'live' || activeTab === 'puntaje') && (
                                 <div className="text-center p-8">
                                     <p className="text-xl text-zinc-400 mb-4">No hay campeonato activo</p>
-                                    {currentUser?.role === 'organizer' && (
+                                    {hasAdminPrivileges(currentUser) && (
                                         <button 
                                             onClick={handleNewGame}
                                             className="px-6 py-3 bg-[#FF1801] text-white font-bold rounded hover:bg-red-700 transition-colors"
