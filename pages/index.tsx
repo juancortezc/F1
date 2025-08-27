@@ -526,10 +526,11 @@ function App() {
         const newPlayerStats: Record<string, PlayerStats> = JSON.parse(JSON.stringify(gameState.playerStats));
         const { scoringMethod, scoringMultiplier } = gameState.settings;
 
-        const getPoints = (rank: number): number => {
+        const getPoints = (rank: number, totalPlayers: number): number => {
+            // Only award positions that exist
             if (rank === 0) return 3;
-            if (rank === 1) return 2;
-            if (rank === 2) return 1;
+            if (rank === 1 && totalPlayers >= 2) return 2;
+            if (rank === 2 && totalPlayers >= 3) return 1;
             return 0;
         };
 
@@ -540,8 +541,9 @@ function App() {
 
         if (scoringMethod === 'average' || scoringMethod === 'both') {
             const sortedByAverage = [...turnResults].sort((a, b) => (a.averageTime ?? Infinity) - (b.averageTime ?? Infinity));
+            const totalPlayers = sortedByAverage.length;
             sortedByAverage.forEach((result, rank) => {
-                let points = getPoints(rank);
+                let points = getPoints(rank, totalPlayers);
                 if (scoringMethod === 'both' && scoringMultiplier?.appliesTo === 'average') {
                     points *= scoringMultiplier.factor;
                 }
@@ -555,9 +557,10 @@ function App() {
                 bestLap: Math.min(...tr.lapTimes)
             }));
             const sortedByLap = playerBests.sort((a, b) => a.bestLap - b.bestLap);
+            const totalPlayers = sortedByLap.length;
             
             sortedByLap.forEach((lapResult, rank) => {
-                let points = getPoints(rank);
+                let points = getPoints(rank, totalPlayers);
                 if (scoringMethod === 'both' && scoringMultiplier?.appliesTo === 'lap') {
                     points *= scoringMultiplier.factor;
                 }
@@ -800,6 +803,65 @@ function App() {
     updateGameState(newGameState);
   };
 
+  const handleRecalculateScores = async () => {
+    let gameIdToRecalculate: string | null = null;
+
+    if (activeGame) {
+      gameIdToRecalculate = activeGame.id;
+    } else if (gameHistory && gameHistory.length > 0) {
+      // Use the most recent completed game
+      gameIdToRecalculate = gameHistory[0].id;
+      addToast({
+        type: 'info',
+        title: 'Recalculando juego anterior',
+        message: 'Usando el campeonato más reciente'
+      });
+    } else {
+      addToast({
+        type: 'error',
+        title: 'No hay juegos disponibles',
+        message: 'No hay campeonatos para recalcular'
+      });
+      return;
+    }
+
+    try {
+      addToast({
+        type: 'info',
+        title: 'Recalculando puntos...',
+        message: 'Corrigiendo cálculos de puntaje'
+      });
+
+      const response = await fetch('/api/game/recalculate-scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId: gameIdToRecalculate })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Refresh the game data
+        await mutate('/api/game/active');
+        
+        addToast({
+          type: 'success',
+          title: 'Puntos recalculados',
+          message: 'Los puntajes han sido corregidos'
+        });
+      } else {
+        throw new Error(data.error || 'Failed to recalculate');
+      }
+    } catch (error) {
+      console.error('Error recalculating scores:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudieron recalcular los puntos'
+      });
+    }
+  };
+
   const handleGameEnd = async () => {
       if (!activeGame) return;
       const newGameState = {
@@ -941,7 +1003,7 @@ function App() {
       case 'setup':
         return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
       case 'admin':
-        return <AdminView players={players || []} circuits={circuits || []} currentUser={currentUser} onBack={() => setGamePhase('hub')} />;
+        return <AdminView players={players || []} circuits={circuits || []} currentUser={currentUser} onBack={() => setGamePhase('hub')} onRecalculateScores={handleRecalculateScores} />;
       case 'modify':
         if (activeGame && activeGame.state && players && circuits) {
           return (

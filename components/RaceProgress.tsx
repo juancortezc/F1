@@ -1,209 +1,152 @@
 import React from 'react';
 import { GameState, Player } from '../types';
+import { ScoreCalculator } from '../utils/ScoreCalculator';
 
 interface RaceProgressProps {
   gameState: GameState;
   players: Player[];
 }
 
-// Calculate turn positions for each player per circuit
+// This function is now replaced by ScoreCalculator.calculateTurnPositions()
+// Keeping for backward compatibility, but delegates to ScoreCalculator
 const calculateTurnPositions = (gameState: GameState, players: Player[]) => {
-  const playerTurnPositions: Record<string, { firsts: number; seconds: number; thirds: number }> = {};
-  
-  // Initialize counters
-  players.forEach(player => {
-    playerTurnPositions[player.id] = { firsts: 0, seconds: 0, thirds: 0 };
-  });
-
-  // Process each circuit's results
-  gameState.circuitResults.forEach(circuit => {
-    circuit.turns.forEach(turn => {
-      // Sort players by turn score for this specific turn
-      const turnStandings = [...turn].sort((a, b) => b.turnScore - a.turnScore);
-      
-      // Award positions based on actual number of players
-      // Only award positions that exist (can't have 3rd place with only 2 players)
-      const totalPlayers = turnStandings.length;
-      
-      if (turnStandings[0] && totalPlayers >= 1) {
-        playerTurnPositions[turnStandings[0].playerId].firsts++;
-      }
-      if (turnStandings[1] && totalPlayers >= 2) {
-        playerTurnPositions[turnStandings[1].playerId].seconds++;
-      }
-      if (turnStandings[2] && totalPlayers >= 3) {
-        playerTurnPositions[turnStandings[2].playerId].thirds++;
-      }
-    });
-  });
-
-  return playerTurnPositions;
+  const calculator = new ScoreCalculator(gameState, players);
+  return calculator.calculateTurnPositions();
 };
 
-// Points breakdown component for validation
+// Circuit-based Points breakdown component - Now uses ScoreCalculator for consistency
 const PointsBreakdownCard: React.FC<{ gameState: GameState; players: Player[]; standings: any[] }> = ({ gameState, players, standings }) => {
-  // Build detailed breakdown for each player including all scoring components
-  const breakdown = standings.map((standing, index) => {
-    const playerId = standing.player.id;
-    
-    // Calculate points per circuit
-    const circuitBreakdown: { name: string; points: number; turns: number[] }[] = [];
-    let totalCircuitPoints = 0;
-    
-    gameState.circuitResults.forEach((circuit, circuitIndex) => {
-      const circuitName = gameState.settings.circuits[circuitIndex]?.name || `Circuito ${circuitIndex + 1}`;
-      const turnPoints: number[] = [];
-      let circuitPoints = 0;
-      
-      circuit.turns.forEach((turn) => {
-        const playerTurn = turn.find(p => p.playerId === playerId);
-        const points = playerTurn?.turnScore || 0;
-        turnPoints.push(points);
-        circuitPoints += points;
-      });
-      
-      circuitBreakdown.push({
-        name: circuitName,
-        points: circuitPoints,
-        turns: turnPoints
-      });
-      totalCircuitPoints += circuitPoints;
-    });
-    
-    // Calculate bonus points (best laps and averages)
-    const bonusPoints = (standing.bestLaps || 0) * (gameState.settings.pointsForBestLap || 0) +
-                       (standing.bestAverages || 0) * (gameState.settings.pointsForBestAverage || 0);
-    
-    return {
-      position: index + 1,
-      player: standing.player,
-      totalScore: standing.score,
-      circuitPoints: totalCircuitPoints,
-      bonusPoints,
-      bestLaps: standing.bestLaps || 0,
-      bestAverages: standing.bestAverages || 0,
-      circuits: circuitBreakdown
-    };
-  });
+  const calculator = new ScoreCalculator(gameState, players);
+  const circuitBreakdown = calculator.getCircuitBreakdown();
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-      <div className="p-4 border-b border-zinc-800">
-        <h3 className="text-xl font-bold text-zinc-100">Desglose de Puntos</h3>
-      </div>
-      
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm font-mono">
-          <thead className="bg-zinc-800">
-            <tr className="text-left">
-              <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">POS</th>
-              <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">JUGADOR</th>
-              <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">TOTAL</th>
-              <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">CIRCUITOS</th>
-              <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">BONUS</th>
-              <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">VR</th>
-              <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">PR</th>
-              {breakdown[0]?.circuits.map((circuit, idx) => (
-                <th key={idx} className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">
-                  {circuit.name.substring(0, 3)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {breakdown.map((data) => (
-              <tr key={data.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors">
-                <td className="px-3 py-2">
-                  <span className={`font-bold ${
-                    data.position === 1 ? 'text-yellow-400' :
-                    data.position === 2 ? 'text-zinc-300' :
-                    data.position === 3 ? 'text-amber-600' :
-                    'text-zinc-400'
-                  }`}>
-                    {data.position}
-                  </span>
-                </td>
-                <td className="px-3 py-2">
-                  <span className="font-semibold text-zinc-100">{data.player.name}</span>
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <span className="font-bold text-zinc-100">{data.totalScore}</span>
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <span className="text-zinc-300">{data.circuitPoints}</span>
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <span className="text-amber-400">{data.bonusPoints}</span>
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <span className="text-zinc-100 font-bold">{data.bestLaps}</span>
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <span className="text-zinc-100 font-bold">{data.bestAverages}</span>
-                </td>
-                {data.circuits.map((circuit, idx) => (
-                  <td key={idx} className="px-3 py-2 text-center">
-                    <span className="text-zinc-300" title={circuit.turns.join(' + ')}>
-                      {circuit.points}
-                    </span>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="space-y-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+        <h3 className="text-xl font-bold text-zinc-100 mb-4">Desglose de Puntos por Circuito</h3>
+        <p className="text-zinc-400 text-sm">Análisis detallado de puntuación por circuito y turno</p>
       </div>
 
-      {/* Mobile View */}
-      <div className="md:hidden">
-        {breakdown.map((data) => (
-          <div key={data.player.id} className="border-b border-zinc-800 p-4">
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-2">
-                <span className={`font-bold ${
-                  data.position === 1 ? 'text-yellow-400' :
-                  data.position === 2 ? 'text-zinc-300' :
-                  data.position === 3 ? 'text-amber-600' :
-                  'text-zinc-400'
-                }`}>
-                  {data.position}
-                </span>
-                <span className="font-semibold text-zinc-100">{data.player.name}</span>
-              </div>
-              <span className="font-bold text-zinc-100 font-mono">{data.totalScore} pts</span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Circuitos:</span>
-                <span className="text-zinc-300">{data.circuitPoints}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Bonus:</span>
-                <span className="text-amber-400">{data.bonusPoints}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">VR:</span>
-                <span className="text-zinc-100">{data.bestLaps}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">PR:</span>
-                <span className="text-zinc-100">{data.bestAverages}</span>
-              </div>
-            </div>
-            
-            <div className="mt-2 text-xs text-zinc-500">
-              {data.circuits.map((circuit, idx) => (
-                <div key={idx} className="flex justify-between">
-                  <span>{circuit.name}:</span>
-                  <span>{circuit.points} pts</span>
-                </div>
-              ))}
-            </div>
+      {circuitBreakdown.map((circuit, circuitIndex) => {
+        if (!circuit) return null;
+        return (
+        <div key={circuitIndex} className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
+            <h4 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+              {circuit.name}
+            </h4>
           </div>
-        ))}
-      </div>
+
+          {/* Desktop Circuit Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm font-mono">
+              <thead className="bg-zinc-800">
+                <tr className="text-left">
+                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">POS</th>
+                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">JUGADOR</th>
+                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">TOTAL</th>
+                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">BASE</th>
+                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">BONUS</th>
+                  {Array.from({ length: gameState.settings.turnsPerCircuit }, (_, i) => (
+                    <th key={i} className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">
+                      T{i + 1}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {circuit.players.map((playerData, index) => (
+                  <tr key={playerData.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors">
+                    <td className="px-3 py-2">
+                      <span className={`font-bold ${
+                        index === 0 ? 'text-yellow-400' :
+                        index === 1 ? 'text-zinc-300' :
+                        index === 2 ? 'text-amber-600' :
+                        'text-zinc-400'
+                      }`}>
+                        {index + 1}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className="font-semibold text-zinc-100">{playerData.player.name}</span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <span className="font-bold text-zinc-100">{playerData.totalPoints}</span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <span className="text-zinc-300">{playerData.basePoints}</span>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <span className="text-amber-400">{playerData.bonusPoints}</span>
+                    </td>
+                    {playerData.turns.map((turnData, turnIndex) => (
+                      <td key={turnIndex} className="px-3 py-2 text-center">
+                        <span 
+                          className="text-zinc-300 cursor-help text-xs"
+                          title={`Posición: ${turnData.position}° | Base: ${turnData.basePoints}pts | Bonus: ${turnData.bonusPoints}pts`}
+                        >
+                          {turnData.totalPoints}
+                          {turnData.bonusPoints > 0 && (
+                            <span className="text-amber-400">+{turnData.bonusPoints}</span>
+                          )}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Circuit View */}
+          <div className="md:hidden p-4 space-y-4">
+            {circuit.players.map((playerData, index) => (
+              <div key={playerData.player.id} className="border border-zinc-700 rounded-md p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-bold ${
+                      index === 0 ? 'text-yellow-400' :
+                      index === 1 ? 'text-zinc-300' :
+                      index === 2 ? 'text-amber-600' :
+                      'text-zinc-400'
+                    }`}>
+                      {index + 1}
+                    </span>
+                    <span className="font-semibold text-zinc-100">{playerData.player.name}</span>
+                  </div>
+                  <span className="font-bold text-zinc-100 font-mono">{playerData.totalPoints} pts</span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Base:</span>
+                    <span className="text-zinc-300">{playerData.basePoints}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Bonus:</span>
+                    <span className="text-amber-400">{playerData.bonusPoints}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {playerData.turns.map((turnData, turnIndex) => (
+                    <div key={turnIndex} className="text-center">
+                      <div className="text-zinc-400">T{turnIndex + 1}</div>
+                      <div className="font-mono">
+                        {turnData.totalPoints}
+                        {turnData.bonusPoints > 0 && (
+                          <span className="text-amber-400">+{turnData.bonusPoints}</span>
+                        )}
+                      </div>
+                      <div className="text-zinc-500">{turnData.position}°</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        );
+      })}
     </div>
   );
 };
@@ -219,26 +162,9 @@ const RaceProgress: React.FC<RaceProgressProps> = ({ gameState, players }) => {
   const totalProgressTurns = totalCircuits * totalTurns;
   const overallProgress = Math.round((completedTurns / totalProgressTurns) * 100);
   
-  // Get current standings with additional stats
-  const turnPositions = calculateTurnPositions(gameState, players);
-  
-  const standings = Object.entries(gameState.playerStats)
-    .map(([playerId, stats]) => {
-      const player = players.find(p => p.id === playerId)!;
-      const positions = turnPositions[playerId] || { firsts: 0, seconds: 0, thirds: 0 };
-      
-      return {
-        player,
-        score: stats.totalScore,
-        bestLaps: stats.bestLaps || 0,
-        bestAverages: stats.bestAverages || 0,
-        firsts: positions.firsts,
-        seconds: positions.seconds,
-        thirds: positions.thirds
-      };
-    })
-    .filter(s => s.player)
-    .sort((a, b) => b.score - a.score);
+  // Get current standings using ScoreCalculator for consistency
+  const calculator = new ScoreCalculator(gameState, players);
+  const standings = calculator.getPlayerStandings();
 
   return (
     <div className="space-y-6">
