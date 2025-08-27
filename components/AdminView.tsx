@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Player, Circuit, UserSession } from '../types';
+import { Player, Circuit, UserSession, Tournament } from '../types';
 import { PlusIcon, PencilIcon, TrashIcon, UserGroupIcon } from './icons';
 import { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import Modal from './Modal';
 import CircuitImage from './CircuitImage';
 import LoadingSpinner from './LoadingSpinner';
+import TournamentManagement from './TournamentManagement';
 
 // Arrow Left Icon for navigation
 const ArrowLeftIcon = ({ className }: { className?: string }) => (
@@ -34,6 +36,20 @@ const RefreshIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
+// Trophy Icon for tournaments tab
+const TrophyIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C13.1046 2 14 2.89543 14 4V5H18C19.1046 5 20 5.89543 20 7V9C20 10.8638 18.7252 12.4299 17.0005 12.874L16.8293 16.2929C16.7439 17.3753 15.8365 18.2436 14.7486 18.2486L14.7486 20H16C16.5523 20 17 20.4477 17 21C17 21.5523 16.5523 22 16 22H8C7.44772 22 7 21.5523 7 21C7 20.4477 7.44772 20 8 20H9.25139L9.25139 18.2486C8.16354 18.2436 7.25607 17.3753 7.17071 16.2929L7.00001 12.874C5.27477 12.4299 4 10.8638 4 9V7C4 5.89543 4.89543 5 6 5H10V4C10 2.89543 10.8954 2 12 2ZM15 12H9V16C9 16.5523 9.44772 17 10 17H14C14.5523 17 15 16.5523 15 16V12ZM18 7H16V10.0003C17.0544 9.82329 17.8281 8.99084 17.8281 8V7.17188C17.8281 7.07687 17.7531 7 17.6562 7H18ZM8 7V10.0003C6.94563 9.82329 6.17188 8.99084 6.17188 8V7.17188C6.17188 7.07687 6.24687 7 6.34375 7H8Z"/>
+    </svg>
+);
+
+// Settings Icon for tournament management
+const SettingsIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
+    </svg>
+);
+
 interface AdminViewProps {
     players: Player[];
     circuits: Circuit[];
@@ -43,7 +59,7 @@ interface AdminViewProps {
 }
 
 type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | 'new-guest' | null;
-type TabType = 'players' | 'circuits' | 'guests';
+type TabType = 'players' | 'circuits' | 'guests' | 'tournaments';
 
 interface AdminLock {
     userId: string;
@@ -59,6 +75,14 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     // Separate regular players and guests
     const regularPlayers = players.filter(p => !p.isGuest);
     const guestPlayers = players.filter(p => p.isGuest);
+    
+    // Fetch tournaments data
+    const { data: tournaments, error: tournamentsError, isLoading: tournamentsLoading, mutate: mutateTournaments } = useSWR<Tournament[]>('/api/tournaments');
+    
+    // Tournament management state
+    const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+    const [showTournamentManagement, setShowTournamentManagement] = useState(false);
+    
     const [isLocked, setIsLocked] = useState(false);
     const [lockInfo, setLockInfo] = useState<AdminLock | null>(null);
     const [isCheckingLock, setIsCheckingLock] = useState(true);
@@ -305,6 +329,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     }
 
     return (
+        <>
         <div className="min-h-screen bg-black">
             {/* F1 Luxury Navigation Header */}
             <div className="bg-zinc-900 border-b-2 border-f1-red sticky top-0 z-20 shadow-lg">
@@ -376,6 +401,18 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                             <CircuitIcon className="w-4 h-4" />
                             <span className="hidden sm:inline">Circuitos</span>
                             <span className="sm:hidden">({circuits.length})</span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('tournaments')}
+                            className={`flex-1 min-w-[120px] px-4 py-4 flex items-center justify-center gap-2 font-semibold text-sm uppercase tracking-wide transition-all duration-200 ${
+                                activeTab === 'tournaments'
+                                    ? 'bg-yellow-600 text-white shadow-lg'
+                                    : 'bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700'
+                            }`}
+                        >
+                            <TrophyIcon className="w-4 h-4" />
+                            <span className="hidden sm:inline">Torneos</span>
+                            <span className="sm:hidden">({tournaments?.length || 0})</span>
                         </button>
                     </div>
                 </div>
@@ -783,6 +820,194 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                     </div>
                 )}
 
+                {activeTab === 'tournaments' && (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+                        {/* Luxury Table Header */}
+                        <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+                                        TORNEOS F1 NIGHT
+                                    </h2>
+                                    <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
+                                        {tournaments?.length || 0} Torneos • Sistema profesional
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {tournamentsLoading ? (
+                            <div className="p-8 text-center">
+                                <LoadingSpinner />
+                                <p className="mt-4 text-zinc-400">Cargando torneos...</p>
+                            </div>
+                        ) : tournamentsError ? (
+                            <div className="p-8 text-center">
+                                <div className="text-red-500 mb-4">
+                                    <TrophyIcon className="w-16 h-16 mx-auto opacity-50" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-red-400 mb-2">Error al cargar torneos</h3>
+                                <p className="text-zinc-500 text-sm">Revisa la conexión con la base de datos</p>
+                            </div>
+                        ) : tournaments && tournaments.length > 0 ? (
+                            <>
+                                {/* Desktop Table */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-zinc-800 border-b border-zinc-700">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Estado</th>
+                                                <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Torneo</th>
+                                                <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Progreso</th>
+                                                <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Participantes</th>
+                                                <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Puntuación</th>
+                                                <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-800">
+                                            {tournaments.map(tournament => (
+                                                <tr key={tournament.id} className="hover:bg-zinc-800/30 transition-colors duration-200">
+                                                    <td className="px-4 py-3">
+                                                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wide ${
+                                                            tournament.status === 'ACTIVE' 
+                                                                ? 'bg-green-900/30 text-green-400 border border-green-600/30'
+                                                                : tournament.status === 'COMPLETED'
+                                                                ? 'bg-blue-900/30 text-blue-400 border border-blue-600/30'
+                                                                : 'bg-red-900/30 text-red-400 border border-red-600/30'
+                                                        }`}>
+                                                            {tournament.status === 'ACTIVE' ? 'ACTIVO' : 
+                                                             tournament.status === 'COMPLETED' ? 'COMPLETADO' : 'CANCELADO'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="font-semibold text-zinc-100 text-lg">{tournament.name}</div>
+                                                        {tournament.description && (
+                                                            <div className="text-zinc-400 text-sm">{tournament.description}</div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <div className="font-mono font-bold text-zinc-100">
+                                                            {tournament.championships?.filter((c: any) => c.status === 'COMPLETED').length || 0}/{tournament.maxChampionships}
+                                                        </div>
+                                                        <div className="text-xs text-zinc-400">campeonatos</div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <div className="font-mono font-bold text-zinc-100">
+                                                            {tournament.participants?.length || 0}
+                                                        </div>
+                                                        <div className="text-xs text-zinc-400">pilotos</div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <div className="text-xs text-zinc-400 font-mono space-x-2">
+                                                            <span className="text-amber-400">{tournament.pointsForFirst}°</span>
+                                                            <span className="text-zinc-300">{tournament.pointsForSecond}°</span>
+                                                            <span className="text-amber-600">{tournament.pointsForThird}°</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex justify-center gap-2">
+                                                            {tournament.status === 'ACTIVE' ? (
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        console.log('🚀 DESKTOP: Tournament button clicked:', tournament);
+                                                                        console.log('🚀 Setting selectedTournament to:', tournament);
+                                                                        console.log('🚀 Setting showTournamentManagement to: true');
+                                                                        setSelectedTournament(tournament);
+                                                                        setShowTournamentManagement(true);
+                                                                        console.log('🚀 State updated successfully');
+                                                                    }}
+                                                                    className="flex items-center gap-2 px-3 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors duration-200 font-bold text-xs uppercase tracking-wide"
+                                                                >
+                                                                    <SettingsIcon className="w-4 h-4"/>
+                                                                    Gestionar
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-xs text-zinc-500 font-mono">
+                                                                    {tournament.status}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Cards */}
+                                <div className="md:hidden divide-y divide-zinc-800">
+                                    {tournaments.map(tournament => (
+                                        <div key={tournament.id} className="p-4 hover:bg-zinc-800/30 transition-colors duration-200">
+                                            <div className="flex items-start gap-3 mb-3">
+                                                <div className="w-14 h-14 rounded-full bg-zinc-700 border-2 border-yellow-600/50 flex items-center justify-center">
+                                                    <TrophyIcon className="w-7 h-7 text-yellow-400" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-semibold text-zinc-100 text-lg">{tournament.name}</div>
+                                                    {tournament.description && (
+                                                        <div className="text-zinc-400 text-sm mb-2">{tournament.description}</div>
+                                                    )}
+                                                    <div className="flex gap-4 text-sm">
+                                                        <span className="text-zinc-300 font-mono">
+                                                            {tournament.championships?.filter((c: any) => c.status === 'COMPLETED').length || 0}/{tournament.maxChampionships}
+                                                        </span>
+                                                        <span className="text-zinc-300 font-mono">
+                                                            {tournament.participants?.length || 0} pilotos
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                                                    tournament.status === 'ACTIVE' 
+                                                        ? 'bg-green-900/30 text-green-400 border border-green-700'
+                                                        : tournament.status === 'COMPLETED'
+                                                        ? 'bg-blue-900/30 text-blue-400 border border-blue-700'
+                                                        : 'bg-red-900/30 text-red-400 border border-red-700'
+                                                }`}>
+                                                    {tournament.status === 'ACTIVE' ? 'ACTIVO' : 
+                                                     tournament.status === 'COMPLETED' ? 'COMPLETADO' : 'CANCELADO'}
+                                                </span>
+                                            </div>
+                                            
+                                            {tournament.status === 'ACTIVE' ? (
+                                                <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                                                    <button 
+                                                        onClick={() => {
+                                                            console.log('📱 MOBILE: Tournament button clicked:', tournament);
+                                                            console.log('📱 Setting selectedTournament to:', tournament);
+                                                            console.log('📱 Setting showTournamentManagement to: true');
+                                                            setSelectedTournament(tournament);
+                                                            setShowTournamentManagement(true);
+                                                            console.log('📱 Mobile state updated successfully');
+                                                        }}
+                                                        className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors duration-200 min-h-[48px] font-bold text-sm uppercase tracking-wide"
+                                                    >
+                                                        <SettingsIcon className="w-4 h-4"/>
+                                                        Gestionar Torneo
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center pt-2 border-t border-zinc-800">
+                                                    <span className="text-xs text-zinc-500 font-mono uppercase">
+                                                        Estado: {tournament.status}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="p-8 text-center">
+                                <div className="text-zinc-500 mb-4">
+                                    <TrophyIcon className="w-16 h-16 mx-auto opacity-50" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-zinc-400 mb-2">No hay torneos registrados</h3>
+                                <p className="text-zinc-500 text-sm">Crea torneos desde la configuración de campeonatos</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Game Management Section */}
                 {typeof onRecalculateScores === 'function' && (
                     <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
@@ -844,6 +1069,28 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
             )}
             </div>
         </div>
+        
+        {/* Tournament Management Modal - Outside main container for proper z-index */}
+        {showTournamentManagement && selectedTournament ? (
+            <div>
+                {console.log('✅ MODAL SHOULD APPEAR NOW:', { showTournamentManagement, selectedTournament })}
+                <TournamentManagement 
+                    tournament={selectedTournament}
+                    onTournamentUpdated={async () => {
+                        console.log('Tournament updated, closing modal');
+                        await mutateTournaments();
+                        setShowTournamentManagement(false);
+                        setSelectedTournament(null);
+                    }}
+                    onClose={() => {
+                        console.log('Tournament modal closed by user');
+                        setShowTournamentManagement(false);
+                        setSelectedTournament(null);
+                    }}
+                />
+            </div>
+        ) : null}
+        </>
     );
 }
 

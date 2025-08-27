@@ -83,15 +83,17 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
 
   if (action === null) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6 w-full max-w-md">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+        <div className="bg-zinc-900 border-2 border-zinc-700 rounded-lg shadow-2xl p-6 w-full max-w-md">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-zinc-100">Gestionar Torneo</h2>
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-zinc-100"
+              className="text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 w-8 h-8 rounded-md flex items-center justify-center transition-colors"
             >
-              ✕
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
@@ -141,7 +143,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
   const expectedWord = isCancel ? 'CANCELAR' : 'TERMINAR';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
       <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-zinc-100">
@@ -153,9 +155,11 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
               setConfirmation('');
               setError('');
             }}
-            className="text-zinc-400 hover:text-zinc-100"
+            className="text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 w-8 h-8 rounded-md flex items-center justify-center transition-colors"
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
