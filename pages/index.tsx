@@ -1290,7 +1290,7 @@ function App() {
                         <>
                             {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} gameId={activeGame!.id} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
                             {activeTab === 'live' && <LivePage gameState={gameStateFromDB} players={players} circuits={circuits} gameId={activeGame!.id} />}
-                            {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
+                            {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4 max-h-[calc(100vh-200px)] overflow-y-auto"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                             {activeTab === 'stats' && <StatsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                             {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} currentGameId={activeGame?.id} />}
                             {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to STATS tab to see the final standings.</div>}

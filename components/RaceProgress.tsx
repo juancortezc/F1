@@ -14,6 +14,155 @@ const calculateTurnPositions = (gameState: GameState, players: Player[]) => {
   return calculator.calculateTurnPositions();
 };
 
+// Circuit Turn Positions Cards - Shows position each player got in each turn
+export const CircuitPositionsCards: React.FC<{ gameState: GameState; players: Player[] }> = ({ gameState, players }) => {
+  const calculator = new ScoreCalculator(gameState, players);
+  const circuitBreakdown = calculator.getCircuitBreakdown();
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+        <h3 className="text-xl font-bold text-zinc-100 mb-2">Posiciones por Turno</h3>
+        <p className="text-zinc-400 text-sm">Posición que ocupó cada jugador en cada turno del circuito</p>
+      </div>
+
+      {circuitBreakdown.length === 0 ? (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-8 text-center">
+          <div className="text-zinc-500 mb-4">
+            <svg className="w-16 h-16 mx-auto opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM21 17a2 2 0 11-4 0 2 2 0 014 0zM7 8l4-4 4 4M7 8v9a2 2 0 002 2h6a2 2 0 002-2V8"/>
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-zinc-400 mb-2">No hay datos de posiciones</h3>
+          <p className="text-zinc-500 text-sm">Las posiciones por turno aparecerán aquí una vez que se complete un campeonato</p>
+        </div>
+      ) : (
+        circuitBreakdown.map((circuit, circuitIndex) => {
+          if (!circuit) return null;
+          return (
+          <div key={circuitIndex} className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+            <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
+              <div className="flex justify-between items-center">
+                <h4 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+                  {circuit.name}
+                </h4>
+                <span className="text-xs text-zinc-400 font-mono">
+                  POSICIONES POR TURNO
+                </span>
+              </div>
+            </div>
+
+            {/* Desktop Positions Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm font-mono">
+                <thead className="bg-zinc-800">
+                  <tr className="text-left">
+                    <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">POS</th>
+                    <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">JUGADOR</th>
+                    {Array.from({ length: gameState.settings.turnsPerCircuit }, (_, i) => (
+                      <th key={i} className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">
+                        T{i + 1}
+                      </th>
+                    ))}
+                    <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">BASE PTS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {circuit.players.map((playerData, index) => (
+                    <tr key={playerData.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors">
+                      <td className="px-3 py-2">
+                        <span className={`font-bold text-lg ${
+                          index === 0 ? 'text-yellow-400' :
+                          index === 1 ? 'text-zinc-300' :
+                          index === 2 ? 'text-amber-600' :
+                          'text-zinc-400'
+                        }`}>
+                          {index + 1}°
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="font-semibold text-zinc-100 text-lg">{playerData.player.name}</span>
+                      </td>
+                      {playerData.turns.map((turnData, turnIndex) => (
+                        <td key={turnIndex} className="px-3 py-2 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className={`font-bold text-lg ${
+                              turnData.position === 1 ? 'text-yellow-400' :
+                              turnData.position === 2 ? 'text-zinc-300' :
+                              turnData.position === 3 ? 'text-amber-600' :
+                              'text-zinc-400'
+                            }`}>
+                              {turnData.position}°
+                            </span>
+                            <span className="text-xs text-zinc-500">
+                              +{turnData.basePoints}
+                            </span>
+                          </div>
+                        </td>
+                      ))}
+                      <td className="px-3 py-2 text-center">
+                        <span className="font-bold text-zinc-100 text-lg">{playerData.basePoints}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Positions Table - Grid System like Results */}
+            <div className="md:hidden overflow-x-auto">
+              <div className="min-w-fit">
+                {/* Mobile Header - Dynamic columns based on turns */}
+                <div className={`grid gap-1 px-3 py-2 bg-zinc-800 text-xs font-mono uppercase tracking-wide border-b border-zinc-800`} 
+                     style={{ gridTemplateColumns: `40px 100px repeat(${gameState.settings.turnsPerCircuit}, 50px) 50px` }}>
+                  <div className="text-zinc-400">POS</div>
+                  <div className="text-zinc-400">JUGADOR</div>
+                  {Array.from({ length: gameState.settings.turnsPerCircuit }, (_, i) => (
+                    <div key={i} className="text-zinc-400 text-center">T{i + 1}</div>
+                  ))}
+                  <div className="text-zinc-400 text-center">BASE</div>
+                </div>
+                
+                {/* Mobile Data Rows */}
+                {circuit.players.map((playerData, index) => (
+                  <div key={playerData.player.id} 
+                       className={`grid gap-1 px-3 py-2 border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors text-sm font-mono`}
+                       style={{ gridTemplateColumns: `40px 100px repeat(${gameState.settings.turnsPerCircuit}, 50px) 50px` }}>
+                    <div className={`font-bold ${
+                      index === 0 ? 'text-yellow-400' :
+                      index === 1 ? 'text-zinc-300' :
+                      index === 2 ? 'text-amber-600' :
+                      'text-zinc-400'
+                    }`}>
+                      {index + 1}°
+                    </div>
+                    <div className="text-zinc-100 font-semibold truncate">{playerData.player.name}</div>
+                    {playerData.turns.map((turnData, turnIndex) => (
+                      <div key={turnIndex} className="text-center">
+                        <div className={`font-bold ${
+                          turnData.position === 1 ? 'text-yellow-400' :
+                          turnData.position === 2 ? 'text-zinc-300' :
+                          turnData.position === 3 ? 'text-amber-600' :
+                          'text-zinc-400'
+                        }`}>
+                          {turnData.position}°
+                        </div>
+                        <div className="text-xs text-zinc-500">+{turnData.basePoints}</div>
+                      </div>
+                    ))}
+                    <div className="text-zinc-100 font-bold text-center">{playerData.basePoints}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          );
+        })
+      )}
+    </div>
+  );
+};
+
 // Circuit-based Points breakdown component - Now uses ScoreCalculator for consistency
 const PointsBreakdownCard: React.FC<{ gameState: GameState; players: Player[]; standings: any[] }> = ({ gameState, players, standings }) => {
   const calculator = new ScoreCalculator(gameState, players);
@@ -21,11 +170,6 @@ const PointsBreakdownCard: React.FC<{ gameState: GameState; players: Player[]; s
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
-        <h3 className="text-xl font-bold text-zinc-100 mb-4">Desglose de Puntos por Circuito</h3>
-        <p className="text-zinc-400 text-sm">Análisis detallado de puntuación por circuito y turno</p>
-      </div>
-
       {circuitBreakdown.map((circuit, circuitIndex) => {
         if (!circuit) return null;
         return (
@@ -97,52 +241,48 @@ const PointsBreakdownCard: React.FC<{ gameState: GameState; players: Player[]; s
             </table>
           </div>
 
-          {/* Mobile Circuit View */}
-          <div className="md:hidden p-4 space-y-4">
-            {circuit.players.map((playerData, index) => (
-              <div key={playerData.player.id} className="border border-zinc-700 rounded-md p-3">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`font-bold ${
-                      index === 0 ? 'text-yellow-400' :
-                      index === 1 ? 'text-zinc-300' :
-                      index === 2 ? 'text-amber-600' :
-                      'text-zinc-400'
-                    }`}>
-                      {index + 1}
-                    </span>
-                    <span className="font-semibold text-zinc-100">{playerData.player.name}</span>
+          {/* Mobile Circuit Table - Grid System like Results */}
+          <div className="md:hidden overflow-x-auto">
+            <div className="min-w-fit">
+              {/* Mobile Header - Dynamic columns based on turns */}
+              <div className={`grid gap-1 px-3 py-2 bg-zinc-800 text-xs font-mono uppercase tracking-wide border-b border-zinc-800`}
+                   style={{ gridTemplateColumns: `40px 100px 50px 50px 60px repeat(${gameState.settings.turnsPerCircuit}, 40px)` }}>
+                <div className="text-zinc-400">POS</div>
+                <div className="text-zinc-400">JUGADOR</div>
+                <div className="text-zinc-400 text-center">TOTAL</div>
+                <div className="text-zinc-400 text-center">BASE</div>
+                <div className="text-zinc-400 text-center">BONUS</div>
+                {Array.from({ length: gameState.settings.turnsPerCircuit }, (_, i) => (
+                  <div key={i} className="text-zinc-400 text-center">T{i + 1}</div>
+                ))}
+              </div>
+              
+              {/* Mobile Data Rows */}
+              {circuit.players.map((playerData, index) => (
+                <div key={playerData.player.id} 
+                     className={`grid gap-1 px-3 py-2 border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors text-sm font-mono`}
+                     style={{ gridTemplateColumns: `40px 100px 50px 50px 60px repeat(${gameState.settings.turnsPerCircuit}, 40px)` }}>
+                  <div className={`font-bold ${
+                    index === 0 ? 'text-yellow-400' :
+                    index === 1 ? 'text-zinc-300' :
+                    index === 2 ? 'text-amber-600' :
+                    'text-zinc-400'
+                  }`}>
+                    {index + 1}
                   </div>
-                  <span className="font-bold text-zinc-100 font-mono">{playerData.totalPoints} pts</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Base:</span>
-                    <span className="text-zinc-300">{playerData.basePoints}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Bonus:</span>
-                    <span className="text-amber-400">{playerData.bonusPoints}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="text-zinc-100 font-semibold truncate">{playerData.player.name}</div>
+                  <div className="text-zinc-100 font-bold text-center">{playerData.totalPoints}</div>
+                  <div className="text-zinc-300 font-bold text-center">{playerData.basePoints}</div>
+                  <div className="text-amber-400 font-bold text-center">{playerData.bonusPoints}</div>
                   {playerData.turns.map((turnData, turnIndex) => (
                     <div key={turnIndex} className="text-center">
-                      <div className="text-zinc-400">T{turnIndex + 1}</div>
-                      <div className="font-mono">
-                        {turnData.totalPoints}
-                        {turnData.bonusPoints > 0 && (
-                          <span className="text-amber-400">+{turnData.bonusPoints}</span>
-                        )}
-                      </div>
-                      <div className="text-zinc-500">{turnData.position}°</div>
+                      <div className="text-zinc-100 font-bold">{turnData.totalPoints}</div>
+                      <div className="text-xs text-zinc-500">{turnData.position}°</div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
         );

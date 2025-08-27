@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { GameState, NightlyResult, Player, PlayerStats, Circuit, GameHistoryEntry } from '../types';
 import NavigationBar from './NavigationBar';
 import RaceProgress from './RaceProgress';
+import { CircuitPositionsCards } from './RaceProgress';
 import { ScoreCalculator } from '../utils/ScoreCalculator';
 
 interface ResultsViewProps {
@@ -480,6 +481,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ gameState, players, circuits,
             <div className="p-4">
                 {activeTab === 'tiempos' && (
                     <div className="space-y-6">
+                        <CircuitPositionsCards gameState={gameState} players={players} />
                         <CircuitResultsDetail gameState={gameState} players={players} />
                         <TopStats circuits={circuits} players={players} gameHistory={gameHistory} />
                     </div>
