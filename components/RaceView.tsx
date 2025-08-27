@@ -40,6 +40,97 @@ const cleanupStaleLocalStorage = (gameId: string, playerId: string) => {
   });
 };
 
+// Enhanced offline backup system
+const BACKUP_KEY_PREFIX = 'f1-lap-backup';
+const PENDING_SAVES_KEY = 'f1-pending-saves';
+
+interface LapTimeBackup {
+  gameId: string;
+  playerId: string;
+  circuitId: string;
+  turnNumber: number;
+  lapNumber: number;
+  timeMs: number;
+  timestamp: number;
+  saved: boolean;
+}
+
+interface PendingSave extends LapTimeBackup {
+  retryCount: number;
+  lastAttempt: number;
+}
+
+// Backup lap time to localStorage
+const backupLapTime = (backup: LapTimeBackup) => {
+  const key = `${BACKUP_KEY_PREFIX}-${backup.gameId}-${backup.playerId}-${backup.circuitId}-${backup.turnNumber}-${backup.lapNumber}`;
+  localStorage.setItem(key, JSON.stringify(backup));
+};
+
+// Get all unsaved backups
+const getUnsavedBackups = (gameId: string): LapTimeBackup[] => {
+  const keys = Object.keys(localStorage);
+  const backups: LapTimeBackup[] = [];
+  
+  keys.forEach(key => {
+    if (key.startsWith(`${BACKUP_KEY_PREFIX}-${gameId}`)) {
+      try {
+        const backup = JSON.parse(localStorage.getItem(key) || '');
+        if (!backup.saved) {
+          backups.push(backup);
+        }
+      } catch (e) {
+        console.warn('Failed to parse backup:', key);
+      }
+    }
+  });
+  
+  return backups.sort((a, b) => a.timestamp - b.timestamp);
+};
+
+// Mark backup as saved
+const markBackupAsSaved = (gameId: string, playerId: string, circuitId: string, turnNumber: number, lapNumber: number) => {
+  const key = `${BACKUP_KEY_PREFIX}-${gameId}-${playerId}-${circuitId}-${turnNumber}-${lapNumber}`;
+  const backup = localStorage.getItem(key);
+  if (backup) {
+    try {
+      const parsed = JSON.parse(backup);
+      parsed.saved = true;
+      localStorage.setItem(key, JSON.stringify(parsed));
+    } catch (e) {
+      console.warn('Failed to mark backup as saved:', key);
+    }
+  }
+};
+
+// Add to pending saves queue
+const addToPendingSaves = (backup: LapTimeBackup) => {
+  const pending: PendingSave = {
+    ...backup,
+    retryCount: 0,
+    lastAttempt: Date.now()
+  };
+  
+  const existingPending = JSON.parse(localStorage.getItem(PENDING_SAVES_KEY) || '[]');
+  existingPending.push(pending);
+  localStorage.setItem(PENDING_SAVES_KEY, JSON.stringify(existingPending));
+};
+
+// Get and clear pending saves
+const getPendingSaves = (): PendingSave[] => {
+  const pending = JSON.parse(localStorage.getItem(PENDING_SAVES_KEY) || '[]');
+  return pending;
+};
+
+// Remove from pending saves
+const removeFromPendingSaves = (gameId: string, playerId: string, circuitId: string, turnNumber: number, lapNumber: number) => {
+  const pending = getPendingSaves();
+  const filtered = pending.filter(p => 
+    !(p.gameId === gameId && p.playerId === playerId && 
+      p.circuitId === circuitId && p.turnNumber === turnNumber && p.lapNumber === lapNumber)
+  );
+  localStorage.setItem(PENDING_SAVES_KEY, JSON.stringify(filtered));
+};
+
 const TimeInput: React.FC<{ 
   value: string; 
   onChange: (val: string) => void; 
@@ -131,8 +222,79 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { mutate } = useSWRConfig();
+  const [pendingSync, setPendingSync] = useState<number>(0);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const isCurrentController = currentUser.userId === currentController;
+
+  // Retry mechanism for pending saves
+  const retryPendingSaves = useCallback(async () => {
+    if (isRetrying) return;
+    
+    const pending = getPendingSaves();
+    if (pending.length === 0) return;
+    
+    setIsRetrying(true);
+    console.log(`Attempting to sync ${pending.length} unsaved lap times...`);
+    
+    for (const save of pending) {
+      try {
+        const response = await fetch('/api/lap-times/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gameId: save.gameId,
+            playerId: save.playerId,
+            circuitId: save.circuitId,
+            turnNumber: save.turnNumber,
+            lapNumber: save.lapNumber,
+            timeMs: save.timeMs
+          })
+        });
+        
+        if (response.ok) {
+          // Success - remove from pending and mark backup as saved
+          removeFromPendingSaves(save.gameId, save.playerId, save.circuitId, save.turnNumber, save.lapNumber);
+          markBackupAsSaved(save.gameId, save.playerId, save.circuitId, save.turnNumber, save.lapNumber);
+          console.log(`Successfully synced lap ${save.lapNumber} for player ${save.playerId}`);
+        }
+      } catch (error) {
+        console.warn('Failed to sync lap time during retry:', error);
+      }
+    }
+    
+    const remainingPending = getPendingSaves();
+    setPendingSync(remainingPending.length);
+    setIsRetrying(false);
+    
+    if (remainingPending.length === 0) {
+      console.log('All lap times successfully synced!');
+    }
+  }, [isRetrying]);
+
+  // Check for pending saves on mount and network reconnection
+  useEffect(() => {
+    const checkPendingSync = () => {
+      const pending = getPendingSaves();
+      setPendingSync(pending.length);
+      
+      if (pending.length > 0 && navigator.onLine) {
+        retryPendingSaves();
+      }
+    };
+
+    // Check on mount
+    checkPendingSync();
+
+    // Listen for online event to retry pending saves
+    const handleOnline = () => {
+      console.log('Network reconnected - attempting to sync unsaved data...');
+      retryPendingSaves();
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [retryPendingSaves]);
 
   // Removed access restriction for testing
   // if (!isCurrentController) {
@@ -151,14 +313,28 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
   //   );
   // }
 
-  // Auto-save individual lap time and check for records
+  // Enhanced auto-save with offline backup system
   const autoSaveLapTime = useCallback(async (lapIndex: number, timeMs: number) => {
     if (!gameState?.settings || timeMs <= 0) return;
+    
+    // Always backup locally first
+    const backup: LapTimeBackup = {
+      gameId: gameId,
+      playerId: currentPlayerId,
+      circuitId: currentCircuit.id,
+      turnNumber: currentTurn,
+      lapNumber: lapIndex + 1,
+      timeMs,
+      timestamp: Date.now(),
+      saved: false
+    };
+    
+    backupLapTime(backup);
     
     try {
       setIsAutoSaving(true);
       
-      // Save individual lap time
+      // Attempt to save to server
       const response = await fetch('/api/lap-times/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -173,17 +349,31 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
       });
       
       if (response.ok) {
+        // Mark as saved both in state and backup
         setSavedLapTimes(prev => ({ ...prev, [lapIndex]: true }));
+        markBackupAsSaved(gameId, currentPlayerId, currentCircuit.id, currentTurn, lapIndex + 1);
+        
+        // Remove from pending saves if it was there
+        removeFromPendingSaves(gameId, currentPlayerId, currentCircuit.id, currentTurn, lapIndex + 1);
         
         // Invalidate live lap times cache to refresh LIVE page immediately
         mutate(`/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${currentTurn}`);
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Auto-save failed:', error);
+      
+      // Mark as not saved and add to retry queue
+      setSavedLapTimes(prev => ({ ...prev, [lapIndex]: false }));
+      addToPendingSaves(backup);
+      
+      // Show user that there are unsaved changes
+      console.warn('Lap time saved locally but not synced to server');
     } finally {
       setIsAutoSaving(false);
     }
-  }, [gameState, currentPlayerId, currentCircuit?.id, currentTurn]);
+  }, [gameState, currentPlayerId, currentCircuit?.id, currentTurn, gameId, mutate]);
 
   const handleLapTimeChange = (index: number, field: keyof LapTimeType, value: string) => {
     const newLapTimes = [...lapTimes];
@@ -378,6 +568,38 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
             </div>
           </div>
           
+          {/* Connection Status and Sync Indicators */}
+          {(pendingSync > 0 || isRetrying || !navigator.onLine) && (
+            <div className="mb-3 p-2 bg-zinc-800/50 rounded-md border-l-4 border-yellow-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {!navigator.onLine && (
+                    <>
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <span className="text-red-400 text-sm font-medium">Sin conexión</span>
+                    </>
+                  )}
+                  {navigator.onLine && pendingSync > 0 && (
+                    <>
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                      <span className="text-yellow-400 text-sm font-medium">
+                        {isRetrying ? 'Sincronizando...' : `${pendingSync} tiempos sin sincronizar`}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {pendingSync > 0 && navigator.onLine && !isRetrying && (
+                  <button
+                    onClick={retryPendingSaves}
+                    className="text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded transition-colors"
+                  >
+                    Reintentar
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          
           {/* Next Player */}
           <div className="text-zinc-400 text-sm mb-4">
             Siguiente: <span className="text-zinc-300 font-semibold">{nextPlayer?.name || 'N/A'}</span>
@@ -466,8 +688,14 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
                   {/* Lap Label */}
                   <div className="flex items-center gap-1">
                     <span className="text-zinc-300 font-semibold text-sm">V{index + 1}</span>
-                    {isSaved && (
+                    {isSaved === true && (
                       <span className="text-green-400 text-xs">✓</span>
+                    )}
+                    {isSaved === false && timeToMs(lapTime) > 0 && (
+                      <span className="text-yellow-400 text-xs animate-pulse" title="Guardado localmente, pendiente sincronización">⏳</span>
+                    )}
+                    {isAutoSaving && (
+                      <span className="text-blue-400 text-xs animate-spin">⟳</span>
                     )}
                   </div>
                   

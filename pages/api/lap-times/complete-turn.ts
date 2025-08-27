@@ -74,14 +74,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       // Calculate points based on scoring method and game settings
-      const getPoints = (rank: number): number => {
+      const getPoints = (rank: number, totalPlayers: number): number => {
         const pointsForFirst = gameState.settings.pointsForFirst || 3;
         const pointsForSecond = gameState.settings.pointsForSecond || 2;
         const pointsForThird = gameState.settings.pointsForThird || 1;
         
+        // Only award positions that exist (can't have 3rd place with only 2 players)
         if (rank === 0) return pointsForFirst;
-        if (rank === 1) return pointsForSecond; 
-        if (rank === 2) return pointsForThird;
+        if (rank === 1 && totalPlayers >= 2) return pointsForSecond; 
+        if (rank === 2 && totalPlayers >= 3) return pointsForThird;
         return 0;
       };
 
@@ -97,7 +98,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const rank = playerAverages.findIndex(p => p.playerId === playerId);
         if (rank !== -1) {
-          turnScore += getPoints(rank);
+          const totalPlayers = playerAverages.length;
+          const avgPoints = getPoints(rank, totalPlayers);
+          turnScore += avgPoints;
+          console.log(`[SCORING DEBUG] Average - Player: ${playerId}, Rank: ${rank + 1}/${totalPlayers}, Points: ${avgPoints}, Average: ${averageTimeMs}ms`);
         }
       }
 
@@ -130,10 +134,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Find current player's rank
         const lapRank = sortedByBestLap.findIndex(([pid]) => pid === playerId);
         if (lapRank !== -1) {
-          turnScore += getPoints(lapRank);
+          const totalPlayers = sortedByBestLap.length;
+          const lapPoints = getPoints(lapRank, totalPlayers);
+          const playerBestTime = sortedByBestLap[lapRank][1];
+          turnScore += lapPoints;
+          console.log(`[SCORING DEBUG] Best Lap - Player: ${playerId}, Rank: ${lapRank + 1}/${totalPlayers}, Points: ${lapPoints}, Best Lap: ${playerBestTime}ms`);
         }
       }
     }
+
+    console.log(`[SCORING DEBUG] FINAL - Player: ${playerId}, Turn: ${turnNumber}, Circuit: ${circuitId}, Total Score: ${turnScore}, Scoring Method: ${activeGame?.state ? (activeGame.state as any).settings?.scoringMethod || 'unknown' : 'unknown'}`);
 
     // Update turn completion
     const turnCompletion = await prisma.turnCompletion.upsert({

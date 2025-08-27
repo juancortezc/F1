@@ -21,14 +21,108 @@ const calculateTurnPositions = (gameState: GameState, players: Player[]) => {
       // Sort players by turn score for this specific turn
       const turnStandings = [...turn].sort((a, b) => b.turnScore - a.turnScore);
       
-      // Award positions (only top 3)
-      if (turnStandings[0]) playerTurnPositions[turnStandings[0].playerId].firsts++;
-      if (turnStandings[1]) playerTurnPositions[turnStandings[1].playerId].seconds++;
-      if (turnStandings[2]) playerTurnPositions[turnStandings[2].playerId].thirds++;
+      // Award positions based on actual number of players
+      // Only award positions that exist (can't have 3rd place with only 2 players)
+      const totalPlayers = turnStandings.length;
+      
+      if (turnStandings[0] && totalPlayers >= 1) {
+        playerTurnPositions[turnStandings[0].playerId].firsts++;
+      }
+      if (turnStandings[1] && totalPlayers >= 2) {
+        playerTurnPositions[turnStandings[1].playerId].seconds++;
+      }
+      if (turnStandings[2] && totalPlayers >= 3) {
+        playerTurnPositions[turnStandings[2].playerId].thirds++;
+      }
     });
   });
 
   return playerTurnPositions;
+};
+
+// Points breakdown component for validation
+const PointsBreakdownCard: React.FC<{ gameState: GameState; players: Player[] }> = ({ gameState, players }) => {
+  const breakdown = players.map(player => {
+    const playerId = player.id;
+    const stats = gameState.playerStats[playerId];
+    
+    if (!stats) return null;
+    
+    // Calculate detailed breakdown per circuit/turn
+    const circuits = gameState.circuitResults.map((circuit, circuitIndex) => {
+      const circuitName = gameState.settings.circuits[circuitIndex]?.name || `Circuito ${circuitIndex + 1}`;
+      const turns = circuit.turns.map((turn, turnIndex) => {
+        const playerTurnData = turn.find(p => p.playerId === playerId);
+        return {
+          turnNumber: turnIndex + 1,
+          turnScore: playerTurnData?.turnScore || 0,
+          averageTime: playerTurnData?.averageTime,
+          bestLap: playerTurnData?.lapTimes ? Math.min(...playerTurnData.lapTimes.filter(t => t > 0)) : null
+        };
+      });
+      
+      const circuitTotal = turns.reduce((sum, t) => sum + t.turnScore, 0);
+      return { circuitName, turns, circuitTotal };
+    });
+    
+    return {
+      player,
+      totalScore: stats.totalScore,
+      circuits,
+      bestLaps: stats.bestLaps || 0,
+      bestAverages: stats.bestAverages || 0
+    };
+  }).filter(Boolean);
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+      <div className="p-4 border-b border-zinc-800">
+        <h3 className="text-xl font-bold text-zinc-100">Desglose de Puntos</h3>
+        <p className="text-zinc-400 text-sm mt-1">Validación de cálculos de puntaje</p>
+      </div>
+      
+      {breakdown.map((data, idx) => data && (
+        <div key={data.player.id || idx} className="border-b border-zinc-800 last:border-b-0">
+          <div className="p-4 bg-zinc-800/30">
+            <div className="flex justify-between items-center">
+              <h4 className="text-lg font-bold text-zinc-100">{data.player.name}</h4>
+              <div className="text-right">
+                <div className="text-2xl font-bold font-mono text-zinc-100">{data.totalScore} pts</div>
+                <div className="text-sm text-zinc-400">
+                  VR: {data.bestLaps} | PR: {data.bestAverages}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 space-y-3">
+            {data.circuits.map((circuit, cIdx) => (
+              <div key={cIdx} className="bg-zinc-800/20 rounded-md p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-zinc-100">{circuit.circuitName}</span>
+                  <span className="font-mono font-bold text-amber-400">{circuit.circuitTotal} pts</span>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  {circuit.turns.map((turn, tIdx) => (
+                    <div key={tIdx} className="text-center bg-zinc-900/50 rounded px-2 py-1">
+                      <div className="text-zinc-400">T{turn.turnNumber}</div>
+                      <div className="font-mono font-bold text-zinc-100">{turn.turnScore} pts</div>
+                      {turn.averageTime && (
+                        <div className="text-zinc-500 text-xs">
+                          {Math.round(turn.averageTime)}ms avg
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const RaceProgress: React.FC<RaceProgressProps> = ({ gameState, players }) => {
@@ -183,6 +277,9 @@ const RaceProgress: React.FC<RaceProgressProps> = ({ gameState, players }) => {
           ))}
         </div>
       </div>
+
+      {/* Points Breakdown Card for Validation */}
+      <PointsBreakdownCard gameState={gameState} players={players} />
 
       {/* Progress Section - Now at the bottom */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-md p-6">
