@@ -140,6 +140,7 @@ export interface Tournament {
   updatedAt: string;
   championships: Championship[];
   participants: TournamentParticipant[];
+  playedCircuits?: string[]; // Track which circuits have been played in tournament
 }
 
 export interface Championship {

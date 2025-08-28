@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Player, Circuit, GameSettings } from '../types';
 import { CheckCircleIcon, ArrowUpIcon, ArrowDownIcon } from './icons';
+import { useTournament } from '../contexts/TournamentContext';
 
 interface ModernGameSetupProps {
   players: Player[];
@@ -38,37 +39,37 @@ const ArrowLeftIcon = ({ className }: { className?: string }) => (
   <div className={`${className} flex items-center justify-center font-bold`}>←</div>
 );
 
-// Presets modernos para quick start
+// Presets para inicio rápido
 const QUICK_START_PRESETS = {
   'quick-race': {
-    name: 'Quick Race',
-    description: 'Fast 3-circuit race for immediate action',
+    name: 'Carrera Rápida',
+    description: '3 circuitos aleatorios, 2 turnos por circuito',
     icon: SparkIcon,
     settings: {
       circuits: 3,
-      turnsPerCircuit: 1,
+      turnsPerCircuit: 2,  // Changed from 1 to 2
       lapsPerTurn: 3,
       scoringMethod: 'average' as const,
-      pointsForBestLap: 0,
+      pointsForBestLap: 2,  // Changed from 0 to 2 (VR bonus)
       pointsForBestAverage: 0
     }
   },
-  'championship': {
-    name: 'Championship',
-    description: 'Full F1 experience with all circuits',
+  'torneo': {
+    name: 'Torneo',
+    description: 'Competencia completa con todos los circuitos',
     icon: TrophyIcon,
     settings: {
-      circuits: 'all',
+      circuits: 3,  // 3 circuits per night, but will track all
       turnsPerCircuit: 2,
-      lapsPerTurn: 5,
-      scoringMethod: 'both' as const,
-      pointsForBestLap: 1,
-      pointsForBestAverage: 1
+      lapsPerTurn: 3,  // Changed from 5 to 3
+      scoringMethod: 'average' as const,
+      pointsForBestLap: 2,  // 2 pts bonus VR
+      pointsForBestAverage: 0
     }
   },
   'practice': {
-    name: 'Practice Session',
-    description: 'Casual practice with selected circuits',
+    name: 'Práctica',
+    description: 'Sesión casual con circuitos seleccionados',
     icon: ClockIcon,
     settings: {
       circuits: 5,
@@ -87,9 +88,11 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
   onSetupComplete, 
   onCancel 
 }) => {
+  const { activeTournament, isInTournamentMode } = useTournament();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [useQuickStart, setUseQuickStart] = useState(true);
+  const [continuingTournament, setContinuingTournament] = useState(false);
   
   // Simplified settings
   const [gameSettings, setGameSettings] = useState({
@@ -113,28 +116,48 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
     const preset = QUICK_START_PRESETS[presetKey as keyof typeof QUICK_START_PRESETS];
     if (!preset) return;
 
-    const circuitCount = preset.settings.circuits === 'all' 
-      ? circuits.length 
-      : Math.min(preset.settings.circuits as number, circuits.length);
-    
-    const selectedCircuits = circuits
-      .sort(() => Math.random() - 0.5)
-      .slice(0, circuitCount);
+    // For torneo mode, handle differently
+    if (presetKey === 'torneo') {
+      // If continuing tournament, circuits are already set
+      if (continuingTournament) return;
+      
+      // For new tournament, select 3 random circuits for tonight
+      const selectedCircuits = circuits
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
 
-    setGameSettings(prev => ({
-      ...prev,
-      selectedCircuits,
-      turnsPerCircuit: preset.settings.turnsPerCircuit,
-      lapsPerTurn: preset.settings.lapsPerTurn as 3 | 5,
-      scoringMethod: preset.settings.scoringMethod,
-      pointsForBestLap: preset.settings.pointsForBestLap,
-      pointsForBestAverage: preset.settings.pointsForBestAverage
-    }));
+      setGameSettings(prev => ({
+        ...prev,
+        selectedCircuits,
+        turnsPerCircuit: preset.settings.turnsPerCircuit,
+        lapsPerTurn: preset.settings.lapsPerTurn as 3 | 5,
+        scoringMethod: preset.settings.scoringMethod,
+        pointsForBestLap: preset.settings.pointsForBestLap,
+        pointsForBestAverage: preset.settings.pointsForBestAverage,
+        useBest4Of5: false
+      }));
+    } else {
+      const circuitCount = Math.min(preset.settings.circuits as number, circuits.length);
+      
+      const selectedCircuits = circuits
+        .sort(() => Math.random() - 0.5)
+        .slice(0, circuitCount);
+
+      setGameSettings(prev => ({
+        ...prev,
+        selectedCircuits,
+        turnsPerCircuit: preset.settings.turnsPerCircuit,
+        lapsPerTurn: preset.settings.lapsPerTurn as 3 | 5,
+        scoringMethod: preset.settings.scoringMethod,
+        pointsForBestLap: preset.settings.pointsForBestLap,
+        pointsForBestAverage: preset.settings.pointsForBestAverage
+      }));
+    }
   };
 
   // Handle completion
   const handleComplete = () => {
-    const finalSettings: GameSettings = {
+    const finalSettings: GameSettings & { tournamentMode?: boolean } = {
       players: gameSettings.selectedPlayers, // Pass full Player objects
       circuits: gameSettings.selectedCircuits, // Pass full Circuit objects
       controllerIds: gameSettings.selectedPlayers.map(p => p.id), // Controller IDs as separate field
@@ -146,6 +169,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
       pointsForBestAverage: gameSettings.pointsForBestAverage,
       awardBestTimeFor: 'turn',
       scoringMultiplier: null, // No multiplier in modern setup
+      tournamentMode: selectedPreset === 'torneo' || continuingTournament
     };
 
     onSetupComplete(finalSettings);
@@ -154,9 +178,50 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
   const renderStep1 = () => (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-f1-2xl font-bold text-f1-pro-platinum mb-4">Start Your Championship</h2>
-        <p className="text-f1-base text-f1-pro-silver">Choose your racing experience</p>
+        <h2 className="text-f1-2xl font-bold text-f1-pro-platinum mb-4">Inicia tu Campeonato</h2>
+        <p className="text-f1-base text-f1-pro-silver">Elige tu experiencia de carrera</p>
       </div>
+
+      {/* Tournament Continuation Option */}
+      {isInTournamentMode && activeTournament && (
+        <div className="bg-f1-pro-chrome border-2 border-f1-pro-gold rounded-f1-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-f1-large font-bold text-f1-pro-gold">🏆 Torneo Activo</h3>
+              <p className="text-f1-base text-f1-pro-silver">{activeTournament.name}</p>
+            </div>
+            <button
+              onClick={() => {
+                setContinuingTournament(true);
+                setSelectedPreset('torneo');
+                // Select next 3 unplayed circuits
+                const playedCircuitIds = activeTournament.playedCircuits || [];
+                const unplayedCircuits = circuits.filter(c => !playedCircuitIds.includes(c.id));
+                const nextCircuits = unplayedCircuits.slice(0, 3).sort(() => Math.random() - 0.5);
+                
+                setGameSettings(prev => ({
+                  ...prev,
+                  selectedCircuits: nextCircuits,
+                  turnsPerCircuit: 2,
+                  lapsPerTurn: 3,
+                  scoringMethod: 'average' as const,
+                  pointsForBestLap: 2,
+                  pointsForBestAverage: 0,
+                  useBest4Of5: false
+                }));
+                setUseQuickStart(false);
+                setCurrentStep(2);
+              }}
+              className="px-6 py-3 bg-f1-pro-gold hover:bg-f1-pro-gold/80 text-black font-bold rounded-f1-lg transition-all"
+            >
+              Continuar Torneo →
+            </button>
+          </div>
+          <div className="text-f1-small text-f1-pro-aluminum">
+            Circuitos jugados: {activeTournament.playedCircuits?.length || 0} / {circuits.length}
+          </div>
+        </div>
+      )}
 
       {/* Quick Start Toggle */}
       <div className="flex items-center justify-center space-x-4">
@@ -169,7 +234,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
           }`}
         >
           <SparkIcon className="w-5 h-5 inline mr-2" />
-          Quick Start
+          Inicio Rápido
         </button>
         <button
           onClick={() => setUseQuickStart(false)}
@@ -180,7 +245,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
           }`}
         >
           <CogIcon className="w-5 h-5 inline mr-2" />
-          Custom Setup
+          Configuración Manual
         </button>
       </div>
 
@@ -207,9 +272,9 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
                 {preset.description}
               </p>
               <div className="space-y-2 text-f1-tiny text-f1-pro-aluminum">
-                <div>Circuits: {preset.settings.circuits === 'all' ? 'All' : preset.settings.circuits}</div>
-                <div>Turns: {preset.settings.turnsPerCircuit} per circuit</div>
-                <div>Laps: {preset.settings.lapsPerTurn} per turn</div>
+                <div>Circuitos: {preset.settings.circuits}</div>
+                <div>Turnos: {preset.settings.turnsPerCircuit} por circuito</div>
+                <div>Vueltas: {preset.settings.lapsPerTurn} por turno</div>
               </div>
             </button>
           ))}
@@ -217,9 +282,9 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
       ) : (
         <div className="text-center p-12 border-2 border-dashed border-f1-pro-steel rounded-f1-xl">
           <CogIcon className="w-16 h-16 text-f1-pro-aluminum mx-auto mb-4" />
-          <h3 className="text-f1-large font-bold text-f1-pro-silver mb-2">Custom Configuration</h3>
+          <h3 className="text-f1-large font-bold text-f1-pro-silver mb-2">Configuración Manual</h3>
           <p className="text-f1-small text-f1-pro-aluminum">
-            You'll configure all settings manually in the next steps
+            Configurarás todos los ajustes manualmente en los siguientes pasos
           </p>
         </div>
       )}
@@ -229,17 +294,17 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
   const renderStep2 = () => (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-f1-2xl font-bold text-f1-pro-platinum mb-4">Select Participants & Circuits</h2>
-        <p className="text-f1-base text-f1-pro-silver">Choose who races and where</p>
+        <h2 className="text-f1-2xl font-bold text-f1-pro-platinum mb-4">Selecciona Participantes y Circuitos</h2>
+        <p className="text-f1-base text-f1-pro-silver">Elige quién corre y dónde</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Players Selection */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-f1-large font-bold text-f1-pro-platinum">Players</h3>
+            <h3 className="text-f1-large font-bold text-f1-pro-platinum">Jugadores</h3>
             <div className="text-f1-small text-f1-pro-aluminum">
-              {gameSettings.selectedPlayers.length} selected
+              {gameSettings.selectedPlayers.length} seleccionados
             </div>
           </div>
           
@@ -272,7 +337,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
                     {player.name}
                   </div>
                   {player.isGuest && (
-                    <div className="text-f1-tiny text-f1-pro-aluminum">Guest Player</div>
+                    <div className="text-f1-tiny text-f1-pro-aluminum">Jugador Invitado</div>
                   )}
                 </div>
                 {gameSettings.selectedPlayers.find(p => p.id === player.id) && (
@@ -286,31 +351,31 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
         {/* Circuits Selection */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-f1-large font-bold text-f1-pro-platinum">Circuits</h3>
+            <h3 className="text-f1-large font-bold text-f1-pro-platinum">Circuitos</h3>
             <div className="text-f1-small text-f1-pro-aluminum">
-              {gameSettings.selectedCircuits.length} selected
+              {gameSettings.selectedCircuits.length} seleccionados
             </div>
           </div>
           
           {!useQuickStart && (
             <div className="flex space-x-2 mb-4">
               <button
-                onClick={() => setGameSettings(prev => ({ ...prev, selectedCircuits: circuits.slice(0, 3) }))}
+                onClick={() => setGameSettings(prev => ({ ...prev, selectedCircuits: circuits.slice(0, 3).sort(() => Math.random() - 0.5) }))}
                 className="px-3 py-1 text-f1-tiny bg-f1-pro-titanium text-f1-pro-silver rounded-f1-sm hover:bg-f1-pro-steel"
               >
-                3 Random
+                3 Aleatorios
               </button>
               <button
-                onClick={() => setGameSettings(prev => ({ ...prev, selectedCircuits: circuits.slice(0, 5) }))}
+                onClick={() => setGameSettings(prev => ({ ...prev, selectedCircuits: circuits.slice(0, 5).sort(() => Math.random() - 0.5) }))}
                 className="px-3 py-1 text-f1-tiny bg-f1-pro-titanium text-f1-pro-silver rounded-f1-sm hover:bg-f1-pro-steel"
               >
-                5 Random
+                5 Aleatorios
               </button>
               <button
                 onClick={() => setGameSettings(prev => ({ ...prev, selectedCircuits: circuits }))}
                 className="px-3 py-1 text-f1-tiny bg-f1-pro-titanium text-f1-pro-silver rounded-f1-sm hover:bg-f1-pro-steel"
               >
-                All Circuits
+                Todos los Circuitos
               </button>
             </div>
           )}
@@ -351,36 +416,36 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
   const renderStep3 = () => (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-f1-2xl font-bold text-f1-pro-platinum mb-4">Review & Launch</h2>
-        <p className="text-f1-base text-f1-pro-silver">Confirm your championship settings</p>
+        <h2 className="text-f1-2xl font-bold text-f1-pro-platinum mb-4">Revisar y Lanzar</h2>
+        <p className="text-f1-base text-f1-pro-silver">Confirma la configuración de tu campeonato</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Configuration Summary */}
         <div className="space-y-6">
           <div className="bg-f1-pro-chrome rounded-f1-lg p-6 border border-f1-pro-steel">
-            <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Configuration</h3>
+            <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Configuración</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-f1-pro-silver">Preset</span>
+                <span className="text-f1-pro-silver">Tipo</span>
                 <span className="text-f1-pro-platinum font-medium">
-                  {selectedPreset ? QUICK_START_PRESETS[selectedPreset as keyof typeof QUICK_START_PRESETS].name : 'Custom'}
+                  {selectedPreset ? QUICK_START_PRESETS[selectedPreset as keyof typeof QUICK_START_PRESETS].name : 'Personalizado'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-f1-pro-silver">Circuits</span>
+                <span className="text-f1-pro-silver">Circuitos</span>
                 <span className="text-f1-pro-platinum font-medium">{gameSettings.selectedCircuits.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-f1-pro-silver">Players</span>
+                <span className="text-f1-pro-silver">Jugadores</span>
                 <span className="text-f1-pro-platinum font-medium">{gameSettings.selectedPlayers.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-f1-pro-silver">Turns per Circuit</span>
+                <span className="text-f1-pro-silver">Turnos por Circuito</span>
                 <span className="text-f1-pro-platinum font-medium">{gameSettings.turnsPerCircuit}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-f1-pro-silver">Laps per Turn</span>
+                <span className="text-f1-pro-silver">Vueltas por Turno</span>
                 <span className="text-f1-pro-platinum font-medium">{gameSettings.lapsPerTurn}</span>
               </div>
             </div>
@@ -388,22 +453,22 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
 
           {!useQuickStart && (
             <div className="bg-f1-pro-chrome rounded-f1-lg p-6 border border-f1-pro-steel">
-              <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Advanced Settings</h3>
+              <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Configuración Avanzada</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-f1-small text-f1-pro-silver mb-2">Scoring Method</label>
+                  <label className="block text-f1-small text-f1-pro-silver mb-2">Método de Puntuación</label>
                   <select
                     value={gameSettings.scoringMethod}
                     onChange={(e) => setGameSettings(prev => ({ ...prev, scoringMethod: e.target.value as any }))}
                     className="w-full bg-f1-pro-titanium border border-f1-pro-steel rounded-f1-md px-3 py-2 text-f1-pro-platinum"
                   >
-                    <option value="average">Average Time</option>
-                    <option value="lap">Best Lap</option>
-                    <option value="both">Both</option>
+                    <option value="average">Tiempo Promedio</option>
+                    <option value="lap">Mejor Vuelta</option>
+                    <option value="both">Ambos</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-f1-small text-f1-pro-silver mb-2">Bonus Points (Best Lap)</label>
+                  <label className="block text-f1-small text-f1-pro-silver mb-2">Puntos Bonus (Vuelta Rápida)</label>
                   <input
                     type="number"
                     min="0"
@@ -421,7 +486,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
         {/* Participants Preview */}
         <div className="space-y-6">
           <div className="bg-f1-pro-chrome rounded-f1-lg p-6 border border-f1-pro-steel">
-            <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Racing Grid</h3>
+            <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Parrilla de Salida</h3>
             <div className="space-y-3">
               {gameSettings.selectedPlayers.map((player, index) => (
                 <div key={player.id} className="flex items-center space-x-4">
@@ -432,7 +497,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
                   <div className="flex-1">
                     <div className="text-f1-small font-bold text-f1-pro-platinum">{player.name}</div>
                     {player.isGuest && (
-                      <div className="text-f1-micro text-f1-pro-aluminum">Guest</div>
+                      <div className="text-f1-micro text-f1-pro-aluminum">Invitado</div>
                     )}
                   </div>
                 </div>
@@ -441,7 +506,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
           </div>
 
           <div className="bg-f1-pro-chrome rounded-f1-lg p-6 border border-f1-pro-steel">
-            <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Circuit Calendar</h3>
+            <h3 className="text-f1-large font-bold text-f1-pro-platinum mb-4">Calendario de Circuitos</h3>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {gameSettings.selectedCircuits.map((circuit, index) => (
                 <div key={circuit.id} className="flex items-center space-x-3">
@@ -463,7 +528,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
           className="px-12 py-4 bg-f1-pro-crimson hover:bg-f1-pro-crimson/80 text-white rounded-f1-xl text-f1-large font-bold transition-all shadow-f1-glow hover:scale-105 inline-flex items-center space-x-3"
         >
           <PlayIcon className="w-6 h-6" />
-          <span>Launch Championship</span>
+          <span>Lanzar Campeonato</span>
         </button>
       </div>
     </div>
@@ -515,7 +580,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
             className="px-6 py-3 bg-f1-pro-titanium hover:bg-f1-pro-steel text-f1-pro-silver rounded-f1-lg transition-colors inline-flex items-center space-x-2"
           >
             <ArrowLeftIcon className="w-5 h-5" />
-            <span>{currentStep === 1 ? 'Cancel' : 'Back'}</span>
+            <span>{currentStep === 1 ? 'Cancelar' : 'Atrás'}</span>
           </button>
 
           {currentStep < 3 && (
@@ -524,7 +589,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
               disabled={currentStep === 1 ? !canProceedStep1 : !canProceedStep2}
               className="px-6 py-3 bg-f1-pro-crimson hover:bg-f1-pro-crimson/80 disabled:bg-f1-pro-steel disabled:text-f1-pro-aluminum text-white rounded-f1-lg transition-colors inline-flex items-center space-x-2 disabled:cursor-not-allowed"
             >
-              <span>Continue</span>
+              <span>Continuar</span>
               <ArrowRightIcon className="w-5 h-5" />
             </button>
           )}
