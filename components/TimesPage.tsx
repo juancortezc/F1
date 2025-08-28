@@ -1,5 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import useSWR from 'swr';
+// Simple icon components (F1 Professional style)
+const MagnifyingGlassIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+  </svg>
+);
+
+const FunnelIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M14,12V19.88C14.04,20.18 13.94,20.5 13.71,20.71C13.32,21.1 12.69,21.1 12.3,20.71L10.29,18.7C10.06,18.47 9.96,18.16 10,17.87V12H9.97L4.21,4.62C3.87,4.19 3.95,3.56 4.38,3.22C4.57,3.08 4.78,3 5,3V3H19V3C19.22,3 19.43,3.08 19.62,3.22C20.05,3.56 20.13,4.19 19.79,4.62L14.03,12H14Z" />
+  </svg>
+);
+
+const ChartBarIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M22,21H2V3H4V19H6V10H10V19H12V6H16V19H18V14H22V21Z" />
+  </svg>
+);
 
 // Time formatting utility
 const formatTimeMs = (ms: number | null | undefined): string => {
@@ -42,14 +60,20 @@ interface TimesPageProps {
 }
 
 export default function TimesPage({ players, circuits, currentGameId }: TimesPageProps) {
-  const [selectedGameId, setSelectedGameId] = useState<string>(currentGameId || 'all');
-  const [selectedCircuit, setSelectedCircuit] = useState<string>('all');
-  const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
+  // Modern state management
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeFilters, setActiveFilters] = useState({
+    gameId: currentGameId || 'all',
+    circuitId: 'all',
+    playerId: 'all'
+  });
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   // Build query parameters
   const queryParams = new URLSearchParams();
-  if (selectedGameId !== 'all') {
-    queryParams.append('gameId', selectedGameId);
+  if (activeFilters.gameId !== 'all') {
+    queryParams.append('gameId', activeFilters.gameId);
   }
 
   const { data: lapTimesData, error, isLoading } = useSWR<{
@@ -92,22 +116,7 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
     });
   }, [lapTimesData?.data]);
   
-  // Filter processed lap times based on selected filters
-  const filteredLapTimes = React.useMemo(() => {
-    let filtered = processedLapTimes;
-    
-    if (selectedCircuit !== 'all') {
-      filtered = filtered.filter(lap => lap.circuitId === selectedCircuit);
-    }
-    
-    if (selectedPlayer !== 'all') {
-      filtered = filtered.filter(lap => lap.playerId === selectedPlayer);
-    }
-    
-    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [processedLapTimes, selectedCircuit, selectedPlayer]);
-
-  // Get player and circuit names
+  // Get player and circuit names (declared before filteredLapTimes)
   const getPlayerName = useCallback((playerId: string) => {
     return players?.find(p => p.id === playerId)?.name || 'Unknown Player';
   }, [players]);
@@ -115,6 +124,34 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
   const getCircuitName = useCallback((circuitId: string) => {
     return circuits?.find(c => c.id === circuitId)?.name || 'Unknown Circuit';
   }, [circuits]);
+
+  // Modern search and filter system
+  const filteredLapTimes = useMemo(() => {
+    let filtered = processedLapTimes;
+    
+    // Apply search query first
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(lap => {
+        const playerName = getPlayerName(lap.playerId).toLowerCase();
+        const circuitName = (lap.circuit?.name || getCircuitName(lap.circuitId)).toLowerCase();
+        return playerName.includes(query) || 
+               circuitName.includes(query) || 
+               lap.turnNumber.toString().includes(query);
+      });
+    }
+    
+    // Apply active filters
+    if (activeFilters.circuitId !== 'all') {
+      filtered = filtered.filter(lap => lap.circuitId === activeFilters.circuitId);
+    }
+    
+    if (activeFilters.playerId !== 'all') {
+      filtered = filtered.filter(lap => lap.playerId === activeFilters.playerId);
+    }
+    
+    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [processedLapTimes, searchQuery, activeFilters, getPlayerName, getCircuitName]);
 
   // Calculate statistics
   const statistics = React.useMemo(() => {
@@ -138,143 +175,285 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
   }, [filteredLapTimes, getPlayerName, getCircuitName]);
 
   return (
-    <div className="min-h-screen bg-f1-black p-4 pb-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-f1-red mb-2">Tiempos Detallados</h1>
-          <p className="text-zinc-400">Historial completo de vueltas por jugador y circuito</p>
-        </div>
+    <div className="min-h-screen bg-f1-pro-carbon">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         
-        <div className="space-y-4">
-        
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-zinc-800 rounded-md">
-          <div>
-            <label className="block mb-2 text-xs font-mono uppercase tracking-wide text-zinc-400">FILTRAR POR JUEGO</label>
-            <select 
-              value={selectedGameId} 
-              onChange={(e) => setSelectedGameId(e.target.value)}
-              className="w-full bg-zinc-700 border border-zinc-600 rounded px-4 py-3 text-zinc-100 font-bold text-lg"
-            >
-              <option value="all">Todos los Juegos</option>
-              {currentGameId && (
-                <option value={currentGameId}>Juego Actual</option>
-              )}
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-2 text-xs font-mono uppercase tracking-wide text-zinc-400">FILTRAR POR CIRCUITO</label>
-            <select 
-              value={selectedCircuit} 
-              onChange={(e) => setSelectedCircuit(e.target.value)}
-              className="w-full bg-zinc-700 border border-zinc-600 rounded px-4 py-3 text-zinc-100 font-bold text-lg"
-            >
-              <option value="all">Todos los Circuitos</option>
-              {circuits?.map(circuit => (
-                <option key={circuit.id} value={circuit.id}>
-                  {circuit.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-2 text-xs font-mono uppercase tracking-wide text-zinc-400">FILTRAR POR JUGADOR</label>
-            <select 
-              value={selectedPlayer} 
-              onChange={(e) => setSelectedPlayer(e.target.value)}
-              className="w-full bg-zinc-700 border border-zinc-600 rounded px-4 py-3 text-zinc-100 font-bold text-lg"
-            >
-              <option value="all">Todos los Jugadores</option>
-              {players?.map(player => (
-                <option key={player.id} value={player.id}>
-                  {player.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-
-        {/* Loading and Error States */}
-        {isLoading && (
-          <div className="text-center py-8">
-            <div className="text-zinc-400">Cargando tiempos...</div>
-          </div>
-        )}
-
-        {error && (
-          <div className="text-center py-8">
-            <div className="text-red-400">Error al cargar los tiempos</div>
-          </div>
-        )}
-
-        {/* Lap Times Table */}
-        {!isLoading && !error && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-            <div className="overflow-x-auto max-h-[65vh] overflow-y-auto">
-              <table className="w-full">
-                <thead className="sticky top-0 z-10">
-                  <tr className="bg-zinc-800 text-zinc-200 text-sm uppercase tracking-wider border-b border-zinc-700">
-                    <th className="px-4 py-3 text-left font-mono font-bold">JUGADOR</th>
-                    <th className="px-4 py-3 text-left font-mono font-bold">CIRCUITO</th>
-                    <th className="px-4 py-3 text-center font-mono font-bold">TURNO</th>
-                    <th className="px-4 py-3 text-center font-mono font-bold">VUELTA</th>
-                    <th className="px-4 py-3 text-center font-mono font-bold">TIEMPO</th>
-                    <th className="px-4 py-3 text-center font-mono font-bold">PROM TURNO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredLapTimes.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-zinc-400 text-lg">
-                        No hay tiempos que coincidan con los filtros seleccionados
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredLapTimes.map((lap, index) => (
-                      <tr 
-                        key={lap.id} 
-                        className={`${index % 2 === 0 ? 'bg-zinc-900' : 'bg-zinc-950'} hover:bg-zinc-800/50 transition-colors border-b border-zinc-800`}
-                      >
-                        <td className="px-4 py-3 text-zinc-100 font-bold text-lg">
-                          {getPlayerName(lap.playerId)}
-                        </td>
-                        <td className="px-4 py-3 text-zinc-300 font-semibold text-base">
-                          {lap.circuit?.name || getCircuitName(lap.circuitId)}
-                        </td>
-                        <td className="px-4 py-3 text-center font-mono font-bold text-lg text-zinc-100">
-                          {lap.turnNumber}
-                        </td>
-                        <td className="px-4 py-3 text-center font-mono font-bold text-lg text-zinc-100">
-                          {lap.lapNumber}
-                        </td>
-                        <td className="px-4 py-3 text-center font-mono font-bold text-lg text-amber-400">
-                          {formatTimeMs(lap.timeMs)}
-                        </td>
-                        <td className="px-4 py-3 text-center font-mono font-bold text-base text-zinc-300">
-                          {lap.turnAverage ? formatTimeMs(Math.round(lap.turnAverage)) : '-:--.---'}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+        {/* Modern Header */}
+        <div className="flex flex-col space-y-4 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-f1-large font-bold text-f1-pro-platinum mb-2">Performance Analytics</h1>
+              <p className="text-f1-small text-f1-pro-silver">Detailed lap times and turn analysis</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
+                className="p-2 bg-f1-pro-titanium hover:bg-f1-pro-steel rounded-f1-md text-f1-pro-silver transition-colors"
+              >
+                <ChartBarIcon className="w-5 h-5" />
+              </button>
             </div>
           </div>
+
+          {/* Compact Search and Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Bar */}
+            <div className="flex-1 relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-f1-pro-aluminum" />
+              <input
+                type="text"
+                placeholder="Search by player, circuit, or turn..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-f1-pro-chrome border border-f1-pro-steel rounded-f1-lg text-f1-base text-f1-pro-platinum placeholder-f1-pro-aluminum focus:border-f1-pro-crimson focus:outline-none transition-colors"
+              />
+            </div>
+            
+            {/* Filter Toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-4 py-3 rounded-f1-lg font-medium transition-colors flex items-center space-x-2 min-w-[120px] justify-center ${
+                showFilters 
+                  ? 'bg-f1-pro-crimson text-white' 
+                  : 'bg-f1-pro-titanium hover:bg-f1-pro-steel text-f1-pro-silver'
+              }`}
+            >
+              <FunnelIcon className="w-5 h-5" />
+              <span className="text-f1-small font-medium">Filters</span>
+              {Object.values(activeFilters).filter(v => v !== 'all').length > 0 && (
+                <span className="bg-f1-pro-gold text-black text-f1-micro px-2 py-0.5 rounded-full font-bold">
+                  {Object.values(activeFilters).filter(v => v !== 'all').length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Collapsible Advanced Filters */}
+          {showFilters && (
+            <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel animate-f1-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-f1-tiny font-medium text-f1-pro-silver mb-2">Game</label>
+                  <select 
+                    value={activeFilters.gameId} 
+                    onChange={(e) => setActiveFilters({...activeFilters, gameId: e.target.value})}
+                    className="w-full bg-f1-pro-titanium border border-f1-pro-steel rounded-f1-md px-3 py-2 text-f1-small text-f1-pro-platinum focus:border-f1-pro-crimson focus:outline-none"
+                  >
+                    <option value="all">All Games</option>
+                    {currentGameId && <option value={currentGameId}>Current Game</option>}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-f1-tiny font-medium text-f1-pro-silver mb-2">Circuit</label>
+                  <select 
+                    value={activeFilters.circuitId} 
+                    onChange={(e) => setActiveFilters({...activeFilters, circuitId: e.target.value})}
+                    className="w-full bg-f1-pro-titanium border border-f1-pro-steel rounded-f1-md px-3 py-2 text-f1-small text-f1-pro-platinum focus:border-f1-pro-crimson focus:outline-none"
+                  >
+                    <option value="all">All Circuits</option>
+                    {circuits?.map(circuit => (
+                      <option key={circuit.id} value={circuit.id}>
+                        {circuit.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-f1-tiny font-medium text-f1-pro-silver mb-2">Player</label>
+                  <select 
+                    value={activeFilters.playerId} 
+                    onChange={(e) => setActiveFilters({...activeFilters, playerId: e.target.value})}
+                    className="w-full bg-f1-pro-titanium border border-f1-pro-steel rounded-f1-md px-3 py-2 text-f1-small text-f1-pro-platinum focus:border-f1-pro-crimson focus:outline-none"
+                  >
+                    <option value="all">All Players</option>
+                    {players?.map(player => (
+                      <option key={player.id} value={player.id}>
+                        {player.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {Object.values(activeFilters).some(v => v !== 'all') && (
+                <div className="mt-3 pt-3 border-t border-f1-pro-steel">
+                  <button
+                    onClick={() => setActiveFilters({ gameId: 'all', circuitId: 'all', playerId: 'all' })}
+                    className="text-f1-tiny text-f1-pro-aluminum hover:text-f1-pro-silver transition-colors"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+
+        {/* Loading State with Skeleton */}
+        {isLoading && (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-f1-pro-chrome rounded-f1-lg p-4 animate-pulse">
+                <div className="flex items-center space-x-4">
+                  <div className="h-12 w-12 bg-f1-pro-steel rounded-f1-md"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-f1-pro-steel rounded w-1/4"></div>
+                    <div className="h-3 bg-f1-pro-titanium rounded w-1/2"></div>
+                  </div>
+                  <div className="h-8 w-20 bg-f1-pro-steel rounded-f1-md"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
-        {/* Results Summary */}
+        {/* Error State */}
+        {error && (
+          <div className="bg-f1-pro-chrome border border-f1-pro-error rounded-f1-lg p-6 text-center">
+            <div className="text-f1-pro-error text-f1-medium font-medium mb-2">Unable to load lap times</div>
+            <div className="text-f1-pro-aluminum text-f1-small">Please check your connection and try again</div>
+          </div>
+        )}
+
+        {/* Modern Data Display */}
+        {!isLoading && !error && (
+          <>
+            {/* Quick Stats Bar */}
+            {statistics && filteredLapTimes.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel">
+                  <div className="text-f1-tiny font-medium text-f1-pro-silver mb-1">FASTEST LAP</div>
+                  <div className="text-f1-medium font-bold text-f1-pro-gold font-mono">{formatTimeMs(statistics.fastestLap)}</div>
+                  <div className="text-f1-tiny text-f1-pro-aluminum">{statistics.fastestLapPlayer}</div>
+                </div>
+                <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel">
+                  <div className="text-f1-tiny font-medium text-f1-pro-silver mb-1">AVERAGE</div>
+                  <div className="text-f1-medium font-bold text-f1-pro-platinum font-mono">{formatTimeMs(Math.round(statistics.averageTime))}</div>
+                  <div className="text-f1-tiny text-f1-pro-aluminum">{statistics.totalLaps} laps recorded</div>
+                </div>
+                <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel">
+                  <div className="text-f1-tiny font-medium text-f1-pro-silver mb-1">RESULTS</div>
+                  <div className="text-f1-medium font-bold text-f1-pro-platinum">{filteredLapTimes.length}</div>
+                  <div className="text-f1-tiny text-f1-pro-aluminum">matching entries</div>
+                </div>
+              </div>
+            )}
+
+            {/* Card View (Mobile-First, No Horizontal Scroll) */}
+            {viewMode === 'cards' && (
+              <div className="space-y-3">
+                {filteredLapTimes.length === 0 ? (
+                  <div className="bg-f1-pro-chrome rounded-f1-lg p-8 text-center border border-f1-pro-steel">
+                    <div className="text-f1-medium text-f1-pro-silver mb-2">No lap times found</div>
+                    <div className="text-f1-small text-f1-pro-aluminum">Try adjusting your search or filters</div>
+                  </div>
+                ) : (
+                  filteredLapTimes.map((lap) => (
+                    <div key={lap.id} className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel hover:border-f1-pro-aluminum transition-colors animate-f1-fade-in">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="text-f1-medium font-bold text-f1-pro-platinum truncate">
+                              {getPlayerName(lap.playerId)}
+                            </div>
+                            <div className="text-f1-tiny bg-f1-pro-steel text-f1-pro-silver px-2 py-1 rounded-f1-sm font-mono">
+                              T{lap.turnNumber}
+                            </div>
+                            <div className="text-f1-tiny bg-f1-pro-titanium text-f1-pro-aluminum px-2 py-1 rounded-f1-sm font-mono">
+                              L{lap.lapNumber}
+                            </div>
+                          </div>
+                          <div className="text-f1-small text-f1-pro-silver mb-1">
+                            {lap.circuit?.name || getCircuitName(lap.circuitId)}
+                          </div>
+                          {lap.turnAverage && (
+                            <div className="text-f1-tiny text-f1-pro-aluminum font-mono">
+                              Turn avg: {formatTimeMs(Math.round(lap.turnAverage))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-f1-large font-bold text-f1-pro-gold font-mono">
+                            {formatTimeMs(lap.timeMs)}
+                          </div>
+                          <div className="text-f1-micro text-f1-pro-aluminum">
+                            {formatDateTime(lap.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Compact Table View (Desktop) */}
+            {viewMode === 'table' && (
+              <div className="bg-f1-pro-chrome rounded-f1-lg border border-f1-pro-steel overflow-hidden">
+                <div className="overflow-x-auto max-h-[70vh]">
+                  <table className="w-full">
+                    <thead className="bg-f1-pro-titanium sticky top-0 z-10">
+                      <tr className="text-f1-tiny font-medium text-f1-pro-silver uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left">Player</th>
+                        <th className="px-4 py-3 text-left">Circuit</th>
+                        <th className="px-4 py-3 text-center">Turn</th>
+                        <th className="px-4 py-3 text-center">Lap</th>
+                        <th className="px-4 py-3 text-center">Time</th>
+                        <th className="px-4 py-3 text-center">Turn Avg</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-f1-pro-steel">
+                      {filteredLapTimes.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-4 py-8 text-center text-f1-pro-silver">
+                            No lap times found matching your criteria
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredLapTimes.map((lap) => (
+                          <tr key={lap.id} className="hover:bg-f1-pro-steel/30 transition-colors">
+                            <td className="px-4 py-3 text-f1-small font-medium text-f1-pro-platinum">
+                              {getPlayerName(lap.playerId)}
+                            </td>
+                            <td className="px-4 py-3 text-f1-small text-f1-pro-silver">
+                              {lap.circuit?.name || getCircuitName(lap.circuitId)}
+                            </td>
+                            <td className="px-4 py-3 text-center text-f1-small font-mono text-f1-pro-aluminum">
+                              {lap.turnNumber}
+                            </td>
+                            <td className="px-4 py-3 text-center text-f1-small font-mono text-f1-pro-aluminum">
+                              {lap.lapNumber}
+                            </td>
+                            <td className="px-4 py-3 text-center text-f1-small font-mono font-bold text-f1-pro-gold">
+                              {formatTimeMs(lap.timeMs)}
+                            </td>
+                            <td className="px-4 py-3 text-center text-f1-small font-mono text-f1-pro-silver">
+                              {lap.turnAverage ? formatTimeMs(Math.round(lap.turnAverage)) : '-'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Modern Footer Info */}
         {!isLoading && !error && filteredLapTimes.length > 0 && (
-          <div className="text-center text-zinc-400 text-sm space-y-1">
-            <div>Mostrando {filteredLapTimes.length} tiempos de vuelta</div>
-            {filteredLapTimes.length > 10 && (
-              <div className="text-zinc-500 text-xs">Desplázate en la tabla para ver todos los registros</div>
+          <div className="mt-8 text-center">
+            <div className="text-f1-small text-f1-pro-silver">
+              Displaying <span className="font-bold text-f1-pro-platinum">{filteredLapTimes.length}</span> lap times
+            </div>
+            {searchQuery && (
+              <div className="text-f1-tiny text-f1-pro-aluminum mt-1">
+                Search results for "<span className="font-medium">{searchQuery}</span>"
+              </div>
             )}
           </div>
         )}
-        </div>
       </div>
     </div>
   );

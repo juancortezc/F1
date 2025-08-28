@@ -860,78 +860,111 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
           </div>
         );
         
-      case 4: // Select & Order Circuits
+      case 4: // Select & Order Circuits - Mobile Optimized
         const availableCircuits = allCircuits.filter(c => !selectedCircuits.find(sc => sc.id === c.id));
         return (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-zinc-100">4. Seleccionar Circuitos</h2>
-              <div className="flex gap-3">
+            <div className="mb-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-zinc-100 mb-4">4. Seleccionar Circuitos</h2>
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => {
                     const shuffled = [...allCircuits].sort(() => Math.random() - 0.5);
                     const randomSelection = shuffled.slice(0, Math.min(3, shuffled.length));
                     setSelectedCircuits(randomSelection);
                   }}
-                  className="px-4 py-3 text-lg font-bold bg-zinc-700 text-zinc-100 rounded-md hover:bg-zinc-600 transition-colors touch-target"
+                  className="flex-1 min-h-[48px] px-4 py-3 text-lg font-bold bg-zinc-700 text-zinc-100 rounded-md hover:bg-zinc-600 transition-colors touch-manipulation"
                 >
-                  🎲 RANDOM
+                  🎲 SELECCIÓN ALEATORIA
                 </button>
                 <button
                   onClick={() => setSelectedCircuits([])}
-                  className="px-4 py-3 text-lg font-bold bg-f1-red text-white rounded-md hover:bg-red-700 transition-colors touch-target"
+                  className="flex-1 min-h-[48px] px-4 py-3 text-lg font-bold bg-f1-red text-white rounded-md hover:bg-red-700 transition-colors touch-manipulation"
                 >
-                  ⚙️ MANUAL
+                  🗑️ LIMPIAR TODO
                 </button>
               </div>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-bold text-xl text-zinc-100 mb-4">Circuitos Disponibles</h3>
-                <div className="space-y-3">
-                  {availableCircuits.map(circuit => (
-                    <div 
-                      key={circuit.id} 
-                      onClick={() => handleCircuitToggle(circuit)} 
-                      className="p-4 bg-zinc-900 border border-zinc-800 rounded-md cursor-pointer hover:border-zinc-600 transition-colors touch-target"
-                    >
-                      <div className="font-bold text-lg text-zinc-100">{circuit.name}</div>
-                    </div>
-                  ))}
+            {/* Mobile-First Layout */}
+            <div className="space-y-6">
+              {/* Selected Circuits - Show First on Mobile */}
+              <div className="order-2 md:order-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-xl text-zinc-100">Orden de Carrera</h3>
+                  <div className="bg-zinc-700 px-3 py-1 rounded-full text-sm font-mono text-zinc-100">
+                    {selectedCircuits.length}/21
+                  </div>
                 </div>
+                
+                {selectedCircuits.length === 0 ? (
+                  <div className="bg-zinc-800/50 border border-zinc-700 rounded-md p-6 text-center">
+                    <div className="text-zinc-400 text-lg mb-2">No hay circuitos seleccionados</div>
+                    <div className="text-zinc-500 text-sm">Toca los circuitos de abajo para agregarlos</div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedCircuits.map((circuit, index) => (
+                      <div key={circuit.id} className="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-4 rounded-md">
+                        <div 
+                          onClick={() => handleCircuitToggle(circuit)} 
+                          className="cursor-pointer flex-grow font-bold text-lg text-zinc-100 touch-manipulation min-h-[48px] flex items-center"
+                        >
+                          <span className="bg-zinc-700 text-zinc-100 rounded-full w-8 h-8 flex items-center justify-center font-mono text-sm mr-3">
+                            {index + 1}
+                          </span>
+                          {circuit.name}
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <button 
+                            onClick={() => moveCircuit(index, 'up')} 
+                            disabled={index === 0} 
+                            className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-md bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 touch-manipulation transition-colors"
+                          >
+                            <ArrowUpIcon className="w-5 h-5 text-zinc-100"/>
+                          </button>
+                          <button 
+                            onClick={() => moveCircuit(index, 'down')} 
+                            disabled={index === selectedCircuits.length-1} 
+                            className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-md bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 touch-manipulation transition-colors"
+                          >
+                            <ArrowDownIcon className="w-5 h-5 text-zinc-100"/>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
-              <div>
-                <h3 className="font-bold text-xl text-zinc-100 mb-4">Orden de Carrera</h3>
-                <div className="space-y-3">
-                  {selectedCircuits.map((circuit, index) => (
-                    <div key={circuit.id} className="flex items-center justify-between bg-zinc-900 border border-zinc-800 p-4 rounded-md">
-                      <span 
-                        onClick={() => handleCircuitToggle(circuit)} 
-                        className="cursor-pointer flex-grow font-bold text-lg text-zinc-100"
-                      >
-                        {index + 1}. {circuit.name}
-                      </span>
-                      <div className="flex gap-2 ml-4">
-                        <button 
-                          onClick={() => moveCircuit(index, 'up')} 
-                          disabled={index === 0} 
-                          className="p-2 rounded-md bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 touch-target transition-colors"
-                        >
-                          <ArrowUpIcon className="w-5 h-5 text-zinc-100"/>
-                        </button>
-                        <button 
-                          onClick={() => moveCircuit(index, 'down')} 
-                          disabled={index === selectedCircuits.length-1} 
-                          className="p-2 rounded-md bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 touch-target transition-colors"
-                        >
-                          <ArrowDownIcon className="w-5 h-5 text-zinc-100"/>
-                        </button>
-                      </div>
+              {/* Available Circuits - Optimized for Mobile */}
+              <div className="order-1 md:order-2">
+                <h3 className="font-bold text-xl text-zinc-100 mb-4">Circuitos Disponibles</h3>
+                
+                {/* Mobile: Compact Grid, Desktop: 2 columns */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[50vh] md:max-h-[40vh] overflow-y-auto border border-zinc-800 rounded-md p-4 bg-zinc-900/50">
+                  {availableCircuits.length === 0 ? (
+                    <div className="col-span-full text-center text-zinc-400 py-8">
+                      Todos los circuitos han sido seleccionados
                     </div>
-                  ))}
+                  ) : (
+                    availableCircuits.map(circuit => (
+                      <button 
+                        key={circuit.id} 
+                        onClick={() => handleCircuitToggle(circuit)} 
+                        className="p-4 bg-zinc-900 border border-zinc-800 rounded-md hover:border-zinc-600 hover:bg-zinc-800 transition-colors touch-manipulation min-h-[48px] text-left"
+                      >
+                        <div className="font-bold text-base md:text-lg text-zinc-100">{circuit.name}</div>
+                      </button>
+                    ))
+                  )}
                 </div>
+                
+                {availableCircuits.length > 0 && (
+                  <div className="mt-3 text-center text-zinc-500 text-sm">
+                    {availableCircuits.length} circuitos disponibles • Toca para seleccionar
+                  </div>
+                )}
               </div>
             </div>
           </div>

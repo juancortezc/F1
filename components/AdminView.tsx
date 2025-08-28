@@ -1152,10 +1152,10 @@ const EditForm: React.FC<{
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Field */}
-            <div>
-                <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+        <form onSubmit={handleSubmit} className="space-y-6 md:space-y-4">
+            {/* Name Field - Mobile Optimized */}
+            <div className="space-y-2">
+                <label className="block text-sm md:text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">
                     {isPlayer ? 'Nombre del Jugador' : 'Nombre del Circuito'}
                 </label>
                 <input 
@@ -1165,15 +1165,15 @@ const EditForm: React.FC<{
                     onChange={handleChange} 
                     placeholder={isPlayer ? "Ingresa el nombre del jugador" : "Ingresa el nombre del circuito"}
                     required 
-                    className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                    className="w-full px-4 py-4 md:py-3 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg md:text-base focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[56px] md:min-h-[48px] touch-manipulation"
                 />
             </div>
             
             {isPlayer && !isGuest && (
                 <>
-                    {/* PIN Field */}
-                    <div>
-                        <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+                    {/* PIN Field - Mobile Optimized */}
+                    <div className="space-y-2">
+                        <label className="block text-sm md:text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">
                             PIN de Acceso
                         </label>
                         <input 
@@ -1185,14 +1185,15 @@ const EditForm: React.FC<{
                             pattern="\d{4}" 
                             maxLength={4}
                             required 
-                            className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg font-mono tracking-widest text-center focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                            inputMode="numeric"
+                            className="w-full px-4 py-4 md:py-3 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-2xl md:text-lg font-mono tracking-widest text-center focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[56px] md:min-h-[48px] touch-manipulation"
                         />
-                        <p className="text-xs text-zinc-500 mt-1">Exactamente 4 dígitos para el acceso del jugador</p>
+                        <p className="text-sm md:text-xs text-zinc-500">Exactamente 4 dígitos para el acceso del jugador</p>
                     </div>
                     
-                    {/* Avatar URL Field */}
-                    <div>
-                        <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+                    {/* Avatar URL Field - Mobile Optimized */}
+                    <div className="space-y-2">
+                        <label className="block text-sm md:text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">
                             Avatar (URL)
                         </label>
                         <input 
@@ -1202,9 +1203,9 @@ const EditForm: React.FC<{
                             onChange={handleChange} 
                             placeholder="https://ejemplo.com/avatar.jpg"
                             required 
-                            className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                            className="w-full px-4 py-4 md:py-3 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg md:text-base focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[56px] md:min-h-[48px] touch-manipulation"
                         />
-                        <p className="text-xs text-zinc-500 mt-1">URL de la imagen del avatar del jugador</p>
+                        <p className="text-sm md:text-xs text-zinc-500">URL de la imagen del avatar del jugador</p>
                     </div>
                 </>
             )}
@@ -1244,8 +1245,8 @@ const EditForm: React.FC<{
             )}
             
             {!isPlayer && !isGuest && (
-                <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wide text-zinc-400 mb-2">
+                <div className="space-y-2">
+                    <label className="block text-sm md:text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">
                         Layout del Circuito (URL)
                     </label>
                     <input 
@@ -1255,24 +1256,24 @@ const EditForm: React.FC<{
                         onChange={handleChange} 
                         placeholder="https://ejemplo.com/circuito-layout.jpg"
                         required 
-                        className="w-full p-4 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[48px]"
+                        className="w-full px-4 py-4 md:py-3 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100 text-lg md:text-base focus:border-f1-red focus:outline-none transition-colors duration-200 min-h-[56px] md:min-h-[48px] touch-manipulation"
                     />
-                    <p className="text-xs text-zinc-500 mt-1">URL de la imagen del layout del circuito</p>
+                    <p className="text-sm md:text-xs text-zinc-500">URL de la imagen del layout del circuito</p>
                 </div>
             )}
             
-            {/* Form Actions */}
-            <div className="flex gap-4 pt-6 border-t border-zinc-700">
+            {/* Form Actions - Mobile Optimized */}
+            <div className="flex flex-col-reverse md:flex-row gap-3 md:gap-4 pt-6 border-t border-zinc-700">
                 <button 
                     type="button" 
                     onClick={onCancel} 
-                    className="flex-1 flex items-center justify-center gap-2 bg-zinc-700 border border-zinc-600 text-zinc-100 font-bold py-4 rounded-md hover:bg-zinc-600 transition-colors duration-200 min-h-[48px] text-sm uppercase tracking-wide"
+                    className="flex-1 flex items-center justify-center gap-2 bg-zinc-700 border border-zinc-600 text-zinc-100 font-bold py-4 md:py-3 rounded-md hover:bg-zinc-600 transition-colors duration-200 min-h-[56px] md:min-h-[48px] text-base md:text-sm uppercase tracking-wide touch-manipulation"
                 >
                     <span>CANCELAR</span>
                 </button>
                 <button 
                     type="submit" 
-                    className="flex-1 flex items-center justify-center gap-2 bg-f1-red border border-red-600 text-white font-bold py-4 rounded-md hover:bg-red-700 transition-colors duration-200 min-h-[48px] text-sm uppercase tracking-wide shadow-lg"
+                    className="flex-1 flex items-center justify-center gap-2 bg-f1-red border border-red-600 text-white font-bold py-4 md:py-3 rounded-md hover:bg-red-700 transition-colors duration-200 min-h-[56px] md:min-h-[48px] text-base md:text-sm uppercase tracking-wide shadow-lg touch-manipulation"
                 >
                     <span>GUARDAR</span>
                 </button>

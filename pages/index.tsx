@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import LandingPage from '../components/LandingPage';
 import LoginScreen from '../components/LoginScreen';
 import GameSetup from '../components/GameSetup';
+import ModernGameSetup from '../components/ModernGameSetup';
 import RaceView from '../components/RaceView';
 import StatsView from '../components/StatsView';
 import AdminHub from '../components/AdminHub';
@@ -1002,7 +1003,7 @@ function App() {
           onLogout={handleLogout}
         />;
       case 'setup':
-        return <GameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
+        return <ModernGameSetup players={players!} circuits={circuits!} onSetupComplete={handleSetupComplete} onCancel={() => setGamePhase('hub')} />;
       case 'admin':
         return <AdminView players={players || []} circuits={circuits || []} currentUser={currentUser} onBack={() => setGamePhase('hub')} onRecalculateScores={handleRecalculateScores} />;
       case 'modify':

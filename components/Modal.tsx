@@ -58,17 +58,17 @@ const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   const maxWidthClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
+    sm: 'max-w-sm md:max-w-sm',
+    md: 'max-w-full md:max-w-md',
+    lg: 'max-w-full md:max-w-lg',
+    xl: 'max-w-full md:max-w-xl',
   };
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/80 flex items-start md:items-center justify-center z-50"
       style={{
-        touchAction: 'none',
+        touchAction: 'pan-y',
         WebkitOverflowScrolling: 'touch',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingTop: 'env(safe-area-inset-top)',
@@ -78,27 +78,31 @@ const Modal: React.FC<ModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className={`bg-zinc-900 border border-zinc-700 rounded-md p-6 w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] overflow-y-auto`}
+        className={`bg-zinc-900 border border-zinc-700 w-full ${maxWidthClasses[maxWidth]} 
+                   rounded-none md:rounded-md 
+                   m-0 md:m-4
+                   min-h-screen md:min-h-0 md:max-h-[90vh] 
+                   overflow-y-auto
+                   p-4 md:p-6
+                   flex flex-col`}
         style={{
-          marginBottom: 'env(safe-area-inset-bottom)',
-          marginTop: 'env(safe-area-inset-top)',
           WebkitOverflowScrolling: 'touch',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-800">
-            <h2 className="text-xl font-bold text-zinc-100">{title}</h2>
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-800 flex-shrink-0">
+            <h2 className="text-xl md:text-2xl font-bold text-zinc-100">{title}</h2>
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-zinc-100 transition-colors duration-200 w-8 h-8 flex items-center justify-center rounded hover:bg-zinc-800 touch-target"
+              className="text-zinc-400 hover:text-zinc-100 transition-colors duration-200 min-w-[48px] min-h-[48px] flex items-center justify-center rounded hover:bg-zinc-800 touch-manipulation text-2xl md:text-xl"
               aria-label="Cerrar"
             >
               ×
             </button>
           </div>
         )}
-        <div className="space-y-6">
+        <div className="flex-grow space-y-6 md:space-y-4">
           {children}
         </div>
       </div>
