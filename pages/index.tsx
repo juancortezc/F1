@@ -996,6 +996,7 @@ function App() {
           onNewGame={handleNewGame} 
           onAdmin={handleAdmin} 
           onTournamentSetup={handleTournamentSetup}
+          onTournamentManagement={handleTournamentManagement}
           onBackToLive={handleBackToLive}
           currentUser={currentUser} 
           onLogout={handleLogout}

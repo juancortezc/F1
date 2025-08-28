@@ -35,6 +35,7 @@ interface AdminHubProps {
     onNewGame: () => void;
     onAdmin: () => void;
     onTournamentSetup?: () => void;
+    onTournamentManagement?: () => void;
     onBackToLive: () => void;
     currentUser: UserSession | null;
     onLogout: () => void;
@@ -45,7 +46,8 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 const AdminHub: React.FC<AdminHubProps> = ({ 
     onNewGame, 
     onAdmin, 
-    onTournamentSetup, 
+    onTournamentSetup,
+    onTournamentManagement, 
     onBackToLive,
     currentUser, 
     onLogout 
@@ -94,9 +96,21 @@ const AdminHub: React.FC<AdminHubProps> = ({
                             <span className="text-xs font-mono uppercase tracking-wide text-amber-400">TORNEO ACTIVO</span>
                         </div>
                         <h3 className="text-lg font-bold text-zinc-100 mb-1">{activeTournament.name}</h3>
-                        <p className="text-sm text-zinc-400">
+                        <p className="text-sm text-zinc-400 mb-3">
                             Campeonato {((activeTournament.championships?.filter((c: any) => c.status === 'COMPLETED').length) || 0) + 1} de {activeTournament.maxChampionships}
                         </p>
+                        {onTournamentManagement && (
+                            <button
+                                onClick={onTournamentManagement}
+                                className="w-full relative overflow-hidden group min-h-[40px] bg-amber-800 border border-amber-600 text-amber-100 rounded-md py-2 px-4 transition-all duration-300 hover:bg-amber-700 hover:border-amber-500 transform hover:scale-[1.02] active:scale-[0.98] text-sm font-semibold"
+                            >
+                                <div className="flex items-center justify-center gap-2">
+                                    <SettingsIcon className="w-4 h-4" />
+                                    <span className="tracking-wide">GESTIONAR TORNEO</span>
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-amber-600/0 via-amber-400/20 to-amber-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                            </button>
+                        )}
                     </div>
                 )}
 
