@@ -145,6 +145,85 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log(`[SCORING DEBUG] FINAL - Player: ${playerId}, Turn: ${turnNumber}, Circuit: ${circuitId}, Total Score: ${turnScore}, Scoring Method: ${activeGame?.state ? (activeGame.state as any).settings?.scoringMethod || 'unknown' : 'unknown'}`);
 
+    // Check if we need to update bestLaps/bestAverages counters
+    let needsGameStateUpdate = false;
+    let updatedPlayerStats: any = null;
+    
+    if (activeGame && activeGame.state) {
+      const gameState = activeGame.state as any;
+      const { awardBestTimeFor, pointsForBestLap, pointsForBestAverage } = gameState.settings;
+      
+      // Only update if awarding circuit-level or turn-level bonuses
+      if ((awardBestTimeFor === 'circuit' || awardBestTimeFor === 'both' || awardBestTimeFor === 'turn') && 
+          (pointsForBestLap > 0 || pointsForBestAverage > 0)) {
+        
+        console.log(`[BESTLAPS DEBUG] Checking for best time bonuses - awardFor: ${awardBestTimeFor}, bestLapPts: ${pointsForBestLap}, bestAvgPts: ${pointsForBestAverage}`);
+        
+        // Get all completed turn completions for this turn to determine if this player had best times
+        const allTurnCompletions = await prisma.turnCompletion.findMany({
+          where: {
+            gameId,
+            circuitId,
+            turnNumber,
+            isCompleted: true
+          }
+        });
+        
+        // Include the current player's completion in the comparison
+        const allCompletionsWithCurrent = [
+          ...allTurnCompletions.filter(tc => tc.playerId !== playerId),
+          {
+            playerId,
+            averageTimeMs,
+            // We'll get the best lap from the current lap times
+            bestLapTime: Math.min(...lapTimes.map(lap => lap.timeMs))
+          }
+        ];
+        
+        // Get all individual lap times for this turn to find overall best lap
+        const allTurnLapTimes = await prisma.individualLapTime.findMany({
+          where: {
+            gameId,
+            circuitId,
+            turnNumber
+          }
+        });
+        
+        // Add current player's lap times
+        const allLapTimesWithCurrent = [
+          ...allTurnLapTimes,
+          ...lapTimes.map(lap => ({ playerId, timeMs: lap.timeMs }))
+        ];
+        
+        updatedPlayerStats = { ...gameState.playerStats };
+        
+        // Check for best lap bonus
+        if (pointsForBestLap > 0) {
+          const bestOverallLapTime = Math.min(...allLapTimesWithCurrent.map(lap => lap.timeMs));
+          const playerBestLap = Math.min(...lapTimes.map(lap => lap.timeMs));
+          
+          if (playerBestLap === bestOverallLapTime) {
+            console.log(`[BESTLAPS DEBUG] Player ${playerId} has BEST LAP (${playerBestLap}ms) - awarding bonus and incrementing counter`);
+            updatedPlayerStats[playerId] = updatedPlayerStats[playerId] || { totalScore: 0, bestLaps: 0, bestAverages: 0 };
+            updatedPlayerStats[playerId].bestLaps += 1;
+            needsGameStateUpdate = true;
+          }
+        }
+        
+        // Check for best average bonus  
+        if (pointsForBestAverage > 0) {
+          const bestOverallAverage = Math.min(...allCompletionsWithCurrent.map(tc => tc.averageTimeMs || Infinity));
+          
+          if (averageTimeMs === bestOverallAverage) {
+            console.log(`[BESTLAPS DEBUG] Player ${playerId} has BEST AVERAGE (${averageTimeMs}ms) - awarding bonus and incrementing counter`);
+            updatedPlayerStats[playerId] = updatedPlayerStats[playerId] || { totalScore: 0, bestLaps: 0, bestAverages: 0 };
+            updatedPlayerStats[playerId].bestAverages += 1;
+            needsGameStateUpdate = true;
+          }
+        }
+      }
+    }
+
     // Update turn completion
     const turnCompletion = await prisma.turnCompletion.upsert({
       where: {
@@ -173,6 +252,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         completedAt: new Date()
       }
     });
+
+    // Update game state if we awarded best time bonuses
+    if (needsGameStateUpdate && updatedPlayerStats && activeGame) {
+      console.log(`[BESTLAPS DEBUG] Updating game state with new playerStats`);
+      const gameState = activeGame.state as any;
+      const updatedGameState = {
+        ...gameState,
+        playerStats: updatedPlayerStats
+      };
+      
+      await prisma.game.update({
+        where: { id: gameId },
+        data: {
+          state: updatedGameState
+        }
+      });
+      
+      console.log(`[BESTLAPS DEBUG] Game state updated successfully`);
+    }
 
     res.status(200).json({
       success: true,
