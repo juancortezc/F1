@@ -89,7 +89,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     // Debug tournaments data
     useEffect(() => {
         if (tournaments.length > 0) {
-            console.log('🏆 Current tournaments:', tournaments.map(t => ({
+            console.log('🏆 Current tournaments:', tournaments.map((t: Tournament) => ({
                 name: t.name,
                 status: t.status,
                 id: t.id
@@ -883,7 +883,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-800">
-                                            {tournaments.map(tournament => (
+                                            {tournaments.map((tournament: Tournament) => (
                                                 <tr key={tournament.id} className="hover:bg-zinc-800/30 transition-colors duration-200">
                                                     <td className="px-4 py-3">
                                                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wide ${
@@ -954,9 +954,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
 
                                 {/* Mobile Cards */}
                                 <div className="md:hidden divide-y divide-zinc-800">
-                                    {tournaments.map(tournament => {
-                                        console.log('🔍 Rendering tournament:', tournament.name, 'Status:', tournament.status);
-                                        return (
+                                    {tournaments.map((tournament: Tournament) => (
                                         <div key={tournament.id} className="p-4 hover:bg-zinc-800/30 transition-colors duration-200">
                                             <div className="flex items-start gap-3 mb-3">
                                                 <div className="w-14 h-14 rounded-full bg-zinc-700 border-2 border-yellow-600/50 flex items-center justify-center">
@@ -1013,7 +1011,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                                 </div>
                                             )}
                                         </div>
-                                    )})}
+                                    ))}
                                 </div>
                             </>
                         ) : (
@@ -1093,7 +1091,6 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
         {/* Tournament Management Modal - Outside main container for proper z-index */}
         {showTournamentManagement && selectedTournament ? (
             <div>
-                {console.log('✅ MODAL SHOULD APPEAR NOW:', { showTournamentManagement, selectedTournament })}
                 <TournamentManagement 
                     tournament={selectedTournament}
                     onTournamentUpdated={async () => {
