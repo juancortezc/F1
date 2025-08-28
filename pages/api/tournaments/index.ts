@@ -47,6 +47,11 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
     orderBy: { createdAt: 'desc' }
   });
 
+  console.log(`[Tournaments API] Returning ${tournaments.length} tournaments`);
+  tournaments.forEach(t => {
+    console.log(`- ${t.name}: status=${t.status}`);
+  });
+  
   return res.status(200).json({
     success: true,
     tournaments

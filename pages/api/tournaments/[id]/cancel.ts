@@ -47,6 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    console.log(`[Cancel API] Cancelling tournament ${id} - current status: ${tournament.status}`);
+    
     // Cancel the tournament - set to CANCELLED status
     const cancelledTournament = await prisma.tournament.update({
       where: { id },
@@ -59,6 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         participants: true
       }
     });
+    
+    console.log(`[Cancel API] Tournament ${id} cancelled - new status: ${cancelledTournament.status}`);
 
     return res.status(200).json({
       success: true,

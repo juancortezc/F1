@@ -39,6 +39,9 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
         throw new Error(data.error || 'Error al cancelar torneo');
       }
 
+      // Add a small delay to ensure database update is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       await onTournamentUpdated();
       onClose();
     } catch (err) {
@@ -70,6 +73,9 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
         throw new Error(data.error || 'Error al completar torneo');
       }
 
+      // Add a small delay to ensure database update is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       await onTournamentUpdated();
       onClose();
     } catch (err) {

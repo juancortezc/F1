@@ -49,7 +49,7 @@ function App() {
   const { mutate } = useSWRConfig();
   const { addToast } = useToast();
   const { players, circuits, activeGame, pinCode, gameHistory, isLoading, error } = useApiData();
-  const { activeTournament, isInTournamentMode, currentChampionshipPosition } = useTournament();
+  const { activeTournament, isInTournamentMode, currentChampionshipPosition, refreshTournament } = useTournament();
 
   // Get current player data
   const currentPlayer = currentUser && players ? players.find(p => p.id === currentUser.userId || p.name === currentUser.name) : null;
@@ -386,7 +386,7 @@ function App() {
 
   const handleTournamentUpdated = async () => {
     // Refresh tournament data
-    await mutate('/api/tournaments/active');
+    await refreshTournament();
     
     addToast({
       type: 'success',

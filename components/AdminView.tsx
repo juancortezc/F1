@@ -7,6 +7,7 @@ import Modal from './Modal';
 import CircuitImage from './CircuitImage';
 import LoadingSpinner from './LoadingSpinner';
 import TournamentManagement from './TournamentManagement';
+import { useTournament } from '../contexts/TournamentContext';
 
 // Arrow Left Icon for navigation
 const ArrowLeftIcon = ({ className }: { className?: string }) => (
@@ -76,8 +77,25 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     const regularPlayers = players.filter(p => !p.isGuest);
     const guestPlayers = players.filter(p => p.isGuest);
     
+    // Get refreshTournament from context
+    const { refreshTournament } = useTournament();
+    
     // Fetch tournaments data
-    const { data: tournaments, error: tournamentsError, isLoading: tournamentsLoading, mutate: mutateTournaments } = useSWR<Tournament[]>('/api/tournaments');
+    const { data: tournamentsData, error: tournamentsError, isLoading: tournamentsLoading, mutate: mutateTournaments } = useSWR('/api/tournaments');
+    
+    // Extract tournaments from response
+    const tournaments = tournamentsData?.tournaments || tournamentsData || [];
+    
+    // Debug tournaments data
+    useEffect(() => {
+        if (tournaments.length > 0) {
+            console.log('🏆 Current tournaments:', tournaments.map(t => ({
+                name: t.name,
+                status: t.status,
+                id: t.id
+            })));
+        }
+    }, [tournaments]);
     
     // Tournament management state
     const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -936,7 +954,9 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
 
                                 {/* Mobile Cards */}
                                 <div className="md:hidden divide-y divide-zinc-800">
-                                    {tournaments.map(tournament => (
+                                    {tournaments.map(tournament => {
+                                        console.log('🔍 Rendering tournament:', tournament.name, 'Status:', tournament.status);
+                                        return (
                                         <div key={tournament.id} className="p-4 hover:bg-zinc-800/30 transition-colors duration-200">
                                             <div className="flex items-start gap-3 mb-3">
                                                 <div className="w-14 h-14 rounded-full bg-zinc-700 border-2 border-yellow-600/50 flex items-center justify-center">
@@ -993,7 +1013,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                                 </div>
                                             )}
                                         </div>
-                                    ))}
+                                    )})}
                                 </div>
                             </>
                         ) : (
@@ -1077,8 +1097,19 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                 <TournamentManagement 
                     tournament={selectedTournament}
                     onTournamentUpdated={async () => {
-                        console.log('Tournament updated, closing modal');
-                        await mutateTournaments();
+                        console.log('Tournament updated, refreshing data...');
+                        
+                        // Force refresh of tournaments list with cache invalidation
+                        await mutateTournaments(undefined, { revalidate: true });
+                        
+                        // Fetch fresh data directly
+                        const freshData = await fetch('/api/tournaments').then(r => r.json());
+                        console.log('Fresh tournaments data:', freshData);
+                        
+                        // Also refresh the active tournament context
+                        await refreshTournament();
+                        console.log('Tournament context refreshed');
+                        
                         setShowTournamentManagement(false);
                         setSelectedTournament(null);
                     }}
