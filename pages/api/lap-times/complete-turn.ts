@@ -153,6 +153,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const gameState = activeGame.state as any;
       const { awardBestTimeFor, pointsForBestLap, pointsForBestAverage } = gameState.settings;
       
+      // Initialize updatedPlayerStats and add base turn score to totalScore
+      updatedPlayerStats = { ...gameState.playerStats };
+      if (!updatedPlayerStats[playerId]) {
+        updatedPlayerStats[playerId] = { totalScore: 0, bestLaps: 0, bestAverages: 0 };
+      }
+      updatedPlayerStats[playerId].totalScore += turnScore;
+      needsGameStateUpdate = true;
+      
       // Only update if awarding circuit-level or turn-level bonuses
       if ((awardBestTimeFor === 'circuit' || awardBestTimeFor === 'both' || awardBestTimeFor === 'turn') && 
           (pointsForBestLap > 0 || pointsForBestAverage > 0)) {
@@ -195,8 +203,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ...lapTimes.map(lap => ({ playerId, timeMs: lap.timeMs }))
         ];
         
-        updatedPlayerStats = { ...gameState.playerStats };
-        
         // Check for best lap bonus
         if (pointsForBestLap > 0) {
           const bestOverallLapTime = Math.min(...allLapTimesWithCurrent.map(lap => lap.timeMs));
@@ -204,9 +210,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           
           if (playerBestLap === bestOverallLapTime) {
             console.log(`[BESTLAPS DEBUG] Player ${playerId} has BEST LAP (${playerBestLap}ms) - awarding bonus and incrementing counter`);
-            updatedPlayerStats[playerId] = updatedPlayerStats[playerId] || { totalScore: 0, bestLaps: 0, bestAverages: 0 };
             updatedPlayerStats[playerId].bestLaps += 1;
-            needsGameStateUpdate = true;
+            updatedPlayerStats[playerId].totalScore += pointsForBestLap;
           }
         }
         
@@ -216,9 +221,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           
           if (averageTimeMs === bestOverallAverage) {
             console.log(`[BESTLAPS DEBUG] Player ${playerId} has BEST AVERAGE (${averageTimeMs}ms) - awarding bonus and incrementing counter`);
-            updatedPlayerStats[playerId] = updatedPlayerStats[playerId] || { totalScore: 0, bestLaps: 0, bestAverages: 0 };
             updatedPlayerStats[playerId].bestAverages += 1;
-            needsGameStateUpdate = true;
+            updatedPlayerStats[playerId].totalScore += pointsForBestAverage;
           }
         }
       }
