@@ -30,10 +30,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
 
     let totalGames = 0;
-    let totalWins = 0;
-    let fastestLaps = 0;
-    let bestAverages = 0;
-    let circuitVictories = 0;
+    let totalWins = 0; // CMP: Campeonatos ganados
+    let fastestLaps = 0; // VR: Récords de vuelta rápida por circuito
+    let bestAverages = 0; // PR: Récords de promedio por circuito  
+    let circuitVictories = 0; // VIC: Circuitos donde quedó 1° en campeonatos
     const recentResults = [];
 
     // Process game history
@@ -61,37 +61,33 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         totalWins++;
       }
       
-      // Calculate circuit victories and records from circuitResults
+      // Calculate circuit victories (VIC): who finished 1st in each circuit overall
       if (gameState.circuitResults && Array.isArray(gameState.circuitResults)) {
         gameState.circuitResults.forEach((circuitResult: any) => {
           if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
+            // Calculate total points per player for this circuit
+            const circuitPoints: Record<string, number> = {};
+            
             circuitResult.turns.forEach((turn: any) => {
               if (Array.isArray(turn)) {
-                // Check for best average victory
-                const sortedByAverage = turn
-                  .filter((p: any) => p.averageTime && p.averageTime > 0)
-                  .sort((a: any, b: any) => a.averageTime - b.averageTime);
-                
-                if (sortedByAverage.length > 0 && sortedByAverage[0].playerId === id) {
-                  bestAverages++;
-                  circuitVictories++;
-                }
-                
-                // Check for best lap victory
-                const sortedByLap = turn
-                  .map((p: any) => ({
-                    ...p,
-                    bestLap: p.lapTimes ? Math.min(...p.lapTimes.filter((t: number) => t > 0)) : Infinity
-                  }))
-                  .filter((p: any) => p.bestLap !== Infinity)
-                  .sort((a: any, b: any) => a.bestLap - b.bestLap);
-                
-                if (sortedByLap.length > 0 && sortedByLap[0].playerId === id) {
-                  fastestLaps++;
-                  circuitVictories++;
-                }
+                turn.forEach((playerData: any) => {
+                  if (!circuitPoints[playerData.playerId]) {
+                    circuitPoints[playerData.playerId] = 0;
+                  }
+                  circuitPoints[playerData.playerId] += playerData.turnScore || 0;
+                });
               }
             });
+            
+            // Find winner of this circuit (highest total points)
+            const circuitWinner = Object.entries(circuitPoints)
+              .reduce((winner, [playerId, points]) => 
+                points > winner.points ? { playerId, points } : winner
+              , { playerId: '', points: 0 });
+            
+            if (circuitWinner.playerId === id) {
+              circuitVictories++;
+            }
           }
         });
       }
@@ -106,13 +102,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    // Get circuit records
+    // Count VR and PR from historical circuit records (database records)
     const circuits = await prisma.circuit.findMany();
-    const circuitRecords = circuits.map(circuit => ({
-      circuitName: circuit.name,
-      bestLap: circuit.bestLapHolderId === id ? circuit.historicalBestLap : null,
-      bestAverage: circuit.bestAverageHolderId === id ? circuit.historicalBestAverage : null
-    }));
+    
+    // Reset counts to use database records instead of game processing
+    fastestLaps = 0;
+    bestAverages = 0;
+    
+    const circuitRecords = circuits.map(circuit => {
+      // Count VR: fastest lap records
+      if (circuit.bestLapHolderId === id) {
+        fastestLaps++;
+      }
+      
+      // Count PR: best average records
+      if (circuit.bestAverageHolderId === id) {
+        bestAverages++;
+      }
+      
+      return {
+        circuitName: circuit.name,
+        bestLap: circuit.bestLapHolderId === id ? circuit.historicalBestLap : null,
+        bestAverage: circuit.bestAverageHolderId === id ? circuit.historicalBestAverage : null
+      };
+    });
 
     return res.status(200).json({
       totalGames,

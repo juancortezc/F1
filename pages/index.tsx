@@ -16,6 +16,7 @@ import GameModify from '../components/GameModify';
 import RaceProgress from '../components/RaceProgress';
 import LivePage from '../components/LivePage';
 import TimesPage from '../components/TimesPage';
+import ResultadosPage from '../components/ResultadosPage';
 import PlayerStatsComponent from '../components/PlayerStats';
 import UserAvatar from '../components/UserAvatar';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
@@ -43,7 +44,7 @@ function useApiData() {
 
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('landing');
-  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'stats' | 'live' | 'admin' | 'tiempos'>('race');
+  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'stats' | 'live' | 'admin' | 'tiempos' | 'resultados'>('race');
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
@@ -1180,6 +1181,12 @@ function App() {
                                 >
                                     TIEMPOS
                                 </button>
+                                <button 
+                                    onClick={() => setActiveTab('resultados')} 
+                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'resultados' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    RESULTADOS
+                                </button>
                                 {/* Admin - Solo para organizadores */}
                                 {hasAdminPrivileges(currentUser) && (
                                     <button
@@ -1257,6 +1264,12 @@ function App() {
                                 >
                                     Tiempos
                                 </button>
+                                <button 
+                                    onClick={() => setActiveTab('resultados')} 
+                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'resultados' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    Resultados
+                                </button>
                             </div>
                             
                             {/* Right: Action Buttons */}
@@ -1295,6 +1308,7 @@ function App() {
                             {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4 max-h-[calc(100vh-200px)] overflow-y-auto"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
                             {activeTab === 'stats' && <StatsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
                             {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} currentGameId={activeGame?.id} />}
+                            {activeTab === 'resultados' && <ResultadosPage gameHistory={gameHistory || []} players={players} circuits={circuits} />}
                             {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to STATS tab to see the final standings.</div>}
                         </>
                     ) : (
@@ -1315,6 +1329,7 @@ function App() {
                                 />
                             )}
                             {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} />}
+                            {activeTab === 'resultados' && <ResultadosPage gameHistory={gameHistory || []} players={players} circuits={circuits} />}
                             {(activeTab === 'race' || activeTab === 'live' || activeTab === 'puntaje') && (
                                 <div className="text-center p-8">
                                     <p className="text-xl text-zinc-400 mb-4">No hay campeonato activo</p>

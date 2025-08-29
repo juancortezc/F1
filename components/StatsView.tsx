@@ -12,9 +12,9 @@ interface StatsViewProps {
 interface AccumulatedStats {
   player: Player;
   championships: number;
-  totalVictories: number;
-  bestLaps: number;
-  bestAverages: number;
+  circuitVictories: number; // VIC: Circuitos donde quedó 1° en campeonatos
+  fastestLaps: number;     // VR: Récords de vuelta rápida por circuito
+  bestAverages: number;    // PR: Récords de promedio por circuito
   totalScore: number;
   favoriteCircuit: string | null;
 }
@@ -46,8 +46,8 @@ const StatsView: React.FC<StatsViewProps> = ({
       playerAccStats[player.id] = {
         player,
         championships: 0,
-        totalVictories: 0,
-        bestLaps: 0,
+        circuitVictories: 0,
+        fastestLaps: 0,
         bestAverages: 0,
         totalScore: 0,
         favoriteCircuit: null
@@ -82,37 +82,33 @@ const StatsView: React.FC<StatsViewProps> = ({
           playerAccStats[standings[0].playerId].championships++;
         }
 
-        // Calculate victories from circuitResults (correct approach)
+        // Calculate circuit victories (VIC): who finished 1st in each circuit overall
         if (game.state.circuitResults && Array.isArray(game.state.circuitResults)) {
-          game.state.circuitResults.forEach((circuitResult: any) => {
+          game.state.circuitResults.forEach((circuitResult: any, circuitIndex: number) => {
             if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
+              // Calculate total points per player for this circuit
+              const circuitPoints: Record<string, number> = {};
+              
               circuitResult.turns.forEach((turn: any) => {
                 if (Array.isArray(turn)) {
-                  // Count best average victories
-                  const sortedByAverage = turn
-                    .filter((p: any) => p.averageTime && p.averageTime > 0)
-                    .sort((a: any, b: any) => a.averageTime - b.averageTime);
-                  
-                  if (sortedByAverage.length > 0 && playerAccStats[sortedByAverage[0].playerId]) {
-                    playerAccStats[sortedByAverage[0].playerId].bestAverages++;
-                    playerAccStats[sortedByAverage[0].playerId].totalVictories++;
-                  }
-                  
-                  // Count best lap victories
-                  const sortedByLap = turn
-                    .map((p: any) => ({
-                      ...p,
-                      bestLap: p.lapTimes ? Math.min(...p.lapTimes.filter((t: number) => t > 0)) : Infinity
-                    }))
-                    .filter((p: any) => p.bestLap !== Infinity)
-                    .sort((a: any, b: any) => a.bestLap - b.bestLap);
-                  
-                  if (sortedByLap.length > 0 && playerAccStats[sortedByLap[0].playerId]) {
-                    playerAccStats[sortedByLap[0].playerId].bestLaps++;
-                    playerAccStats[sortedByLap[0].playerId].totalVictories++;
-                  }
+                  turn.forEach((playerData: any) => {
+                    if (!circuitPoints[playerData.playerId]) {
+                      circuitPoints[playerData.playerId] = 0;
+                    }
+                    circuitPoints[playerData.playerId] += playerData.turnScore || 0;
+                  });
                 }
               });
+              
+              // Find winner of this circuit (highest total points)
+              const circuitWinner = Object.entries(circuitPoints)
+                .reduce((winner, [playerId, points]) => 
+                  points > winner.points ? { playerId, points } : winner
+                , { playerId: '', points: 0 });
+              
+              if (circuitWinner.playerId && playerAccStats[circuitWinner.playerId]) {
+                playerAccStats[circuitWinner.playerId].circuitVictories++;
+              }
             }
           });
         }
@@ -124,67 +120,60 @@ const StatsView: React.FC<StatsViewProps> = ({
           }
         });
 
-        // Process circuit results for best performers
-        if (game.state.circuitResults) {
-          game.state.circuitResults.forEach((circuitResult, circuitIndex) => {
+        // Update victory count for favorite circuit calculation (using circuit winners)
+        if (game.state.circuitResults && Array.isArray(game.state.circuitResults)) {
+          game.state.circuitResults.forEach((circuitResult: any, circuitIndex: number) => {
             const circuitId = game.state.circuits[circuitIndex]?.id;
-            if (!circuitId) return;
-
-            circuitResult.turns.forEach(turn => {
-              if (turn.length > 0) {
-                // Find winner of this turn (highest turnScore)
-                const turnWinner = turn.reduce((prev, current) => 
-                  current.turnScore > prev.turnScore ? current : prev
-                );
-                
-                if (victoryCount[turnWinner.playerId] && victoryCount[turnWinner.playerId][circuitId] !== undefined) {
-                  victoryCount[turnWinner.playerId][circuitId]++;
-                }
+            if (!circuitId || !circuitResult.turns || !Array.isArray(circuitResult.turns)) return;
+            
+            // Calculate total points per player for this circuit (same logic as VIC calculation)
+            const circuitPoints: Record<string, number> = {};
+            
+            circuitResult.turns.forEach((turn: any) => {
+              if (Array.isArray(turn)) {
+                turn.forEach((playerData: any) => {
+                  if (!circuitPoints[playerData.playerId]) {
+                    circuitPoints[playerData.playerId] = 0;
+                  }
+                  circuitPoints[playerData.playerId] += playerData.turnScore || 0;
+                });
               }
             });
+            
+            // Find winner of this circuit (highest total points)
+            const circuitWinner = Object.entries(circuitPoints)
+              .reduce((winner, [playerId, points]) => 
+                points > winner.points ? { playerId, points } : winner
+              , { playerId: '', points: 0 });
+            
+            // Update victory count for favorite circuit calculation
+            if (circuitWinner.playerId && victoryCount[circuitWinner.playerId] && victoryCount[circuitWinner.playerId][circuitId] !== undefined) {
+              victoryCount[circuitWinner.playerId][circuitId]++;
+            }
           });
         }
+      }
+    });
+
+    // Count VR and PR from historical circuit records (database records)
+    circuits.forEach(circuit => {
+      // VR: Count fastest lap records
+      if (circuit.bestLapHolderId && playerAccStats[circuit.bestLapHolderId]) {
+        playerAccStats[circuit.bestLapHolderId].fastestLaps++;
+      }
+      
+      // PR: Count best average records  
+      if (circuit.bestAverageHolderId && playerAccStats[circuit.bestAverageHolderId]) {
+        playerAccStats[circuit.bestAverageHolderId].bestAverages++;
       }
     });
 
     // Add current game stats ONLY if game is still active (not finished)
     const isGameFinished = gameState ? gameState.currentCircuitIndex >= gameState.settings.circuits.length : false;
     
-    if (gameState && gameState.circuitResults && !isGameFinished) {
-      gameState.circuitResults.forEach((circuitResult: any) => {
-        if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
-          circuitResult.turns.forEach((turn: any) => {
-            if (Array.isArray(turn)) {
-              // Count best average victories
-              const sortedByAverage = turn
-                .filter((p: any) => p.averageTime && p.averageTime > 0)
-                .sort((a: any, b: any) => a.averageTime - b.averageTime);
-              
-              if (sortedByAverage.length > 0 && playerAccStats[sortedByAverage[0].playerId]) {
-                playerAccStats[sortedByAverage[0].playerId].bestAverages++;
-                playerAccStats[sortedByAverage[0].playerId].totalVictories++;
-              }
-              
-              // Count best lap victories
-              const sortedByLap = turn
-                .map((p: any) => ({
-                  ...p,
-                  bestLap: p.lapTimes ? Math.min(...p.lapTimes.filter((t: number) => t > 0)) : Infinity
-                }))
-                .filter((p: any) => p.bestLap !== Infinity)
-                .sort((a: any, b: any) => a.bestLap - b.bestLap);
-              
-              if (sortedByLap.length > 0 && playerAccStats[sortedByLap[0].playerId]) {
-                playerAccStats[sortedByLap[0].playerId].bestLaps++;
-                playerAccStats[sortedByLap[0].playerId].totalVictories++;
-              }
-            }
-          });
-        }
-      });
-      
+    if (gameState && !isGameFinished) {
       // Add current game total scores (only if game is still active)
-      if (gameState.playerStats && !isGameFinished) {
+      if (gameState.playerStats) {
         Object.entries(gameState.playerStats).forEach(([playerId, stats]) => {
           if (playerAccStats[playerId]) {
             playerAccStats[playerId].totalScore += (stats as PlayerStats).totalScore || 0;
@@ -211,14 +200,13 @@ const StatsView: React.FC<StatsViewProps> = ({
       }
     });
 
-    // Calculate ranking (championships * 10 + bestLaps * 2 + bestAverages)
+    // Calculate ranking (championships * 10 + circuitVictories * 3 + fastestLaps * 2 + bestAverages)
     const rankedStats = Object.values(playerAccStats)
       .map(stats => ({
         ...stats,
-        rankingScore: stats.championships * 10 + stats.bestLaps * 2 + stats.bestAverages
+        rankingScore: stats.championships * 10 + stats.circuitVictories * 3 + stats.fastestLaps * 2 + stats.bestAverages
       }))
       .sort((a, b) => b.rankingScore - a.rankingScore);
-
 
     return {
       accumulatedStats: rankedStats
@@ -270,12 +258,12 @@ const StatsView: React.FC<StatsViewProps> = ({
                   </td>
                   <td className="px-2 py-3 text-center">
                     <span className="font-mono font-bold text-zinc-100 text-lg">
-                      {stats.totalVictories}
+                      {stats.circuitVictories}
                     </span>
                   </td>
                   <td className="px-2 py-3 text-center">
                     <span className="font-mono font-bold text-zinc-100 text-lg">
-                      {stats.bestLaps}
+                      {stats.fastestLaps}
                     </span>
                   </td>
                   <td className="px-2 py-3 text-center">
