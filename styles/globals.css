@@ -5,7 +5,7 @@
 
 /* F1 Night - Design System Variables */
 :root {
-  /* Colors - Sobrio y elegante */
+  /* Legacy Colors - Sobrio y elegante */
   --color-background: #000000;
   --color-surface: #0a0a0a;
   --color-surface-light: #141414;
@@ -16,6 +16,17 @@
   --color-accent-red: #FF1801;
   --color-accent-green: #10b981;
   --color-accent-yellow: #fbbf24;
+  
+  /* F1 Professional Colors (2025) */
+  --f1-background: #1A1A1A;        /* Gris oscuro - reduce fatiga visual */
+  --f1-surface: #242424;           /* Cards elevadas - jerarquía visual */
+  --f1-elevated: #2A2A2A;          /* Elementos destacados */
+  --f1-red: #E10600;               /* Rojo F1 - acciones críticas */
+  --f1-cyan: #00D2BE;              /* Cyan - actualizaciones en vivo */
+  --f1-green: #00FF88;             /* Verde - mejor vuelta, destello sutil */
+  --f1-text-primary: #FFFFFF;      /* Blanco puro - máximo contraste */
+  --f1-text-secondary: #A1A1AA;    /* Gris claro - información secundaria */
+  --f1-text-muted: #71717A;        /* Gris medio - metadata */
   
   /* Typography - Grande y clara */
   --font-size-base: 18px;
@@ -99,6 +110,18 @@ a {
   
   /* Simple borders */
   .border-subtle { border-color: var(--color-border); }
+  
+  /* F1 Professional utility classes */
+  .bg-f1-background { background-color: var(--f1-background); }
+  .bg-f1-surface { background-color: var(--f1-surface); }
+  .bg-f1-elevated { background-color: var(--f1-elevated); }
+  .bg-f1-red { background-color: var(--f1-red); }
+  .bg-f1-cyan { background-color: var(--f1-cyan); }
+  .bg-f1-green { background-color: var(--f1-green); }
+  .text-f1-red { color: var(--f1-red); }
+  .text-f1-cyan { color: var(--f1-cyan); }
+  .text-f1-green { color: var(--f1-green); }
+  .border-f1-elevated { border-color: var(--f1-elevated); }
 }
 
 /* Override Tailwind defaults for cleaner design */

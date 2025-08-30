@@ -19,6 +19,7 @@ import TimesPage from '../components/TimesPage';
 import ResultadosPage from '../components/ResultadosPage';
 import PlayerStatsComponent from '../components/PlayerStats';
 import UserAvatar from '../components/UserAvatar';
+import F1Layout from '../components/F1Layout';
 import { GameSettings, GameState, PlayerStats, Circuit, Player, GameHistoryEntry, UserRole, UserSession } from '../types';
 import { useTournament } from '../contexts/TournamentContext';
 import TournamentSetup from '../components/TournamentSetup';
@@ -1083,274 +1084,34 @@ function App() {
         return <div>No hay campeonato activo para modificar</div>;
       case 'race':
       case 'results':
-        // Always show navigation, even without active game
-        if (players && circuits) {
-          const gameStateFromDB = activeGame?.state;
-          const isFinished = gameStateFromDB ? gameStateFromDB.currentCircuitIndex >= gameStateFromDB.settings.circuits.length : true;
-
+        // Use F1Layout for logged-in users
+        if (currentUser && players && circuits) {
+          
           return (
-            <div className="w-full">
-                <div className="bg-slate-900/80 backdrop-blur-sm sticky top-0 z-10 shadow-lg">
-                    <div className="max-w-7xl mx-auto px-4">
-                        {/* Mobile Layout */}
-                        <div className="flex md:hidden justify-between items-center py-3 border-b border-slate-700">
-                            <div className="flex items-center gap-2">
-                                <img 
-                                    src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
-                                    alt="F1 Logo" 
-                                    className="w-8 h-6 object-contain"
-                                />
-                                <h1 className="text-lg font-bold">F1 Night</h1>
-                                {isInTournamentMode && activeTournament && (
-                                  <span className="bg-amber-700 text-white text-xs font-bold px-2 py-1 rounded">
-                                    TORNEO
-                                  </span>
-                                )}
-                                {!isFinished && (
-                                    <button
-                                        onClick={handleGameModify}
-                                        className="p-1 text-f1-red hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors ml-2"
-                                        title="Modificar Campeonato"
-                                    >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    </button>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {/* Admin Menu Button Mobile - Solo para administradores */}
-                                {hasAdminPrivileges(currentUser) && (
-                                    <button
-                                        onClick={() => setGamePhase('hub')}
-                                        className="px-3 py-1.5 bg-zinc-800 text-zinc-100 font-semibold text-xs rounded-md"
-                                        title="Menú"
-                                    >
-                                        Menú
-                                    </button>
-                                )}
-                                <UserAvatar
-                                    imageUrl={currentPlayer?.imageUrl}
-                                    name={currentPlayer?.name || currentUser?.name}
-                                    className="w-7 h-7"
-                                    onClick={() => {
-                                        if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                                            handleLogout();
-                                        }
-                                    }}
-                                    title="Cerrar Sesión"
-                                />
-                            </div>
-                        </div>
-                        
-                        {/* Mobile Tab Navigation */}
-                        <div className="flex md:hidden justify-center py-2 border-b border-slate-700">
-                            <div className="flex border border-slate-600 rounded-lg p-1 overflow-x-auto">
-                                {/* Registro - Solo para jugadores y organizadores */}
-                                {currentUser?.role !== 'spectator' && (
-                                    <button 
-                                        onClick={() => setActiveTab('race')} 
-                                        className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
-                                        disabled={isFinished}
-                                    >
-                                        Registro
-                                    </button>
-                                )}
-                                <button 
-                                    onClick={() => setActiveTab('live')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'live' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    LIVE
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('puntaje')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'puntaje' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    Puntaje
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('stats')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'stats' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    STATS
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('tiempos')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'tiempos' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    TIEMPOS
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('resultados')} 
-                                    className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'resultados' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    RESULTADOS
-                                </button>
-                                {/* Admin - Solo para organizadores */}
-                                {hasAdminPrivileges(currentUser) && (
-                                    <button
-                                        onClick={handleAdmin}
-                                        className={`px-2 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${activeTab === 'admin' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700'}`}
-                                    >
-                                        Admin
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Desktop Layout */}
-                        <div className="hidden md:flex justify-between items-center py-3 border-b border-slate-700">
-                             <div className="flex items-center gap-2">
-                                <img 
-                                    src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg" 
-                                    alt="F1 Logo" 
-                                    className="w-10 h-8 object-contain"
-                                />
-                                <h1 className="text-xl font-bold">F1 Night</h1>
-                                {isInTournamentMode && activeTournament && (
-                                  <span className="bg-amber-700 text-white text-sm font-bold px-2 py-1 rounded ml-2">
-                                    TORNEO
-                                  </span>
-                                )}
-                                {/* Gear icon - Solo para administradores y juegos no terminados */}
-                                {hasAdminPrivileges(currentUser) && !isFinished && (
-                                    <button
-                                        onClick={handleGameModify}
-                                        className="p-2 text-f1-red hover:text-red-400 hover:bg-red-900/20 rounded-md transition-colors ml-2"
-                                        title="Modificar Campeonato"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                    </button>
-                                )}
-                            </div>
-                            
-                            {/* Center: Tab Navigation */}
-                            <div className="flex border border-slate-600 rounded-lg p-1">
-                                {/* Registro - Solo para jugadores y organizadores */}
-                                {currentUser?.role !== 'spectator' && (
-                                    <button 
-                                        onClick={() => setActiveTab('race')} 
-                                        className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'race' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`} 
-                                        disabled={isFinished}
-                                    >
-                                        Registro
-                                    </button>
-                                )}
-                                <button 
-                                    onClick={() => setActiveTab('live')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'live' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    LIVE
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('puntaje')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'puntaje' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    Puntaje
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('stats')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'stats' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    STATS
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('tiempos')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'tiempos' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    Tiempos
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('resultados')} 
-                                    className={`px-3 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === 'resultados' ? 'bg-[#FF1801] text-white' : 'text-slate-300 hover:text-white'}`}
-                                >
-                                    Resultados
-                                </button>
-                            </div>
-                            
-                            {/* Right: Action Buttons */}
-                            <div className="flex items-center gap-3">
-                                {/* Admin Menu Button - Solo para administradores */}
-                                {hasAdminPrivileges(currentUser) && (
-                                    <button
-                                        onClick={() => setGamePhase('hub')}
-                                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-semibold text-sm rounded-md transition-colors"
-                                        title="Menú Administrador"
-                                    >
-                                        Menú Admin
-                                    </button>
-                                )}
-                                <UserAvatar
-                                    imageUrl={currentPlayer?.imageUrl}
-                                    name={currentPlayer?.name}
-                                    className="w-8 h-8"
-                                    onClick={() => {
-                                        if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                                            handleLogout();
-                                        }
-                                    }}
-                                    title="Cerrar Sesión"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <main className="mt-4">
-                    {gameStateFromDB ? (
-                        <>
-                            {(activeTab === 'race' && !isFinished) && <RaceView gameState={gameStateFromDB} players={players} gameId={activeGame!.id} onTurnComplete={handleTurnComplete} onNextCircuit={handleNextCircuit} onGameEnd={handleGameEnd} currentUser={currentUser!} />}
-                            {activeTab === 'live' && <LivePage gameState={gameStateFromDB} players={players} circuits={circuits} gameId={activeGame!.id} />}
-                            {activeTab === 'puntaje' && <div className="max-w-6xl mx-auto p-4 max-h-[calc(100vh-200px)] overflow-y-auto"><RaceProgress gameState={gameStateFromDB} players={players} /></div>}
-                            {activeTab === 'stats' && <StatsView gameState={gameStateFromDB} players={players} circuits={circuits} gameHistory={gameHistory || []} onNewGame={handleNewGame} />}
-                            {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} currentGameId={activeGame?.id} />}
-                            {activeTab === 'resultados' && <ResultadosPage gameHistory={gameHistory || []} players={players} circuits={circuits} />}
-                            {isFinished && activeTab === 'race' && <div className="text-center p-8">Game is finished. Go to STATS tab to see the final standings.</div>}
-                        </>
-                    ) : (
-                        // No active game - show historical stats or admin
-                        <>
-                            {activeTab === 'stats' && (
-                                <StatsView 
-                                    gameState={{
-                                        settings: { name: 'Estadísticas Históricas', circuits: [], players: [] },
-                                        currentCircuitIndex: 0,
-                                        playerStats: {},
-                                        circuitResults: []
-                                    } as any} 
-                                    players={players} 
-                                    circuits={circuits} 
-                                    gameHistory={gameHistory || []} 
-                                    onNewGame={handleNewGame} 
-                                />
-                            )}
-                            {activeTab === 'tiempos' && <TimesPage players={players} circuits={circuits} />}
-                            {activeTab === 'resultados' && <ResultadosPage gameHistory={gameHistory || []} players={players} circuits={circuits} />}
-                            {(activeTab === 'race' || activeTab === 'live' || activeTab === 'puntaje') && (
-                                <div className="text-center p-8">
-                                    <p className="text-xl text-zinc-400 mb-4">No hay campeonato activo</p>
-                                    {hasAdminPrivileges(currentUser) && (
-                                        <button 
-                                            onClick={handleNewGame}
-                                            className="px-6 py-3 bg-[#FF1801] text-white font-bold rounded hover:bg-red-700 transition-colors"
-                                        >
-                                            Crear Campeonato
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </>
-                    )}
-                </main>
-            </div>
+            <F1Layout
+              currentUser={currentUser}
+              currentPlayer={currentPlayer}
+              players={players}
+              circuits={circuits}
+              activeGame={activeGame}
+              gameHistory={gameHistory || []}
+              hasAdminPrivileges={hasAdminPrivileges(currentUser)}
+              onLogout={handleLogout}
+              onCancelGame={handleCancelGame}
+              onRecalculateScores={handleRecalculateScores}
+            />
           );
         }
         
-        return <div className="text-center p-8">Loading game... Please wait.</div>;
+        return (
+          <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1A1A1A' }}>
+            <div className="text-center">
+              <div className="text-6xl mb-4">⏳</div>
+              <h2 className="text-2xl font-bold text-white mb-2">Cargando F1 Night...</h2>
+              <p className="text-zinc-400">Preparando datos del sistema</p>
+            </div>
+          </div>
+        );
       case 'tournament-setup':
         return <TournamentSetup 
           players={players!} 

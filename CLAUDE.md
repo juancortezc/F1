@@ -662,7 +662,110 @@ const eligiblePlayers = players.filter(p => !p.isGuest);
 - ✅ **Guest system completo** funcionando correctamente
 - ✅ **Landing page simplificado** con terminología F1
 
-### 🎯 Próximas Mejoras Sugeridas
+### 🏎️ F1 Professional Design System (2025) - NUEVO REDISEÑO COMPLETO
+
+### 🎨 Paleta de Colores F1 Professional
+```css
+/* Fondos principales */
+--f1-background: #1A1A1A        /* Gris oscuro - reduce fatiga visual */
+--f1-surface: #242424           /* Cards elevadas - jerarquía visual */
+--f1-elevated: #2A2A2A          /* Elementos destacados */
+
+/* Colores de acento */
+--f1-red: #E10600              /* Rojo F1 - acciones críticas */
+--f1-cyan: #00D2BE             /* Cyan - actualizaciones en vivo */
+--f1-green: #00FF88            /* Verde - mejor vuelta, destello sutil */
+
+/* Textos */
+--f1-text-primary: #FFFFFF     /* Blanco puro - máximo contraste */
+--f1-text-secondary: #A1A1AA   /* Gris claro - información secundaria */
+--f1-text-muted: #71717A       /* Gris medio - metadata */
+```
+
+### 🗂️ Nueva Arquitectura de Navegación (4 Tabs)
+1. **TIEMPOS** - Tabla detallada de todos los tiempos registrados
+2. **LIVE** - Punto focal dinámico:
+   - **ROJO** cuando hay campeonato activo 
+   - **GRIS** sin campeonato activo
+   - Auto-redirect sin campeonato → Hall of Fame
+3. **HALL OF FAME** - Estadísticas y récords históricos  
+4. **REGISTRO** - Admin panel (solo usuarios autorizados, botón naranja)
+
+### 📱 Mobile-First Experience
+- **Bottom Tab Bar** para navegación principal
+- **Header persistente** con logo F1 + avatar + admin controls
+- **Layouts verticales** prioritarios - evitar scroll horizontal/vertical
+- **Touch targets 48px+** para interacción cómoda
+- **Pull-to-refresh** implementado (preservando live updates específicos)
+- **Iconografía F1** específica en toda la aplicación
+
+### ✨ Micro-interacciones y Animaciones
+- **Animaciones sutiles** en transiciones entre vistas
+- **Haptic feedback** en interacciones críticas  
+- **Cards con borde luminoso** cuando se actualiza tiempo en vivo
+- **Slide suave** en cambios de posición de timing
+- **Destello verde sutil** (#00FF88) para indicar mejor vuelta
+- **Degradado header sutil**: #1A1A1A → #2A2A2A
+
+### 🏁 Elementos Específicos F1
+
+#### **Barras de Registro de Tiempos** (Página Live - Imagen 1)
+- **NO son barras de progreso** - son visualización de tiempos del jugador activo
+- Presentación clara de **Personal Record (PR)** y **Vuelta Rápida (VR)**
+- Deltas de tiempo prominentes con colores semánticos (+/- tiempo)
+- Layout compacto pero legible en móvil
+
+#### **Data Presentation Standards**
+- **Posiciones con colores**: Oro (1°), Plata (2°), Bronce (3°)  
+- **Solo tablas**: Sin gráficos ni charts - información directa
+- **Monospace fonts** para datos numéricos críticos
+- **Density optimizada** por página - espaciado generous sin scroll excesivo
+
+#### **Estados Responsive**
+- **Mobile**: Estados específicos optimizados para touch
+- **Desktop**: Hover states diferentes, spacing adaptativo
+- **Orientación landscape**: Layout especial para timing data
+- **Modals**: Best UX para Android e iOS (se decidirá por experiencia)
+
+### 🔄 Flujo de Usuario Actualizado
+
+#### **Login → Navegación Inteligente**
+- **Con campeonato activo**: Login → LIVE tab (botón rojo)
+- **Sin campeonato activo**: Login → HALL OF FAME tab
+- **Admin users**: Acceso a REGISTRO tab (botón naranja)
+
+#### **Live Updates Mejorados** 
+- **Polling preservado** para datos en tiempo real  
+- **Pull-to-refresh** como funcionalidad adicional
+- **Indicadores visuales** de conexión y actualización
+- **Micro-animaciones** en cambios de datos críticos
+
+## 🚀 Plan de Implementación Página por Página
+
+### Páginas a Rediseñar (Orden por definir con usuario)
+1. **Navigation/Layout base** - Sistema de tabs y header
+2. **LivePage** - Vista timing en vivo con barras de registro
+3. **TimesPage** - Tabla detallada filtrable  
+4. **Hall of Fame** - Estadísticas históricas y récords
+5. **Registro (Admin)** - Panel administrativo simplificado
+6. **Landing Page** - Entrada con terminología F1 actualizada
+
+### Componentes Base a Crear
+- **F1TabNavigation** - Bottom navigation con estados dinámicos
+- **F1Header** - Header persistente con controles contextuales
+- **F1DataTable** - Tablas optimizadas para datos de racing
+- **F1Card** - Cards elevados con borders y micro-interacciones  
+- **F1TimingBar** - Barras de registro de tiempo específicas
+- **F1LoadingStates** - Estados de carga con tema racing
+
+### 🎯 Objetivos del Rediseño
+- **Experiencia mobile-first** optimizada para usuarios 50+
+- **Navegación simplificada** - 4 tabs vs 5 tabs actuales
+- **Estética F1 profesional** - colores, tipografía, spacing
+- **Performance mejorado** - animaciones sutiles, layouts eficientes
+- **Funcionalidad preservada** - todas las features racing existentes
+
+## 🎯 Próximas Mejoras Sugeridas
 - **Fase 3**: Sistema de notificaciones push para eventos importantes
 - **Fase 4**: Hall of Fame con estadísticas de temporada completa
 - **PWA Enhanced**: Service worker para uso offline avanzado
