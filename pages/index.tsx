@@ -12,6 +12,7 @@ import RaceView from '../components/RaceView';
 import StatsView from '../components/StatsView';
 import AdminHub from '../components/AdminHub';
 import AdminView from '../components/AdminView';
+import F1AdminLayout from '../components/F1AdminLayout';
 import GameModify from '../components/GameModify';
 import RaceProgress from '../components/RaceProgress';
 import LivePage from '../components/LivePage';
@@ -995,6 +996,21 @@ function App() {
           onBack={handleBackToLanding}
         />;
       case 'hub':
+        // Use F1AdminLayout for admin users
+        if (players && circuits && currentUser && hasAdminPrivileges(currentUser)) {
+          return (
+            <F1AdminLayout
+              currentUser={currentUser}
+              currentPlayer={currentPlayer}
+              players={players}
+              circuits={circuits}
+              onLogout={handleLogout}
+              onBack={handleBackToLive}
+              onRecalculateScores={handleRecalculateScores}
+            />
+          );
+        }
+        // Fallback to original AdminHub if data not ready
         return <AdminHub 
           onNewGame={handleNewGame} 
           onAdmin={handleAdmin} 
@@ -1099,6 +1115,7 @@ function App() {
               onLogout={handleLogout}
               onCancelGame={handleCancelGame}
               onRecalculateScores={handleRecalculateScores}
+              onNavigateToHub={() => setGamePhase('hub')}
             />
           );
         }

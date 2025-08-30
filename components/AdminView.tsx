@@ -57,6 +57,7 @@ interface AdminViewProps {
     onBack?: () => void;
     currentUser?: UserSession | null;
     onRecalculateScores?: () => Promise<void>;
+    initialTab?: 'players' | 'circuits';
 }
 
 type EditingItem = Player | Circuit | 'new-player' | 'new-circuit' | 'new-guest' | null;
@@ -69,9 +70,9 @@ interface AdminLock {
     expiresAt: Date;
 }
 
-const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, currentUser, onRecalculateScores }) => {
+const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, currentUser, onRecalculateScores, initialTab }) => {
     const [editingItem, setEditingItem] = useState<EditingItem>(null);
-    const [activeTab, setActiveTab] = useState<TabType>('players');
+    const [activeTab, setActiveTab] = useState<TabType>(initialTab || 'players');
     
     // Separate regular players and guests
     const regularPlayers = players.filter(p => !p.isGuest);

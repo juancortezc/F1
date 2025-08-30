@@ -19,6 +19,7 @@ interface F1LayoutProps {
   onLogout: () => void;
   onCancelGame?: () => void;
   onRecalculateScores?: () => Promise<void>;
+  onNavigateToHub?: () => void;
 }
 
 type F1Tab = 'tiempos' | 'live' | 'hall-of-fame' | 'registro';
@@ -33,7 +34,8 @@ const F1Layout: React.FC<F1LayoutProps> = ({
   hasAdminPrivileges,
   onLogout,
   onCancelGame,
-  onRecalculateScores
+  onRecalculateScores,
+  onNavigateToHub
 }) => {
   const [activeTab, setActiveTab] = useState<F1Tab>('hall-of-fame');
 
@@ -53,6 +55,12 @@ const F1Layout: React.FC<F1LayoutProps> = ({
 
   const hasActiveGameRunning = activeGame && activeGame.state && 
     activeGame.state.currentCircuitIndex < activeGame.state.settings.circuits.length;
+
+  const handleAdminAccess = () => {
+    if (onNavigateToHub) {
+      onNavigateToHub();
+    }
+  };
 
   const renderContent = () => {
     // Add safety checks for data
@@ -154,6 +162,7 @@ const F1Layout: React.FC<F1LayoutProps> = ({
         currentPlayer={currentPlayer}
         onLogout={onLogout}
         onCancelGame={onCancelGame}
+        onAdminAccess={handleAdminAccess}
         hasActiveGame={hasActiveGameRunning}
         hasAdminPrivileges={hasAdminPrivileges}
       />
