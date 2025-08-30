@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { UserSession, Player, Circuit } from '../types';
 import F1Header from './F1Header';
+import F1Navigation from './F1Navigation';
 import F1ParcFerme from './F1ParcFerme';
+import F1QuickRace from './F1QuickRace';
 import AdminView from './AdminView';
 
 interface F1AdminLayoutProps {
@@ -12,9 +14,11 @@ interface F1AdminLayoutProps {
   onLogout: () => void;
   onBack: () => void;
   onRecalculateScores?: () => Promise<void>;
+  onNavigateToTab?: (tab: 'tiempos' | 'live' | 'hall-of-fame' | 'registro') => void;
+  onStartQuickRace?: (selectedPlayers: Player[], selectedCircuits: Circuit[]) => void;
 }
 
-type AdminSection = 'menu' | 'pilotos' | 'circuitos';
+type AdminSection = 'menu' | 'pilotos' | 'circuitos' | 'quick';
 
 const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
   currentUser,
@@ -23,7 +27,9 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
   circuits,
   onLogout,
   onBack,
-  onRecalculateScores
+  onRecalculateScores,
+  onNavigateToTab,
+  onStartQuickRace
 }) => {
   const [currentSection, setCurrentSection] = useState<AdminSection>('menu');
   const [activeAdminTab, setActiveAdminTab] = useState<'players' | 'circuits'>('players');
@@ -38,6 +44,9 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
         setCurrentSection('circuitos');
         setActiveAdminTab('circuits');
         break;
+      case 'quick':
+        setCurrentSection('quick');
+        break;
       default:
         console.log('Navigate to:', destination);
     }
@@ -51,6 +60,20 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
     switch (currentSection) {
       case 'menu':
         return <F1ParcFerme onNavigate={handleNavigate} />;
+      
+      case 'quick':
+        return (
+          <F1QuickRace
+            players={players}
+            circuits={circuits}
+            onBack={handleBackToMenu}
+            onStartRace={(selectedPlayers, selectedCircuits) => {
+              if (onStartQuickRace) {
+                onStartQuickRace(selectedPlayers, selectedCircuits);
+              }
+            }}
+          />
+        );
       
       case 'pilotos':
       case 'circuitos':
@@ -70,6 +93,18 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
     }
   };
 
+  const handleTabChange = (tab: 'tiempos' | 'live' | 'hall-of-fame' | 'registro') => {
+    if (tab === 'registro') {
+      // Stay in admin area but ensure we're in menu
+      setCurrentSection('menu');
+    } else {
+      // Navigate to other tabs using the provided handler
+      if (onNavigateToTab) {
+        onNavigateToTab(tab);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#1A1A1A' }}>
       {/* F1 Header */}
@@ -82,9 +117,17 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
       />
 
       {/* Main Content */}
-      <main>
+      <main className="pb-20">
         {renderContent()}
       </main>
+
+      {/* F1 Bottom Navigation */}
+      <F1Navigation
+        activeTab={'registro'}
+        onTabChange={handleTabChange}
+        hasActiveGame={false}
+        hasAdminPrivileges={true}
+      />
     </div>
   );
 };

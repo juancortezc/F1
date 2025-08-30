@@ -208,11 +208,17 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
               className="relative rounded-lg border border-zinc-700 p-4 text-center"
               style={{ backgroundColor: '#242424', minHeight: '140px', width: '100px' }}
             >
-              <UserAvatar
-                imageUrl={second.player.imageUrl}
-                name={second.player.name}
-                className="w-16 h-16 mx-auto mb-2"
-              />
+              {/* Position Badge */}
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-zinc-400 rounded-full flex items-center justify-center z-10 border-2 border-zinc-800">
+                <span className="font-mono font-bold text-sm text-black">2</span>
+              </div>
+              <div className="relative inline-block">
+                <UserAvatar
+                  imageUrl={second.player.imageUrl}
+                  name={second.player.name}
+                  className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
+                />
+              </div>
               <h3 className="text-white font-semibold text-sm">{second.player.name}</h3>
             </div>
           )}
@@ -223,11 +229,17 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
               className="relative rounded-lg border border-zinc-600 p-6 text-center"
               style={{ backgroundColor: '#242424', minHeight: '160px', width: '120px' }}
             >
-              <UserAvatar
-                imageUrl={first.player.imageUrl}
-                name={first.player.name}
-                className="w-20 h-20 mx-auto mb-3"
-              />
+              {/* Position Badge */}
+              <div className="absolute -top-3 -right-3 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center z-10 border-2 border-zinc-800 shadow-lg">
+                <span className="font-mono font-bold text-base text-black">1</span>
+              </div>
+              <div className="relative inline-block">
+                <UserAvatar
+                  imageUrl={first.player.imageUrl}
+                  name={first.player.name}
+                  className="w-20 h-20 mx-auto mb-3 ring-2 ring-f1-red"
+                />
+              </div>
               <h3 className="text-white font-bold text-base">{first.player.name}</h3>
             </div>
           )}
@@ -238,11 +250,17 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
               className="relative rounded-lg border border-zinc-700 p-4 text-center"
               style={{ backgroundColor: '#242424', minHeight: '140px', width: '100px' }}
             >
-              <UserAvatar
-                imageUrl={third.player.imageUrl}
-                name={third.player.name}
-                className="w-16 h-16 mx-auto mb-2"
-              />
+              {/* Position Badge */}
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center z-10 border-2 border-zinc-800">
+                <span className="font-mono font-bold text-sm text-white">3</span>
+              </div>
+              <div className="relative inline-block">
+                <UserAvatar
+                  imageUrl={third.player.imageUrl}
+                  name={third.player.name}
+                  className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
+                />
+              </div>
               <h3 className="text-white font-semibold text-sm">{third.player.name}</h3>
             </div>
           )}

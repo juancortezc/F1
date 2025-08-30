@@ -308,6 +308,116 @@ function App() {
       });
     }
   };
+
+  const handleStartQuickRace = async (selectedPlayers: Player[], selectedCircuits: Circuit[]) => {
+    try {
+      addToast({
+        type: 'info',
+        title: 'Iniciando Quick Race...',
+        message: 'Configurando carrera rápida'
+      });
+
+      // Close any existing active game before starting Quick Race
+      if (activeGame) {
+        try {
+          await fetch(`/api/game/update`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: activeGame.id, status: 'COMPLETED' })
+          });
+          await mutate('/api/game/active');
+          await mutate('/api/game/history');
+        } catch(err) {
+          console.error("Failed to close existing game", err);
+        }
+      }
+
+      // Quick Race settings based on ModernGameSetup preset
+      const quickRaceSettings: GameSettings & { tournamentMode?: boolean } = {
+        players: selectedPlayers,
+        circuits: selectedCircuits,
+        controllerIds: selectedPlayers.map(p => p.id), // All players can control
+        lapsPerTurn: 3,
+        turnsPerCircuit: 2,
+        scoringMethod: 'average',
+        scoringMultiplier: null, // No multiplier for Quick Race
+        pointsForBestLap: 2, // VR bonus
+        pointsForBestAverage: 0, // No PR bonus as requested
+        awardBestTimeFor: 'turn',
+        useBest4Of5Laps: false, // Use all laps for 3 lap turns
+        tournamentMode: false
+      };
+
+      const playerStats: Record<string, PlayerStats> = {};
+      selectedPlayers.forEach(p => {
+        playerStats[p.id] = { totalScore: 0, bestLaps: 0, bestAverages: 0 };
+      });
+
+      // Create participant users based on selected players
+      const participantUsers = selectedPlayers.map(player => ({
+        userId: player.id,
+        name: player.name,
+        role: 'controller' as const // All players are controllers in Quick Race
+      }));
+
+      // Set initial controller to current user if they're playing, or first player
+      const initialController = selectedPlayers.find(p => p.id === currentUser?.userId)?.id || selectedPlayers[0].id;
+
+      const newGameState: GameState = {
+        settings: quickRaceSettings,
+        circuits: selectedCircuits,
+        playerOrder: selectedPlayers.map(p => p.id),
+        currentCircuitIndex: 0,
+        currentTurn: 1,
+        currentPlayerIndex: 0,
+        circuitResults: selectedCircuits.map(circuit => ({ circuitId: circuit.id, turns: [] })),
+        playerStats,
+        sessionBestLap: null,
+        sessionBestAverage: null,
+        sessionBestTimes: selectedCircuits.reduce((acc, circuit) => {
+          acc[circuit.id] = {
+            bestLap: null,
+            bestLapPlayerId: null,
+            bestAverage: null,
+            bestAveragePlayerId: null
+          };
+          return acc;
+        }, {} as Record<string, { bestLap: number | null; bestLapPlayerId: string | null; bestAverage: number | null; bestAveragePlayerId: string | null; }>),
+        lapTimesLog: [],
+        currentController: initialController,
+        participantUsers,
+      };
+
+      // Create the game (not in tournament mode)
+      const response = await fetch('/api/game/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: newGameState }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create Quick Race');
+      }
+
+      addToast({
+        type: 'success',
+        title: '🏁 ¡Quick Race iniciado!',
+        message: `Carrera con ${selectedPlayers.length} pilotos en ${selectedCircuits.length} circuitos`
+      });
+
+      // Refresh active game and navigate to race
+      await mutate('/api/game/active');
+      setGamePhase('race');
+      setActiveTab('live'); // Go directly to live timing
+    } catch(err) {
+      console.error("Failed to create Quick Race", err);
+      addToast({
+        type: 'error',
+        title: 'Error al crear Quick Race',
+        message: 'No se pudo iniciar la carrera rápida. Inténtalo de nuevo.'
+      });
+    }
+  };
   
   const handleNewGame = async () => {
       // Starting a new game means marking the old one as complete if it exists
@@ -1007,6 +1117,18 @@ function App() {
               onLogout={handleLogout}
               onBack={handleBackToLive}
               onRecalculateScores={handleRecalculateScores}
+              onNavigateToTab={(tab) => {
+                setGamePhase(activeGame ? 'race' : 'results');
+                // Map F1 tabs to internal tabs
+                const tabMapping = {
+                  'tiempos': 'tiempos' as const,
+                  'live': 'live' as const,
+                  'hall-of-fame': 'stats' as const,
+                  'registro': 'admin' as const
+                };
+                setActiveTab(tabMapping[tab] || 'live');
+              }}
+              onStartQuickRace={handleStartQuickRace}
             />
           );
         }

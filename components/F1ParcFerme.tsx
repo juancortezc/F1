@@ -25,8 +25,8 @@ const F1ParcFerme: React.FC<F1ParcFermeProps> = ({ onNavigate }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
-      disabled: true,
-      action: () => console.log('Quick - Coming soon')
+      disabled: false,
+      action: () => onNavigate('quick')
     },
     {
       id: 'continue',
