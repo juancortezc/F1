@@ -15,7 +15,7 @@ interface F1AdminLayoutProps {
   onLogout: () => void;
   onBack: () => void;
   onRecalculateScores?: () => Promise<void>;
-  onNavigateToTab?: (tab: 'tiempos' | 'live' | 'hall-of-fame' | 'registro') => void;
+  onNavigateToTab?: (tab: 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos') => void;
   onStartQuickRace?: (selectedPlayers: Player[], selectedCircuits: Circuit[]) => void;
   onStartCustomRace?: (settings: any) => void;
 }
@@ -113,8 +113,8 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
     }
   };
 
-  const handleTabChange = (tab: 'tiempos' | 'live' | 'hall-of-fame' | 'registro') => {
-    if (tab === 'registro') {
+  const handleTabChange = (tab: 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos') => {
+    if (tab === 'tiempos') {
       // Stay in admin area but ensure we're in menu
       setCurrentSection('menu');
     } else {
@@ -144,7 +144,7 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
 
       {/* F1 Bottom Navigation */}
       <F1Navigation
-        activeTab={'registro'}
+        activeTab={'tiempos'}
         onTabChange={handleTabChange}
         hasActiveGame={false}
         hasAdminPrivileges={true}

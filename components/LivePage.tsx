@@ -31,12 +31,31 @@ const formatDelta = (ms: number): string => {
 };
 
 const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameId = 'active-game' }) => {
-  const currentCircuit = gameState.circuits[gameState.currentCircuitIndex];
-  const currentPlayer = players.find(p => p.id === gameState.playerOrder[gameState.currentPlayerIndex]);
+  // Early return if no valid game state
+  if (!gameState || !gameState.circuits || gameState.circuits.length === 0) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏁</div>
+          <h2 className="text-2xl font-bold text-white mb-2">No hay campeonato activo</h2>
+          <p className="text-zinc-400">No hay datos de timing en vivo para mostrar</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Safely access game state properties
+  const currentCircuit = gameState?.circuits?.[gameState?.currentCircuitIndex || 0];
+  const currentPlayer = gameState?.playerOrder && players 
+    ? players.find(p => p.id === gameState.playerOrder[gameState.currentPlayerIndex || 0])
+    : null;
+
+  // Only fetch live data if we have valid game state and circuit
+  const shouldFetch = !!(gameState && currentCircuit?.id && gameState.currentTurn);
+  
   // Fetch live lap times with simplified polling
   const { data: liveData, error: liveError } = useSWR(
-    currentCircuit?.id ? `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${gameState.currentTurn}` : null,
+    shouldFetch ? `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${gameState.currentTurn}` : null,
     {
       refreshInterval: 3000,
       revalidateOnFocus: true,
@@ -47,8 +66,12 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
   );
 
   // Get next player
-  const nextPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.playerOrder.length;
-  const nextPlayer = players.find(p => p.id === gameState.playerOrder[nextPlayerIndex]);
+  const nextPlayerIndex = gameState?.playerOrder 
+    ? (gameState.currentPlayerIndex + 1) % gameState.playerOrder.length
+    : 0;
+  const nextPlayer = gameState?.playerOrder && players 
+    ? players.find(p => p.id === gameState.playerOrder[nextPlayerIndex])
+    : null;
 
   // Get current circuit info for historical records
   const currentCircuitInfo = circuits.find(c => c.id === currentCircuit?.id);
@@ -201,7 +224,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       return { currentAverage: null, bestLap: null };
     }
 
-    const validTimes = currentPlayerLaps.map((lap: any) => lap.timeMs).filter(time => time > 0);
+    const validTimes = currentPlayerLaps.map((lap: any) => lap.timeMs).filter((time: number) => time > 0);
     
     if (validTimes.length === 0) {
       return { currentAverage: null, bestLap: null };
@@ -209,7 +232,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
     const bestLap = Math.min(...validTimes);
     const currentAverage = validTimes.length >= 3 
-      ? validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length 
+      ? validTimes.reduce((sum: number, time: number) => sum + time, 0) / validTimes.length 
       : null;
 
     return { currentAverage, bestLap };
@@ -362,7 +385,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
           <div className="grid grid-cols-2 gap-6">
             {/* PR Section */}
             <div className="text-center">
-              <div className="text-white text-xl font-bold mb-1">PR-T{gameState.currentTurn}</div>
+              <div className="text-white text-xl font-bold mb-1">PR-T{gameState.currentTurn || 1}</div>
               <div className="text-white text-2xl font-mono font-bold mb-2">
                 {currentPlayerStats.currentAverage ? formatTime(currentPlayerStats.currentAverage) : '-:--.---'}
               </div>
@@ -378,7 +401,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
             {/* VR Section */}
             <div className="text-center">
-              <div className="text-white text-xl font-bold mb-1">VR-T{gameState.currentTurn}</div>
+              <div className="text-white text-xl font-bold mb-1">VR-T{gameState.currentTurn || 1}</div>
               <div className="text-white text-2xl font-mono font-bold mb-2">
                 {currentPlayerStats.bestLap ? formatTime(currentPlayerStats.bestLap) : '-:--.---'}
               </div>

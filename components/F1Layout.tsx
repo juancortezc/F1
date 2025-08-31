@@ -3,10 +3,10 @@ import { UserSession, Player, Circuit, GameState, GameHistoryEntry } from '../ty
 import F1Header from './F1Header';
 import F1Navigation from './F1Navigation';
 import F1HallOfFame from './F1HallOfFame';
-import StatsView from './StatsView';
 import TimesPage from './TimesPage';
 import LivePage from './LivePage';
 import AdminView from './AdminView';
+import ResultsView from './ResultsView';
 
 interface F1LayoutProps {
   currentUser: UserSession;
@@ -22,7 +22,7 @@ interface F1LayoutProps {
   onNavigateToHub?: () => void;
 }
 
-type F1Tab = 'tiempos' | 'live' | 'hall-of-fame' | 'registro';
+type F1Tab = 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos';
 
 const F1Layout: React.FC<F1LayoutProps> = ({
   currentUser,
@@ -75,6 +75,26 @@ const F1Layout: React.FC<F1LayoutProps> = ({
     }
 
     switch (activeTab) {
+      case 'tiempos-historicos':
+        // Use ResultsView for historical results 
+        const historicalGameState = {
+          settings: { name: 'Resultados', circuits: [], players: [] },
+          currentCircuitIndex: 0,
+          playerStats: {},
+          circuitResults: []
+        } as any;
+        
+        return (
+          <ResultsView
+            gameState={activeGame?.state || historicalGameState}
+            players={players}
+            circuits={circuits}
+            gameHistory={gameHistory || []}
+            activeGame={activeGame}
+            onNewGame={() => {/* No action needed for navigation view */}}
+          />
+        );
+        
       case 'tiempos':
         return (
           <TimesPage 
@@ -121,27 +141,6 @@ const F1Layout: React.FC<F1LayoutProps> = ({
             gameHistory={gameHistory || []}
           />
         );
-        
-      case 'registro':
-        if (hasAdminPrivileges) {
-          return (
-            <AdminView 
-              players={players} 
-              circuits={circuits} 
-              currentUser={currentUser}
-              onBack={() => setActiveTab('hall-of-fame')}
-              onRecalculateScores={onRecalculateScores}
-            />
-          );
-        } else {
-          return (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🔒</div>
-              <h2 className="text-2xl font-bold text-white mb-2">Acceso Restringido</h2>
-              <p className="text-zinc-400">No tienes permisos para acceder a esta sección</p>
-            </div>
-          );
-        }
         
       default:
         return (

@@ -9,7 +9,6 @@ import LoginScreen from '../components/LoginScreen';
 import GameSetup from '../components/GameSetup';
 import ModernGameSetup from '../components/ModernGameSetup';
 import RaceView from '../components/RaceView';
-import StatsView from '../components/StatsView';
 import AdminHub from '../components/AdminHub';
 import AdminView from '../components/AdminView';
 import F1AdminLayout from '../components/F1AdminLayout';
@@ -27,7 +26,7 @@ import TournamentSetup from '../components/TournamentSetup';
 import TournamentStandings from '../components/TournamentStandings';
 import TournamentManagement from '../components/TournamentManagement';
 
-type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'stats' | 'modify' | 'tournament-setup' | 'tournament-standings' | 'tournament-management';
+type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'modify' | 'tournament-setup' | 'tournament-standings' | 'tournament-management';
 
 // API data fetching hook
 function useApiData() {
@@ -46,7 +45,7 @@ function useApiData() {
 
 function App() {
   const [gamePhase, setGamePhase] = useState<GamePhase>('landing');
-  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'stats' | 'live' | 'admin' | 'tiempos' | 'resultados'>('race');
+  const [activeTab, setActiveTab] = useState<'race' | 'puntaje' | 'live' | 'admin' | 'tiempos' | 'resultados'>('race');
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   
@@ -80,15 +79,15 @@ function App() {
           const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
           if (isFinished) {
             setGamePhase('results');
-            setActiveTab('stats');
+            setActiveTab('resultados');
           } else {
             setGamePhase('race');
             setActiveTab('live');
           }
         } else {
-          // No active game - all users go to stats/results
+          // No active game - all users go to results view (championship results)
           setGamePhase('results');
-          setActiveTab('stats'); // Show historical stats
+          setActiveTab('resultados'); // Show championship results
         }
       } catch (e) {
         localStorage.removeItem('f1-user');
@@ -144,7 +143,7 @@ function App() {
       if (isFinished) {
         // Game finished - both go to results
         setGamePhase('results');
-        setActiveTab('stats');
+        setActiveTab('resultados');
       } else {
         // Active game - direct to race view
         if (user.role === 'spectator') {
@@ -159,10 +158,10 @@ function App() {
       // No active game
       if (user.role === 'player') {
         setGamePhase('results');
-        setActiveTab('stats'); // Show historical stats
+        setActiveTab('resultados'); // Show historical results
       } else if (user.role === 'spectator') {
         setGamePhase('results');
-        setActiveTab('stats'); // Spectators also go to results
+        setActiveTab('resultados'); // Spectators also go to results
       } else {
         setGamePhase('hub'); // Organizers go to hub
       }
@@ -468,7 +467,7 @@ function App() {
     if (activeGame) {
       const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
       setGamePhase(isFinished ? 'results' : 'race');
-      setActiveTab(isFinished ? 'stats' : 'race');
+      setActiveTab(isFinished ? 'resultados' : 'race');
     } else {
       setGamePhase('hub');
     }
@@ -478,7 +477,7 @@ function App() {
     if (activeGame) {
       const isFinished = activeGame.state.currentCircuitIndex >= activeGame.state.settings.circuits.length;
       setGamePhase(isFinished ? 'results' : 'race');
-      setActiveTab(isFinished ? 'stats' : 'race');
+      setActiveTab(isFinished ? 'resultados' : 'race');
     } else {
       setGamePhase('hub');
     }
@@ -1051,7 +1050,7 @@ function App() {
         mutate('/api/game/active');
         mutate('/api/game/history');
         setGamePhase('results');
-        setActiveTab('stats');
+        setActiveTab('resultados');
       } catch (err) {
         console.error('Failed to end game:', err);
         addToast({
@@ -1121,10 +1120,10 @@ function App() {
                 setGamePhase(activeGame ? 'race' : 'results');
                 // Map F1 tabs to internal tabs
                 const tabMapping = {
+                  'tiempos-historicos': 'resultados' as const,
                   'tiempos': 'tiempos' as const,
                   'live': 'live' as const,
-                  'hall-of-fame': 'stats' as const,
-                  'registro': 'admin' as const
+                  'hall-of-fame': 'resultados' as const
                 };
                 setActiveTab(tabMapping[tab] || 'live');
               }}
