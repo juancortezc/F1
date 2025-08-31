@@ -286,7 +286,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                             Verificando Acceso al Sistema
                         </div>
                         <div className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
-                            Panel de Administración • F1 Night
+                            PARC FERMÉ • F1 Night
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -319,7 +319,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                             Sistema Bloqueado
                         </h2>
                         <div className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-4">
-                            Panel de Administración • F1 Night
+                            PARC FERMÉ • F1 Night
                         </div>
                     </div>
                     <div className="space-y-4">
@@ -350,36 +350,6 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
     return (
         <>
         <div className="min-h-screen bg-black">
-            {/* F1 Luxury Navigation Header */}
-            <div className="bg-zinc-900 border-b-2 border-f1-red sticky top-0 z-20 shadow-lg">
-                <div className="max-w-6xl mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            {onBack && (
-                                <button 
-                                    onClick={onBack}
-                                    className="flex items-center justify-center w-12 h-12 rounded-md bg-f1-red border border-red-700 text-white hover:bg-red-700 transition-colors duration-200 shadow-md"
-                                    title="Volver al menú principal"
-                                >
-                                    <ArrowLeftIcon className="w-6 h-6" />
-                                </button>
-                            )}
-                            <div>
-                                <h1 className="text-2xl font-bold text-white tracking-wide">PANEL DE ADMINISTRACIÓN</h1>
-                                <p className="text-sm font-mono text-zinc-300 uppercase tracking-widest">
-                                    Sistema de Gestión • F1 Night
-                                </p>
-                            </div>
-                        </div>
-                        {currentUser && (
-                            <div className="text-right">
-                                <div className="text-lg font-bold text-white">{currentUser.name}</div>
-                                <div className="text-sm font-mono text-zinc-300 uppercase tracking-wide">Administrador</div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
 
             <div className="max-w-6xl mx-auto p-4 space-y-6">
                 {/* Luxury Tab Navigation - Mobile First */}
@@ -443,12 +413,9 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                         <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
-                                        JUGADORES HABITUALES
+                                    <h2 className="text-base font-bold text-zinc-100 font-mono uppercase tracking-wider">
+                                        PILOTOS OFICIALES
                                     </h2>
-                                    <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
-                                        {regularPlayers.length} Registrados • Acceso con PIN
-                                    </p>
                                 </div>
                                 <button 
                                     onClick={() => setEditingItem('new-player')} 
@@ -466,8 +433,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                 <thead className="bg-zinc-800 border-b border-zinc-700">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Avatar</th>
-                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Jugador</th>
-                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">PIN</th>
+                                        <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Piloto</th>
                                         <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Estado</th>
                                         <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acciones</th>
                                     </tr>
@@ -484,11 +450,6 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="font-semibold text-zinc-100 text-lg">{player.name}</div>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className="inline-block px-3 py-1 bg-zinc-800 border border-zinc-700 rounded font-mono text-sm text-zinc-300">
-                                                    ••••
-                                                </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
@@ -535,7 +496,6 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                         />
                                         <div className="flex-1">
                                             <div className="font-semibold text-zinc-100 text-lg">{player.name}</div>
-                                            <div className="text-zinc-400 text-sm font-mono">PIN: ••••</div>
                                         </div>
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
                                             player.isActive 
@@ -583,7 +543,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                         <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-lg font-bold text-amber-400 font-mono uppercase tracking-wide">
+                                    <h2 className="text-base font-bold text-amber-400 font-mono uppercase tracking-wider">
                                         JUGADORES INVITADOS
                                     </h2>
                                     <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
@@ -607,8 +567,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Avatar</th>
                                         <th className="px-4 py-3 text-left text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Invitado</th>
-                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Tipo</th>
-                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acceso</th>
+                                        <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Estado</th>
                                         <th className="px-4 py-3 text-center text-xs font-mono font-bold uppercase tracking-wide text-zinc-400">Acciones</th>
                                     </tr>
                                 </thead>
@@ -625,12 +584,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className="inline-block px-2 py-1 bg-amber-900/30 text-amber-400 border border-amber-700 rounded-full text-xs font-bold uppercase tracking-wide">
-                                                    Invitado
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className="inline-block px-3 py-1 bg-zinc-800 border border-zinc-700 rounded font-mono text-sm text-zinc-300">
-                                                    Sin PIN
+                                                    Activo
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
@@ -667,7 +621,6 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                         </div>
                                         <div className="flex-1">
                                             <div className="font-semibold text-zinc-100 text-lg">{player.name}</div>
-                                            <div className="text-zinc-400 text-sm font-mono">Sin PIN • Acceso directo</div>
                                         </div>
                                         <span className="px-2 py-1 bg-amber-900/30 text-amber-400 border border-amber-700 rounded-full text-xs font-bold uppercase tracking-wide">
                                             Invitado
@@ -711,7 +664,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                         <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+                                    <h2 className="text-base font-bold text-zinc-100 font-mono uppercase tracking-wider">
                                         CIRCUITOS F1
                                     </h2>
                                     <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
@@ -845,7 +798,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                         <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
+                                    <h2 className="text-base font-bold text-zinc-100 font-mono uppercase tracking-wider">
                                         TORNEOS F1 NIGHT
                                     </h2>
                                     <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
@@ -1027,43 +980,6 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                     </div>
                 )}
 
-                {/* Game Management Section */}
-                {typeof onRecalculateScores === 'function' && (
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-                        <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h2 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
-                                        GESTIÓN DE JUEGO
-                                    </h2>
-                                    <p className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
-                                        Herramientas de administración para el campeonato activo
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="p-6 space-y-4">
-                            <div className="bg-zinc-800 border border-zinc-700 rounded-md p-4">
-                                <div className="mb-4">
-                                    <h3 className="text-lg font-semibold text-zinc-100 mb-2">Recalcular Puntuación</h3>
-                                    <p className="text-zinc-400 text-sm mb-4">
-                                        Recalcula todos los puntajes del campeonato activo desde cero. 
-                                        Útil si hay discrepancias en el sistema de puntuación.
-                                    </p>
-                                </div>
-                                
-                                <button
-                                    onClick={onRecalculateScores}
-                                    className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold px-6 py-3 rounded-md transition-colors duration-200 text-sm uppercase tracking-wide"
-                                >
-                                    <RefreshIcon className="w-4 h-4" />
-                                    <span>RECALCULAR PUNTOS</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
             {/* Edit Modal */}
             {editingItem && (

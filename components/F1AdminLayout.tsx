@@ -4,6 +4,7 @@ import F1Header from './F1Header';
 import F1Navigation from './F1Navigation';
 import F1ParcFerme from './F1ParcFerme';
 import F1QuickRace from './F1QuickRace';
+import F1CustomChampionship from './F1CustomChampionship';
 import AdminView from './AdminView';
 
 interface F1AdminLayoutProps {
@@ -16,9 +17,10 @@ interface F1AdminLayoutProps {
   onRecalculateScores?: () => Promise<void>;
   onNavigateToTab?: (tab: 'tiempos' | 'live' | 'hall-of-fame' | 'registro') => void;
   onStartQuickRace?: (selectedPlayers: Player[], selectedCircuits: Circuit[]) => void;
+  onStartCustomRace?: (settings: any) => void;
 }
 
-type AdminSection = 'menu' | 'pilotos' | 'circuitos' | 'quick';
+type AdminSection = 'menu' | 'pilotos' | 'circuitos' | 'quick' | 'custom';
 
 const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
   currentUser,
@@ -29,7 +31,8 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
   onBack,
   onRecalculateScores,
   onNavigateToTab,
-  onStartQuickRace
+  onStartQuickRace,
+  onStartCustomRace
 }) => {
   const [currentSection, setCurrentSection] = useState<AdminSection>('menu');
   const [activeAdminTab, setActiveAdminTab] = useState<'players' | 'circuits'>('players');
@@ -46,6 +49,9 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
         break;
       case 'quick':
         setCurrentSection('quick');
+        break;
+      case 'custom':
+        setCurrentSection('custom');
         break;
       default:
         console.log('Navigate to:', destination);
@@ -70,6 +76,20 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
             onStartRace={(selectedPlayers, selectedCircuits) => {
               if (onStartQuickRace) {
                 onStartQuickRace(selectedPlayers, selectedCircuits);
+              }
+            }}
+          />
+        );
+      
+      case 'custom':
+        return (
+          <F1CustomChampionship
+            players={players}
+            circuits={circuits}
+            onBack={handleBackToMenu}
+            onStartRace={(settings) => {
+              if (onStartCustomRace) {
+                onStartCustomRace(settings);
               }
             }}
           />
@@ -112,6 +132,7 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
         currentUser={currentUser}
         currentPlayer={currentPlayer}
         onLogout={onLogout}
+        onAdminAccess={onBack}
         hasActiveGame={false}
         hasAdminPrivileges={true}
       />

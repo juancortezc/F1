@@ -1129,6 +1129,7 @@ function App() {
                 setActiveTab(tabMapping[tab] || 'live');
               }}
               onStartQuickRace={handleStartQuickRace}
+              onStartCustomRace={handleSetupComplete}
             />
           );
         }

@@ -78,96 +78,88 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
   const canStart = selectedPlayers.length >= 2 && selectedCircuits.length >= 1;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#1A1A1A' }}>
-      <div className="max-w-4xl mx-auto px-4 pt-6 pb-32">
-        {/* Header with back button */}
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
+      <div className="max-w-6xl mx-auto px-4 pt-4 pb-20">
+        {/* Title and Back Button */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-white">QUICK RACE</h1>
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            className="bg-zinc-600 hover:bg-zinc-500 text-white font-semibold px-5 py-2 rounded-md text-sm transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            PARC FERMÉ
+            REGRESAR
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">QUICK RACE</h1>
-          <div className="w-20"></div> {/* Spacer for centering */}
         </div>
 
-        {/* Players Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">PILOTOS</h2>
-            <span className="text-zinc-400 text-sm">{selectedPlayers.length} seleccionados</span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            {selectedPlayers.map((player) => (
-              <div 
-                key={player.id}
-                className="relative bg-zinc-900 rounded-lg p-4 text-center border border-zinc-800"
+        {/* Starting Grid Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-white text-base font-bold uppercase tracking-wider">STARTING GRID</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  // Shuffle existing players
+                  setSelectedPlayers(prev => [...prev].sort(() => Math.random() - 0.5));
+                }}
+                className="text-white hover:text-zinc-300 transition-colors"
+                title="Randomize players"
               >
-                <button
-                  onClick={() => handlePlayerToggle(player)}
-                  className="absolute top-2 right-2 w-6 h-6 bg-f1-red rounded-full flex items-center justify-center text-white text-xs hover:bg-red-700"
-                  title="No Participa"
-                >
-                  ×
-                </button>
-                <UserAvatar
-                  imageUrl={player.imageUrl}
-                  name={player.name}
-                  className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
-                />
-                <h3 className="text-white font-semibold text-sm">{player.name}</h3>
-                {player.isGuest && (
-                  <span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded mt-1 inline-block">
-                    INVITADO
-                  </span>
-                )}
-              </div>
-            ))}
-
-            {/* Add Player Button */}
-            <button
-              onClick={handleAddPlayer}
-              className="bg-zinc-800 border-2 border-dashed border-zinc-600 rounded-lg p-4 text-center hover:border-zinc-500 hover:bg-zinc-750 transition-colors"
-            >
-              <div className="w-16 h-16 mx-auto mb-2 bg-zinc-700 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button
+                onClick={handleAddPlayer}
+                className="text-white hover:text-zinc-300 transition-colors"
+                title="Add player"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4">
+            {selectedPlayers.slice(0, 3).map((player, index) => (
+              <div
+                key={player.id}
+                onClick={() => handlePlayerToggle(player)}
+                className="bg-zinc-800 border-2 border-f1-red rounded-lg p-4 text-center cursor-pointer hover:bg-zinc-700 transition-colors"
+              >
+                <UserAvatar 
+                  imageUrl={player.imageUrl} 
+                  name={player.name} 
+                  className="w-20 h-20 mx-auto mb-3"
+                />
+                <h3 className="text-white font-bold">{player.name}</h3>
               </div>
-              <span className="text-zinc-400 text-sm font-medium">Agregar</span>
-            </button>
+            ))}
           </div>
         </div>
 
         {/* Circuits Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">CIRCUITOS</h2>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-white text-base font-bold uppercase tracking-wider">CIRCUITOS</h2>
             <button
               onClick={handleRandomizeCircuits}
-              className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-md text-zinc-300 text-sm transition-colors"
-              title="Aleatorizar circuitos"
+              className="text-white hover:text-zinc-300 transition-colors"
+              title="Randomize circuits"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Random
             </button>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {selectedCircuits.map((circuit, index) => (
-              <div 
+          
+          <div className="grid grid-cols-3 gap-4">
+            {selectedCircuits.map((circuit) => (
+              <div
                 key={circuit.id}
-                className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer"
-                onClick={() => setShowCircuitModal(circuit)}
+                className="bg-zinc-800 border-2 border-f1-red rounded-lg overflow-hidden"
               >
-                <div className="aspect-video bg-zinc-800 relative overflow-hidden">
+                <div className="aspect-video bg-zinc-700 relative">
                   {circuit.imageUrl ? (
                     <img 
                       src={circuit.imageUrl} 
@@ -181,60 +173,45 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
                       </svg>
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 bg-zinc-900/80 rounded-full w-8 h-8 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">{index + 1}</span>
-                  </div>
                 </div>
                 <div className="p-3">
-                  <h3 className="text-white font-semibold text-sm mb-1">{circuit.name}</h3>
-                  <div className="flex justify-between text-xs text-zinc-400">
-                    <span>VR: {formatTime(circuit.historicalBestLap)}</span>
-                    <span>PR: {formatTime(circuit.historicalBestAverage)}</span>
-                  </div>
+                  <h3 className="text-white font-bold text-center">{circuit.name}</h3>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
+
         {/* Configuration Summary */}
-        <div className="mt-8 mb-6">
-          <div 
-            className="rounded-lg p-6 border-2 border-f1-red relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #374151 0%, #7f1d1d 100%)' }}
-          >
-            {/* Background gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-600/20 to-red-900/40"></div>
-            
-            <div className="relative z-10">
-              <h3 className="text-white font-bold text-lg mb-4 text-center">CONFIGURACIÓN QUICK RACE</h3>
+        <div className="mb-6">
+          <div className="bg-zinc-800 border-2 border-f1-red rounded-lg p-3">
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="bg-zinc-900 rounded p-2">
+                <div className="text-zinc-400 text-xs font-bold uppercase">Turnos</div>
+                <div className="text-white font-bold text-sm">2</div>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-                <div className="bg-black/20 rounded-md p-3 backdrop-blur-sm">
-                  <div className="text-zinc-300 text-sm font-medium mb-1">Jugadores</div>
-                  <div className="text-xl font-bold">{selectedPlayers.length}</div>
-                </div>
-                
-                <div className="bg-black/20 rounded-md p-3 backdrop-blur-sm">
-                  <div className="text-zinc-300 text-sm font-medium mb-1">Circuitos</div>
-                  <div className="text-xl font-bold">{selectedCircuits.length}</div>
-                </div>
-                
-                <div className="bg-black/20 rounded-md p-3 backdrop-blur-sm md:col-span-2">
-                  <div className="text-zinc-300 text-sm font-medium mb-2">Sistema de Puntuación</div>
-                  <div className="space-y-1 text-sm">
-                    <div>• Puntos por <strong>Mejor Promedio</strong> por Circuito</div>
-                    <div>• Puntos extra <strong>(2)</strong> por Vuelta Rápida por Circuito</div>
-                    <div>• <strong>2 turnos</strong> por circuito, <strong>3 vueltas</strong> por turno</div>
-                  </div>
-                </div>
+              <div className="bg-zinc-900 rounded p-2">
+                <div className="text-zinc-400 text-xs font-bold uppercase">Vueltas</div>
+                <div className="text-white font-bold text-sm">3</div>
+              </div>
+              
+              <div className="bg-zinc-900 rounded p-2">
+                <div className="text-zinc-400 text-xs font-bold uppercase">VR</div>
+                <div className="text-white font-bold text-sm">+2</div>
+              </div>
+              
+              <div className="bg-zinc-900 rounded p-2">
+                <div className="text-zinc-400 text-xs font-bold uppercase">Prom</div>
+                <div className="text-white font-bold text-sm">✓</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Start Button */}
-        <div className="pb-8">
+        <div className="mt-6">
           <button
             onClick={() => {
               if (canStart) {
@@ -247,15 +224,14 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
             }}
             disabled={!canStart}
             className={`
-              w-full max-w-md mx-auto block py-4 px-8 rounded-xl font-bold text-xl transition-all duration-300
-              ${canStart 
-                ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg transform hover:scale-105 shadow-green-500/25' 
+              w-full max-w-md mx-auto block py-5 px-8 rounded-xl font-bold text-2xl transition-all
+              ${canStart
+                ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg transform hover:scale-105' 
                 : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
               }
             `}
-            style={{ minHeight: '60px' }}
           >
-            {canStart ? '🏁 INICIAR QUICK RACE' : 'SELECCIONA AL MENOS 2 PILOTOS'}
+            INICIAR
           </button>
         </div>
 
