@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserSession, Player } from '../types';
 
 type F1Tab = 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos';
@@ -16,11 +16,13 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
   hasActiveGame,
   hasAdminPrivileges
 }) => {
-  const sideButtons: Array<{id: F1Tab, icon: React.ReactNode, position: 'left' | 'right', label: string, adminOnly?: boolean}> = [
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const sideButtons: Array<{id: F1Tab, icon: React.ReactNode, position: 'left' | 'right', label: string, tooltip: string, adminOnly?: boolean}> = [
     {
       id: 'tiempos-historicos',
       position: 'left',
       label: 'HISTÓRICO',
+      tooltip: 'Resultados',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -31,6 +33,7 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
       id: 'hall-of-fame',
       position: 'left',
       label: 'HALL OF FAME',
+      tooltip: 'Hall of Fame',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -42,6 +45,7 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
       id: 'tiempos',
       position: 'right',
       label: 'TIEMPOS',
+      tooltip: 'Registrar',
       adminOnly: true,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,20 +80,29 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
             {leftButtons.map((button) => {
               const isActive = activeTab === button.id;
               return (
-                <button
-                  key={button.id}
-                  onClick={() => onTabChange(button.id)}
-                  title={button.label}
-                  className={`
-                    p-3 rounded-xl transition-all duration-200
-                    ${isActive 
-                      ? 'bg-zinc-700 text-white transform scale-105' 
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
-                    }
-                  `}
-                >
-                  {button.icon}
-                </button>
+                <div key={button.id} className="relative">
+                  <button
+                    onClick={() => onTabChange(button.id)}
+                    onMouseEnter={() => setHoveredButton(button.id)}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    className={`
+                      p-3 rounded-xl transition-all duration-200
+                      ${isActive 
+                        ? 'bg-zinc-700 text-white transform scale-105' 
+                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
+                      }
+                    `}
+                  >
+                    {button.icon}
+                  </button>
+                  {hoveredButton === button.id && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 border border-zinc-600">
+                      <div className="text-center font-medium">{button.tooltip}</div>
+                      {/* Arrow pointing down */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-800"></div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -97,7 +110,6 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
           {/* Center LIVE button */}
           <button
             onClick={() => onTabChange('live')}
-            title="LIVE TIMING"
             className={`
               relative w-20 h-20 rounded-full font-bold text-base transition-all duration-300 transform
               ${getLiveButtonColor()}
@@ -119,20 +131,29 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
             {rightButtons.map((button) => {
               const isActive = activeTab === button.id;
               return (
-                <button
-                  key={button.id}
-                  onClick={() => onTabChange(button.id)}
-                  title={button.label}
-                  className={`
-                    p-3 rounded-xl transition-all duration-200
-                    ${isActive 
-                      ? 'bg-zinc-700 text-white transform scale-105'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
-                    }
-                  `}
-                >
-                  {button.icon}
-                </button>
+                <div key={button.id} className="relative">
+                  <button
+                    onClick={() => onTabChange(button.id)}
+                    onMouseEnter={() => setHoveredButton(button.id)}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    className={`
+                      p-3 rounded-xl transition-all duration-200
+                      ${isActive 
+                        ? 'bg-zinc-700 text-white transform scale-105'
+                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
+                      }
+                    `}
+                  >
+                    {button.icon}
+                  </button>
+                  {hoveredButton === button.id && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 border border-zinc-600">
+                      <div className="text-center font-medium">{button.tooltip}</div>
+                      {/* Arrow pointing down */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-800"></div>
+                    </div>
+                  )}
+                </div>
               );
             })}
             {/* Spacer if no right buttons to maintain symmetry */}

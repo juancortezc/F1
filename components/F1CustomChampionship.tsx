@@ -310,7 +310,7 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
             onClick={handleBackStep}
             className="bg-zinc-600 hover:bg-zinc-500 text-white font-semibold px-5 py-2 rounded-md text-sm transition-colors"
           >
-            REGRESAR
+            PARC FERMÉ
           </button>
         </div>
 

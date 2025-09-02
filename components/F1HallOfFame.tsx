@@ -272,55 +272,54 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             <table className="w-full">
               <thead>
                 <tr style={{ backgroundColor: '#2A2A2A' }}>
-                  <th className="px-1 py-3 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">POS</th>
-                  <th className="px-4 py-3 text-left text-xs font-mono uppercase tracking-wider text-zinc-400">JUG</th>
-                  <th className="px-3 py-3 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CMP</th>
-                  <th className="px-3 py-3 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VIC</th>
-                  <th className="px-3 py-3 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VR</th>
-                  <th className="px-3 py-3 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">PR</th>
-                  <th className="px-4 py-3 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CRT</th>
+                  <th className="px-1 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">POS</th>
+                  <th className="px-2 py-2 text-left text-xs font-mono uppercase tracking-wider text-zinc-400">JUG</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CMP</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VIC</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VR</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">PR</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CRT</th>
                 </tr>
               </thead>
               <tbody>
                 {accumulatedStats.map((stats, index) => (
                   <tr key={stats.player.id} className="border-t border-zinc-800">
-                    <td className="px-1 py-4 text-center">
-                      <div className={`
-                        w-6 h-6 rounded-full flex items-center justify-center font-mono font-bold text-xs mx-auto
-                        ${index === 0 ? 'bg-yellow-500 text-black' : 
-                          index === 1 ? 'bg-zinc-400 text-black' :
-                          index === 2 ? 'bg-orange-600 text-white' :
-                          'bg-zinc-700 text-zinc-300'}
+                    <td className="px-1 py-3 text-center">
+                      <span className={`font-mono font-bold text-sm
+                        ${index === 0 ? 'text-yellow-500' : 
+                          index === 1 ? 'text-zinc-400' :
+                          index === 2 ? 'text-orange-600' :
+                          'text-zinc-300'}
                       `}>
                         {index + 1}
-                      </div>
+                      </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="text-white font-semibold text-base">
+                    <td className="px-2 py-3">
+                      <div className="text-white font-semibold text-sm">
                         {stats.player.name}
                       </div>
                     </td>
-                    <td className="px-3 py-4 text-center">
-                      <span className="font-mono font-bold text-white text-lg">
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-white text-base">
                         {stats.championships}
                       </span>
                     </td>
-                    <td className="px-3 py-4 text-center">
-                      <span className="font-mono font-bold text-white text-lg">
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-white text-base">
                         {stats.circuitVictories}
                       </span>
                     </td>
-                    <td className="px-3 py-4 text-center">
-                      <span className="font-mono font-bold text-white text-lg">
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-white text-base">
                         {stats.fastestLaps}
                       </span>
                     </td>
-                    <td className="px-3 py-4 text-center">
-                      <span className="font-mono font-bold text-white text-lg">
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-white text-base">
                         {stats.bestAverages}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-2 py-3 text-center">
                       <span className="text-zinc-300 font-medium text-sm">
                         {stats.favoriteCircuit || '-'}
                       </span>

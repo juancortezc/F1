@@ -6,6 +6,7 @@ import F1ParcFerme from './F1ParcFerme';
 import F1QuickRace from './F1QuickRace';
 import F1CustomChampionship from './F1CustomChampionship';
 import AdminView from './AdminView';
+import F1DangerZone from './F1DangerZone';
 
 interface F1AdminLayoutProps {
   currentUser: UserSession;
@@ -15,12 +16,13 @@ interface F1AdminLayoutProps {
   onLogout: () => void;
   onBack: () => void;
   onRecalculateScores?: () => Promise<void>;
+  onCancelGame?: () => Promise<void>;
   onNavigateToTab?: (tab: 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos') => void;
   onStartQuickRace?: (selectedPlayers: Player[], selectedCircuits: Circuit[]) => void;
   onStartCustomRace?: (settings: any) => void;
 }
 
-type AdminSection = 'menu' | 'pilotos' | 'circuitos' | 'quick' | 'custom';
+type AdminSection = 'menu' | 'admin' | 'peligro' | 'quick' | 'custom';
 
 const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
   currentUser,
@@ -30,6 +32,7 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
   onLogout,
   onBack,
   onRecalculateScores,
+  onCancelGame,
   onNavigateToTab,
   onStartQuickRace,
   onStartCustomRace
@@ -39,13 +42,12 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
 
   const handleNavigate = (destination: string) => {
     switch (destination) {
-      case 'pilotos':
-        setCurrentSection('pilotos');
+      case 'admin':
+        setCurrentSection('admin');
         setActiveAdminTab('players');
         break;
-      case 'circuitos':
-        setCurrentSection('circuitos');
-        setActiveAdminTab('circuits');
+      case 'peligro':
+        setCurrentSection('peligro');
         break;
       case 'quick':
         setCurrentSection('quick');
@@ -95,8 +97,7 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
           />
         );
       
-      case 'pilotos':
-      case 'circuitos':
+      case 'admin':
         return (
           <AdminView
             players={players}
@@ -105,6 +106,15 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
             onBack={handleBackToMenu}
             onRecalculateScores={onRecalculateScores}
             initialTab={activeAdminTab}
+          />
+        );
+      
+      case 'peligro':
+        return (
+          <F1DangerZone
+            onBack={handleBackToMenu}
+            onRecalculateScores={onRecalculateScores}
+            onCancelGame={onCancelGame}
           />
         );
       

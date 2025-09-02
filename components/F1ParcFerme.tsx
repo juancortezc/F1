@@ -63,26 +63,26 @@ const F1ParcFerme: React.FC<F1ParcFermeProps> = ({ onNavigate }) => {
       action: () => console.log('Torneo - Coming soon')
     },
     {
-      id: 'pilotos',
-      label: 'Pilotos',
+      id: 'admin',
+      label: 'Admin',
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
       disabled: false,
-      action: () => onNavigate('pilotos')
+      action: () => onNavigate('admin')
     },
     {
-      id: 'circuitos',
-      label: 'Circuitos',
+      id: 'peligro',
+      label: 'Peligro',
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
       ),
       disabled: false,
-      action: () => onNavigate('circuitos')
+      action: () => onNavigate('peligro')
     }
   ];
 
@@ -145,7 +145,7 @@ const F1ParcFerme: React.FC<F1ParcFermeProps> = ({ onNavigate }) => {
         {/* Coming Soon Notice */}
         <div className="mt-8 text-center">
           <p className="text-zinc-500 text-sm">
-            Solo <span className="text-white font-semibold">Pilotos</span> y <span className="text-white font-semibold">Circuitos</span> están disponibles actualmente
+            Solo <span className="text-white font-semibold">Admin</span> y <span className="text-white font-semibold">Peligro</span> están disponibles actualmente
           </p>
         </div>
       </div>

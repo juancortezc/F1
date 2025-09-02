@@ -137,16 +137,35 @@ const TimeInput: React.FC<{
   maxLength: number; 
   placeholder: string; 
   borderColorClass?: string;
-}> = ({ value, onChange, maxLength, placeholder, borderColorClass = 'border-zinc-700' }) => {
+  fieldType?: 'min' | 'sec' | 'ms';
+}> = ({ value, onChange, maxLength, placeholder, borderColorClass = 'border-zinc-700', fieldType }) => {
+    const handleChange = (inputValue: string) => {
+        // Only allow digits
+        if (!/^\d*$/.test(inputValue)) {
+            return;
+        }
+        
+        // Validate ranges based on field type
+        const numValue = parseInt(inputValue) || 0;
+        
+        if (fieldType === 'sec' && numValue > 59) {
+            onChange('59');
+            return;
+        }
+        
+        if (fieldType === 'ms' && numValue > 999) {
+            onChange('999');
+            return;
+        }
+        
+        onChange(inputValue);
+    };
+
     return (
         <input
             type="tel"
             value={value}
-            onChange={e => {
-                if (/^\d*$/.test(e.target.value)) {
-                    onChange(e.target.value);
-                }
-            }}
+            onChange={e => handleChange(e.target.value)}
             maxLength={maxLength}
             placeholder={placeholder}
             className={`w-full text-center text-2xl font-mono p-3 rounded-md border-2 transition-colors touch-target bg-zinc-900 text-zinc-100 ${borderColorClass} focus:border-red-500`}
@@ -376,8 +395,25 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
   }, [gameState, currentPlayerId, currentCircuit?.id, currentTurn, gameId, mutate]);
 
   const handleLapTimeChange = (index: number, field: keyof LapTimeType, value: string) => {
+    // Validate input values
+    let validatedValue = value;
+    
+    if (field === 'sec') {
+      // Seconds must be between 0-59
+      const numValue = parseInt(value) || 0;
+      if (numValue > 59) {
+        validatedValue = '59';
+      }
+    } else if (field === 'ms') {
+      // Milliseconds must be between 0-999
+      const numValue = parseInt(value) || 0;
+      if (numValue > 999) {
+        validatedValue = '999';
+      }
+    }
+    
     const newLapTimes = [...lapTimes];
-    newLapTimes[index] = { ...newLapTimes[index], [field]: value };
+    newLapTimes[index] = { ...newLapTimes[index], [field]: validatedValue };
     setLapTimes(newLapTimes);
     
     // Save to localStorage immediately for form persistence
@@ -706,6 +742,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
                     maxLength={1}
                     placeholder="0"
                     borderColorClass={borderColor}
+                    fieldType="min"
                   />
                   <TimeInput
                     value={lapTime.sec}
@@ -713,6 +750,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
                     maxLength={2}
                     placeholder="00"
                     borderColorClass={borderColor}
+                    fieldType="sec"
                   />
                   <TimeInput
                     value={lapTime.ms}
@@ -720,6 +758,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
                     maxLength={3}
                     placeholder="000"
                     borderColorClass={borderColor}
+                    fieldType="ms"
                   />
                 </div>
               );
@@ -728,6 +767,9 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
           
           <div className="text-center mt-3">
             <span className="text-xs text-zinc-500">M : SS . mmm</span>
+            <div className="text-xs text-zinc-600 mt-1">
+              SS ≤ 59 • mmm ≤ 999
+            </div>
           </div>
         </div>
 

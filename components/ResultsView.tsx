@@ -13,12 +13,12 @@ interface ResultsViewProps {
 }
 
 const formatTime = (ms: number | null | undefined): string => {
-    if (ms === null || ms === undefined) return '-:--.---';
+    if (ms === null || ms === undefined || ms === Infinity || !isFinite(ms)) return '-:--.---';
     const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.floor(totalSeconds % 60);
-    const milliseconds = ms % 1000;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+    const milliseconds = Math.floor(ms % 1000); // Ensure it's an integer
+    return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0').substring(0, 3)}`; // Ensure max 3 digits
 };
 
 // F1 Podium Cards Component - Similar to F1HallOfFame but with current championship points

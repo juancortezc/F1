@@ -78,8 +78,8 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
   const canStart = selectedPlayers.length >= 2 && selectedCircuits.length >= 1;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#000000' }}>
-      <div className="max-w-6xl mx-auto px-4 pt-4 pb-20">
+    <div className="h-screen overflow-y-auto" style={{ backgroundColor: '#000000' }}>
+      <div className="max-w-6xl mx-auto px-4 pt-4 pb-32">
         {/* Title and Back Button */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">QUICK RACE</h1>
@@ -87,7 +87,7 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
             onClick={onBack}
             className="bg-zinc-600 hover:bg-zinc-500 text-white font-semibold px-5 py-2 rounded-md text-sm transition-colors"
           >
-            REGRESAR
+            PARC FERMÉ
           </button>
         </div>
 
@@ -211,7 +211,7 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
         </div>
 
         {/* Start Button */}
-        <div className="mt-6">
+        <div className="mt-8 mb-8">
           <button
             onClick={() => {
               if (canStart) {

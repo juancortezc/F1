@@ -1116,6 +1116,7 @@ function App() {
               onLogout={handleLogout}
               onBack={handleBackToLive}
               onRecalculateScores={handleRecalculateScores}
+              onCancelGame={handleCancelGame}
               onNavigateToTab={(tab) => {
                 setGamePhase(activeGame ? 'race' : 'results');
                 // Map F1 tabs to internal tabs

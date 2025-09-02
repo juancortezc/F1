@@ -30,12 +30,6 @@ const GuestIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-// Refresh Icon for recalculation button
-const RefreshIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z"/>
-    </svg>
-);
 
 // Trophy Icon for tournaments tab
 const TrophyIcon = ({ className }: { className?: string }) => (
@@ -352,6 +346,18 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
         <div className="min-h-screen bg-black">
 
             <div className="max-w-6xl mx-auto p-4 space-y-6">
+                {/* Header with Back Button */}
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-bold text-white tracking-wider">ADMINISTRACIÓN</h1>
+                    <button
+                        onClick={onBack}
+                        className="flex items-center gap-2 bg-zinc-600 hover:bg-zinc-500 text-white font-semibold px-4 py-2 rounded-md text-sm transition-colors"
+                    >
+                        <ArrowLeftIcon className="w-4 h-4" />
+                        <span>PARC FERMÉ</span>
+                    </button>
+                </div>
+
                 {/* Luxury Tab Navigation - Mobile First */}
                 <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
                     <div className="flex overflow-x-auto scrollbar-hide">
