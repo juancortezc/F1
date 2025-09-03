@@ -187,7 +187,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
   } = gameState || {};
 
   if (!gameState || !settings || !circuits || !playerOrder || !players) {
-    return <div className="min-h-screen bg-f1-black flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1A1A1A' }}>
       <LoadingSpinner size="lg" />
     </div>;
   }
@@ -205,7 +205,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
   };
 
   if (!currentCircuit || !currentPlayerId || !currentPlayer) {
-    return <div className="min-h-screen bg-f1-black flex items-center justify-center text-f1-red">
+    return <div className="min-h-screen flex items-center justify-center text-red-500" style={{ backgroundColor: '#1A1A1A' }}>
       Error: Datos incompletos
     </div>;
   }
@@ -375,8 +375,8 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
         // Remove from pending saves if it was there
         removeFromPendingSaves(gameId, currentPlayerId, currentCircuit.id, currentTurn, lapIndex + 1);
         
-        // Invalidate live lap times cache to refresh LIVE page immediately
-        mutate(`/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${currentTurn}`);
+        // Invalidate live lap times cache to refresh LIVE page immediately - FIXED: Remove turnNumber to match LivePage API call
+        mutate(`/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}`);
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -590,11 +590,11 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
   const nextPlayer = players.find(p => p.id === playerOrder[nextPlayerIndex]);
 
   return (
-    <div className="min-h-screen bg-black p-3">
+    <div className="min-h-screen p-3" style={{ backgroundColor: '#1A1A1A' }}>
       <div className="max-w-md mx-auto space-y-4">
         
         {/* Custom Header inspired by header.png */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+        <div className="bg-zinc-800/50 border border-zinc-700 rounded-md p-4">
           {/* Circuit Name and Current Player */}
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-bold text-red-500">{currentCircuit.name}</h1>
@@ -709,7 +709,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
 
 
         {/* REGISTRO - Compact Time Input Card */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-3">
+        <div className="bg-zinc-800/50 border border-zinc-700 rounded-md p-3">
           <div className="mb-3">
             <h2 className="text-lg font-bold text-zinc-100 text-center">Registro</h2>
           </div>
@@ -775,7 +775,7 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
 
         {/* Current Average */}
         {currentAverage !== null && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-3">
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-md p-3">
             <div className="flex justify-between items-center">
               <span className="text-lg text-zinc-100 font-semibold">Promedio</span>
               <span className={`text-xl font-mono font-bold ${

@@ -2,6 +2,7 @@ import React from 'react';
 import useSWR from 'swr';
 import { GameState, Player, Circuit } from '../types';
 import LoadingSpinner from './LoadingSpinner';
+import { fetcher } from '../lib/fetcher';
 
 interface LivePageProps {
   gameState: GameState;
@@ -53,12 +54,16 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
   // Only fetch live data if we have valid game state and circuit
   const shouldFetch = !!(gameState && currentCircuit?.id && gameState.currentTurn);
   
-  // Fetch live lap times with simplified polling
+  // Fetch live lap times with simplified polling - FIXED: Remove turnNumber to get ALL circuit data
   const { data: liveData, error: liveError } = useSWR(
-    shouldFetch ? `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}&turnNumber=${gameState.currentTurn}` : null,
+    shouldFetch ? `/api/lap-times/live?gameId=${gameId}&circuitId=${currentCircuit.id}` : null,
+    fetcher,
     {
       refreshInterval: 3000,
       revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      errorRetryCount: 3,
+      errorRetryInterval: 1000,
       onError: (error) => {
         console.warn('Live data fetch error:', error);
       }
@@ -96,7 +101,7 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
   const currentPlayerLaps = getCurrentPlayerLaps();
 
-  // Calculate session bests from live data
+  // Calculate session bests from live data - FIXED: Now calculates per circuit, not per turn
   const getSessionBests = () => {
     if (!liveData?.data?.liveLapTimes || !currentCircuit?.id) return { bestLap: null, bestAverage: null };
 
@@ -106,28 +111,35 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
     const bestLap = allLapTimes.length > 0 ? Math.min(...allLapTimes) : null;
 
-    // Calculate best average from completed turns
-    const playerAverages = liveData.data.liveLapTimes
+    // Calculate best average from completed turns - FIXED: Group by playerId only, not by turn
+    const playerAllLaps = liveData.data.liveLapTimes
       .filter((lap: any) => lap.circuitId === currentCircuit.id && lap.timeMs > 0)
-      .reduce((acc: Record<string, number[]>, lap: any) => {
-        const key = `${lap.playerId}-${lap.turnNumber}`;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(lap.timeMs);
+      .reduce((acc: Record<string, Record<number, number[]>>, lap: any) => {
+        if (!acc[lap.playerId]) acc[lap.playerId] = {};
+        if (!acc[lap.playerId][lap.turnNumber]) acc[lap.playerId][lap.turnNumber] = [];
+        acc[lap.playerId][lap.turnNumber].push(lap.timeMs);
         return acc;
       }, {});
 
-    const averages = Object.values(playerAverages)
-      .map((times) => {
-        const timesArray = times as number[];
-        if (timesArray.length < 3) return null;
-        return timesArray.reduce((sum, time) => sum + time, 0) / timesArray.length;
-      })
-      .filter((avg): avg is number => avg !== null);
+    // Calculate best average per turn for each player, then find the overall best
+    const allPlayerAverages: number[] = [];
+    
+    Object.values(playerAllLaps).forEach(playerTurns => {
+      Object.values(playerTurns).forEach(turnTimes => {
+        if (turnTimes.length >= 3) { // Only count completed turns (3+ laps)
+          const turnAverage = turnTimes.reduce((sum, time) => sum + time, 0) / turnTimes.length;
+          allPlayerAverages.push(turnAverage);
+        }
+      });
+    });
 
-    const bestAverage = averages.length > 0 ? Math.min(...averages) : null;
+    const bestAverage = allPlayerAverages.length > 0 ? Math.min(...allPlayerAverages) : null;
 
     return { bestLap, bestAverage };
   };
+
+  // Calculate session bests first
+  const sessionBests = getSessionBests();
 
   // Get player's best lap time in this session for this circuit
   const getPlayerSessionBestLap = (playerId: string) => {
@@ -143,40 +155,40 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
 
   // Determine lap box color based on performance vs records
   const getLapBoxColor = (lapTime: number, lapIndex: number) => {
-    if (!currentPlayer || !currentCircuit) return 'bg-white text-black';
+    if (!currentPlayer || !currentCircuit || lapTime <= 0) {
+      return 'bg-zinc-600 text-white';
+    }
     
     const playerSessionBest = getPlayerSessionBestLap(currentPlayer.id);
     const sessionBestLap = sessionBests.bestLap;
     const historicalBest = currentCircuit.historicalBestLap;
     
-    // 🟣 Púrpura: Mejoró récord histórico del circuito
-    if (historicalBest && lapTime <= historicalBest) {
+    // 🟣 Púrpura: NUEVO récord histórico del circuito (debe ser menor que el actual)
+    if (historicalBest && historicalBest > 0 && lapTime < historicalBest) {
       return 'bg-purple-500 text-white';
     }
     
-    // 🟢 Verde: Mejoró el mejor tiempo de la sesión del circuito
-    if (sessionBestLap && lapTime < sessionBestLap) {
+    // 🟢 Verde: NUEVO récord de sesión del circuito (debe ser menor que el actual)  
+    if (sessionBestLap && sessionBestLap > 0 && lapTime < sessionBestLap) {
       return 'bg-green-500 text-white';
     }
     
-    // 🟠 Naranja: Mejoró su mejor tiempo en la sesión del circuito
-    if (playerSessionBest && lapTime < playerSessionBest) {
+    // 🟠 Naranja: Mejoró su mejor tiempo personal en la sesión
+    if (playerSessionBest && playerSessionBest > 0 && lapTime < playerSessionBest) {
       return 'bg-orange-500 text-white';
     }
     
-    // 🔴 Rojo: No mejoró su mejor tiempo de la sesión
-    return 'bg-red-500 text-white';
+    // ⚪ Gris: Tiempo normal sin mejoras
+    return 'bg-zinc-500 text-white';
   };
 
-  const sessionBests = getSessionBests();
-
-  // Get holders of session records
+  // Get holders of session records - FIXED: Now tracks across all turns for circuit
   const getSessionRecordHolders = () => {
     if (!liveData?.data?.liveLapTimes || !currentCircuit?.id) {
       return { vrHolder: null, prHolder: null };
     }
 
-    // Find VR holder (best single lap)
+    // Find VR holder (best single lap) - This was already correct
     let vrHolder = null;
     let bestLapTime = Infinity;
     
@@ -189,26 +201,35 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
         }
       });
 
-    // Find PR holder (best average)
+    // Find PR holder (best average) - FIXED: Calculate best average across all turns per player
     let prHolder = null;
     let bestAverage = Infinity;
     
-    const playerAverages = liveData.data.liveLapTimes
+    const playerAllLaps = liveData.data.liveLapTimes
       .filter((lap: any) => lap.circuitId === currentCircuit.id && lap.timeMs > 0)
-      .reduce((acc: Record<string, number[]>, lap: any) => {
-        const key = `${lap.playerId}-${lap.turnNumber}`;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(lap.timeMs);
+      .reduce((acc: Record<string, Record<number, number[]>>, lap: any) => {
+        if (!acc[lap.playerId]) acc[lap.playerId] = {};
+        if (!acc[lap.playerId][lap.turnNumber]) acc[lap.playerId][lap.turnNumber] = [];
+        acc[lap.playerId][lap.turnNumber].push(lap.timeMs);
         return acc;
       }, {});
 
-    Object.entries(playerAverages).forEach(([key, times]) => {
-      const validTimes = (times as number[]).filter(t => t > 0);
-      if (validTimes.length >= 3) {
-        const average = validTimes.reduce((sum, time) => sum + time, 0) / validTimes.length;
-        if (average < bestAverage) {
-          bestAverage = average;
-          prHolder = key.split('-')[0]; // Extract playerId from key
+    // For each player, find their best turn average, then compare across players
+    Object.entries(playerAllLaps).forEach(([playerId, playerTurns]) => {
+      const playerTurnAverages: number[] = [];
+      
+      Object.values(playerTurns).forEach(turnTimes => {
+        if (turnTimes.length >= 3) { // Only count completed turns
+          const turnAverage = turnTimes.reduce((sum, time) => sum + time, 0) / turnTimes.length;
+          playerTurnAverages.push(turnAverage);
+        }
+      });
+      
+      if (playerTurnAverages.length > 0) {
+        const playerBestAverage = Math.min(...playerTurnAverages);
+        if (playerBestAverage < bestAverage) {
+          bestAverage = playerBestAverage;
+          prHolder = playerId;
         }
       }
     });
@@ -267,10 +288,11 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       positions: [] as number[]
     }));
 
-    // Calculate positions only for completed turns (not current ongoing turn)
-    const completedTurns = Math.max(0, gameState.currentTurn - 1);
+    // Calculate positions for all turns up to current turn
+    // Show T1 when we're on T2, T1+T2 when we're on T3, etc.
+    const maxTurnsToShow = Math.min(3, gameState.currentTurn); // Show max 3 turns (T1, T2, T3)
     
-    for (let turn = 1; turn <= completedTurns; turn++) {
+    for (let turn = 1; turn < gameState.currentTurn; turn++) { // Exclude the currently active turn
       const turnData = liveData.data.liveLapTimes
         .filter((lap: any) => lap.circuitId === currentCircuit.id && lap.turnNumber === turn)
         .reduce((acc: Record<string, number[]>, lap: any) => {
@@ -370,10 +392,14 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
               currentPlayerLaps.map((lap: any, index: number) => (
                 <div
                   key={index}
-                  className={`h-3 w-8 rounded ${
+                  className={`h-8 w-16 rounded flex items-center justify-center ${
                     getLapBoxColor(lap.timeMs, index)
                   }`}
+                  title={`Vuelta ${index + 1}: ${formatTime(lap.timeMs)}`}
                 >
+                  <span className="text-white text-xs font-mono font-bold">
+                    {formatTime(lap.timeMs).replace(/^0:/, '')}
+                  </span>
                 </div>
               ))
             )}

@@ -7,6 +7,8 @@ import TimesPage from './TimesPage';
 import LivePage from './LivePage';
 import AdminView from './AdminView';
 import ResultsView from './ResultsView';
+import RaceView from './RaceView';
+import HistoricalTimesView from './HistoricalTimesView';
 
 interface F1LayoutProps {
   currentUser: UserSession;
@@ -20,6 +22,9 @@ interface F1LayoutProps {
   onCancelGame?: () => void;
   onRecalculateScores?: () => Promise<void>;
   onNavigateToHub?: () => void;
+  onTurnComplete?: (playerId: string, lapTimes: number[], newControllerId?: string) => void;
+  onNextCircuit?: () => void;
+  onGameEnd?: () => void;
 }
 
 type F1Tab = 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos';
@@ -35,7 +40,10 @@ const F1Layout: React.FC<F1LayoutProps> = ({
   onLogout,
   onCancelGame,
   onRecalculateScores,
-  onNavigateToHub
+  onNavigateToHub,
+  onTurnComplete,
+  onNextCircuit,
+  onGameEnd
 }) => {
   const [activeTab, setActiveTab] = useState<F1Tab>('hall-of-fame');
 
@@ -76,33 +84,39 @@ const F1Layout: React.FC<F1LayoutProps> = ({
 
     switch (activeTab) {
       case 'tiempos-historicos':
-        // Use ResultsView for historical results 
-        const historicalGameState = {
-          settings: { name: 'Resultados', circuits: [], players: [] },
-          currentCircuitIndex: 0,
-          playerStats: {},
-          circuitResults: []
-        } as any;
-        
+        // Use HistoricalTimesView for organized historical lap times
         return (
-          <ResultsView
-            gameState={activeGame?.state || historicalGameState}
+          <HistoricalTimesView
             players={players}
             circuits={circuits}
             gameHistory={gameHistory || []}
             activeGame={activeGame}
-            onNewGame={() => {/* No action needed for navigation view */}}
           />
         );
         
       case 'tiempos':
-        return (
-          <TimesPage 
-            players={players} 
-            circuits={circuits} 
-            currentGameId={activeGame?.id}
-          />
-        );
+        // Show RaceView when there's an active game, TimesPage otherwise
+        if (activeGame && activeGame.state && onTurnComplete && onNextCircuit && onGameEnd) {
+          return (
+            <RaceView
+              gameState={activeGame.state}
+              players={players}
+              gameId={activeGame.id}
+              onTurnComplete={onTurnComplete}
+              onNextCircuit={onNextCircuit}
+              onGameEnd={onGameEnd}
+              currentUser={{ userId: currentUser.userId, name: currentUser.name }}
+            />
+          );
+        } else {
+          return (
+            <TimesPage 
+              players={players} 
+              circuits={circuits} 
+              currentGameId={activeGame?.id}
+            />
+          );
+        }
         
       case 'live':
         if (activeGame && activeGame.state) {

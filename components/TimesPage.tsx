@@ -175,20 +175,20 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
   }, [filteredLapTimes, getPlayerName, getCircuitName]);
 
   return (
-    <div className="min-h-screen bg-f1-pro-carbon">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="h-screen overflow-y-auto" style={{ backgroundColor: '#1A1A1A' }}>
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-32">
         
         {/* Modern Header */}
         <div className="flex flex-col space-y-4 mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-f1-large font-bold text-f1-pro-platinum mb-2">Performance Analytics</h1>
-              <p className="text-f1-small text-f1-pro-silver">Detailed lap times and turn analysis</p>
+              <h1 className="text-3xl font-bold text-white mb-2">REGISTRO DE TIEMPOS</h1>
+              <p className="text-sm text-zinc-400">Análisis detallado de vueltas y promedios por turno</p>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
-                className="p-2 bg-f1-pro-titanium hover:bg-f1-pro-steel rounded-f1-md text-f1-pro-silver transition-colors"
+                className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-md text-zinc-400 transition-colors"
               >
                 <ChartBarIcon className="w-5 h-5" />
               </button>
@@ -199,29 +199,29 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Bar */}
             <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-f1-pro-aluminum" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-500" />
               <input
                 type="text"
                 placeholder="Search by player, circuit, or turn..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-f1-pro-chrome border border-f1-pro-steel rounded-f1-lg text-f1-base text-f1-pro-platinum placeholder-f1-pro-aluminum focus:border-f1-pro-crimson focus:outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:border-red-600 focus:outline-none transition-colors"
               />
             </div>
             
             {/* Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-3 rounded-f1-lg font-medium transition-colors flex items-center space-x-2 min-w-[120px] justify-center ${
+              className={`px-4 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2 min-w-[120px] justify-center ${
                 showFilters 
-                  ? 'bg-f1-pro-crimson text-white' 
-                  : 'bg-f1-pro-titanium hover:bg-f1-pro-steel text-f1-pro-silver'
+                  ? 'bg-red-600 text-white' 
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
               }`}
             >
               <FunnelIcon className="w-5 h-5" />
-              <span className="text-f1-small font-medium">Filters</span>
+              <span className="text-sm font-medium">Filtros</span>
               {Object.values(activeFilters).filter(v => v !== 'all').length > 0 && (
-                <span className="bg-f1-pro-gold text-black text-f1-micro px-2 py-0.5 rounded-full font-bold">
+                <span className="bg-yellow-400 text-black text-xs px-2 py-0.5 rounded-full font-bold">
                   {Object.values(activeFilters).filter(v => v !== 'all').length}
                 </span>
               )}
@@ -230,25 +230,25 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
 
           {/* Collapsible Advanced Filters */}
           {showFilters && (
-            <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel animate-f1-fade-in">
+            <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-f1-tiny font-medium text-f1-pro-silver mb-2">Game</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-2">Game</label>
                   <select 
                     value={activeFilters.gameId} 
                     onChange={(e) => setActiveFilters({...activeFilters, gameId: e.target.value})}
-                    className="w-full bg-f1-pro-titanium border border-f1-pro-steel rounded-f1-md px-3 py-2 text-f1-small text-f1-pro-platinum focus:border-f1-pro-crimson focus:outline-none"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none"
                   >
                     <option value="all">All Games</option>
                     {currentGameId && <option value={currentGameId}>Current Game</option>}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-f1-tiny font-medium text-f1-pro-silver mb-2">Circuit</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-2">Circuit</label>
                   <select 
                     value={activeFilters.circuitId} 
                     onChange={(e) => setActiveFilters({...activeFilters, circuitId: e.target.value})}
-                    className="w-full bg-f1-pro-titanium border border-f1-pro-steel rounded-f1-md px-3 py-2 text-f1-small text-f1-pro-platinum focus:border-f1-pro-crimson focus:outline-none"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none"
                   >
                     <option value="all">All Circuits</option>
                     {circuits?.map(circuit => (
@@ -259,11 +259,11 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
                   </select>
                 </div>
                 <div>
-                  <label className="block text-f1-tiny font-medium text-f1-pro-silver mb-2">Player</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-2">Player</label>
                   <select 
                     value={activeFilters.playerId} 
                     onChange={(e) => setActiveFilters({...activeFilters, playerId: e.target.value})}
-                    className="w-full bg-f1-pro-titanium border border-f1-pro-steel rounded-f1-md px-3 py-2 text-f1-small text-f1-pro-platinum focus:border-f1-pro-crimson focus:outline-none"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none"
                   >
                     <option value="all">All Players</option>
                     {players?.map(player => (
@@ -275,10 +275,10 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
                 </div>
               </div>
               {Object.values(activeFilters).some(v => v !== 'all') && (
-                <div className="mt-3 pt-3 border-t border-f1-pro-steel">
+                <div className="mt-3 pt-3 border-t border-zinc-700">
                   <button
                     onClick={() => setActiveFilters({ gameId: 'all', circuitId: 'all', playerId: 'all' })}
-                    className="text-f1-tiny text-f1-pro-aluminum hover:text-f1-pro-silver transition-colors"
+                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                   >
                     Clear all filters
                   </button>
@@ -293,14 +293,14 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
         {isLoading && (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="bg-f1-pro-chrome rounded-f1-lg p-4 animate-pulse">
+              <div key={i} className="bg-zinc-800/50 rounded-lg p-4 animate-pulse">
                 <div className="flex items-center space-x-4">
-                  <div className="h-12 w-12 bg-f1-pro-steel rounded-f1-md"></div>
+                  <div className="h-12 w-12 bg-zinc-700 rounded-md"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-f1-pro-steel rounded w-1/4"></div>
-                    <div className="h-3 bg-f1-pro-titanium rounded w-1/2"></div>
+                    <div className="h-4 bg-zinc-700 rounded w-1/4"></div>
+                    <div className="h-3 bg-zinc-600 rounded w-1/2"></div>
                   </div>
-                  <div className="h-8 w-20 bg-f1-pro-steel rounded-f1-md"></div>
+                  <div className="h-8 w-20 bg-zinc-700 rounded-md"></div>
                 </div>
               </div>
             ))}
@@ -309,9 +309,9 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
 
         {/* Error State */}
         {error && (
-          <div className="bg-f1-pro-chrome border border-f1-pro-error rounded-f1-lg p-6 text-center">
-            <div className="text-f1-pro-error text-f1-medium font-medium mb-2">Unable to load lap times</div>
-            <div className="text-f1-pro-aluminum text-f1-small">Please check your connection and try again</div>
+          <div className="bg-zinc-800/50 border border-red-600 rounded-lg p-6 text-center">
+            <div className="text-red-400 text-base font-medium mb-2">Unable to load lap times</div>
+            <div className="text-zinc-400 text-sm">Please check your connection and try again</div>
           </div>
         )}
 
@@ -321,20 +321,20 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
             {/* Quick Stats Bar */}
             {statistics && filteredLapTimes.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel">
-                  <div className="text-f1-tiny font-medium text-f1-pro-silver mb-1">FASTEST LAP</div>
-                  <div className="text-f1-medium font-bold text-f1-pro-gold font-mono">{formatTimeMs(statistics.fastestLap)}</div>
-                  <div className="text-f1-tiny text-f1-pro-aluminum">{statistics.fastestLapPlayer}</div>
+                <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
+                  <div className="text-xs font-medium text-zinc-400 mb-1">FASTEST LAP</div>
+                  <div className="text-base font-bold text-amber-400 font-mono">{formatTimeMs(statistics.fastestLap)}</div>
+                  <div className="text-xs text-zinc-500">{statistics.fastestLapPlayer}</div>
                 </div>
-                <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel">
-                  <div className="text-f1-tiny font-medium text-f1-pro-silver mb-1">AVERAGE</div>
-                  <div className="text-f1-medium font-bold text-f1-pro-platinum font-mono">{formatTimeMs(Math.round(statistics.averageTime))}</div>
-                  <div className="text-f1-tiny text-f1-pro-aluminum">{statistics.totalLaps} laps recorded</div>
+                <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
+                  <div className="text-xs font-medium text-zinc-400 mb-1">AVERAGE</div>
+                  <div className="text-base font-bold text-white font-mono">{formatTimeMs(Math.round(statistics.averageTime))}</div>
+                  <div className="text-xs text-zinc-500">{statistics.totalLaps} laps recorded</div>
                 </div>
-                <div className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel">
-                  <div className="text-f1-tiny font-medium text-f1-pro-silver mb-1">RESULTS</div>
-                  <div className="text-f1-medium font-bold text-f1-pro-platinum">{filteredLapTimes.length}</div>
-                  <div className="text-f1-tiny text-f1-pro-aluminum">matching entries</div>
+                <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
+                  <div className="text-xs font-medium text-zinc-400 mb-1">RESULTS</div>
+                  <div className="text-base font-bold text-white">{filteredLapTimes.length}</div>
+                  <div className="text-xs text-zinc-500">matching entries</div>
                 </div>
               </div>
             )}
@@ -343,40 +343,40 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
             {viewMode === 'cards' && (
               <div className="space-y-3">
                 {filteredLapTimes.length === 0 ? (
-                  <div className="bg-f1-pro-chrome rounded-f1-lg p-8 text-center border border-f1-pro-steel">
-                    <div className="text-f1-medium text-f1-pro-silver mb-2">No lap times found</div>
-                    <div className="text-f1-small text-f1-pro-aluminum">Try adjusting your search or filters</div>
+                  <div className="bg-zinc-800/50 rounded-lg p-8 text-center border border-zinc-700">
+                    <div className="text-base text-zinc-300 mb-2">No lap times found</div>
+                    <div className="text-sm text-zinc-500">Try adjusting your search or filters</div>
                   </div>
                 ) : (
                   filteredLapTimes.map((lap) => (
-                    <div key={lap.id} className="bg-f1-pro-chrome rounded-f1-lg p-4 border border-f1-pro-steel hover:border-f1-pro-aluminum transition-colors animate-f1-fade-in">
+                    <div key={lap.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700 hover:border-zinc-500 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-3 mb-2">
-                            <div className="text-f1-medium font-bold text-f1-pro-platinum truncate">
+                            <div className="text-base font-bold text-white truncate">
                               {getPlayerName(lap.playerId)}
                             </div>
-                            <div className="text-f1-tiny bg-f1-pro-steel text-f1-pro-silver px-2 py-1 rounded-f1-sm font-mono">
+                            <div className="text-xs bg-zinc-700 text-zinc-300 px-2 py-1 rounded-sm font-mono">
                               T{lap.turnNumber}
                             </div>
-                            <div className="text-f1-tiny bg-f1-pro-titanium text-f1-pro-aluminum px-2 py-1 rounded-f1-sm font-mono">
+                            <div className="text-xs bg-zinc-600 text-zinc-400 px-2 py-1 rounded-sm font-mono">
                               L{lap.lapNumber}
                             </div>
                           </div>
-                          <div className="text-f1-small text-f1-pro-silver mb-1">
+                          <div className="text-sm text-zinc-300 mb-1">
                             {lap.circuit?.name || getCircuitName(lap.circuitId)}
                           </div>
                           {lap.turnAverage && (
-                            <div className="text-f1-tiny text-f1-pro-aluminum font-mono">
+                            <div className="text-xs text-zinc-500 font-mono">
                               Turn avg: {formatTimeMs(Math.round(lap.turnAverage))}
                             </div>
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="text-f1-large font-bold text-f1-pro-gold font-mono">
+                          <div className="text-lg font-bold text-amber-400 font-mono">
                             {formatTimeMs(lap.timeMs)}
                           </div>
-                          <div className="text-f1-micro text-f1-pro-aluminum">
+                          <div className="text-xs text-zinc-500">
                             {formatDateTime(lap.createdAt)}
                           </div>
                         </div>
@@ -389,11 +389,11 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
 
             {/* Compact Table View (Desktop) */}
             {viewMode === 'table' && (
-              <div className="bg-f1-pro-chrome rounded-f1-lg border border-f1-pro-steel overflow-hidden">
+              <div className="bg-zinc-800/50 rounded-lg border border-zinc-700 overflow-hidden">
                 <div className="overflow-x-auto max-h-[70vh]">
                   <table className="w-full">
-                    <thead className="bg-f1-pro-titanium sticky top-0 z-10">
-                      <tr className="text-f1-tiny font-medium text-f1-pro-silver uppercase tracking-wider">
+                    <thead className="bg-zinc-900 sticky top-0 z-10">
+                      <tr className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
                         <th className="px-4 py-3 text-left">Player</th>
                         <th className="px-4 py-3 text-left">Circuit</th>
                         <th className="px-4 py-3 text-center">Turn</th>
@@ -402,32 +402,32 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
                         <th className="px-4 py-3 text-center">Turn Avg</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-f1-pro-steel">
+                    <tbody className="divide-y divide-zinc-700">
                       {filteredLapTimes.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-f1-pro-silver">
+                          <td colSpan={6} className="px-4 py-8 text-center text-zinc-300">
                             No lap times found matching your criteria
                           </td>
                         </tr>
                       ) : (
                         filteredLapTimes.map((lap) => (
-                          <tr key={lap.id} className="hover:bg-f1-pro-steel/30 transition-colors">
-                            <td className="px-4 py-3 text-f1-small font-medium text-f1-pro-platinum">
+                          <tr key={lap.id} className="hover:bg-zinc-700/30 transition-colors">
+                            <td className="px-4 py-3 text-sm font-medium text-white">
                               {getPlayerName(lap.playerId)}
                             </td>
-                            <td className="px-4 py-3 text-f1-small text-f1-pro-silver">
+                            <td className="px-4 py-3 text-sm text-zinc-300">
                               {lap.circuit?.name || getCircuitName(lap.circuitId)}
                             </td>
-                            <td className="px-4 py-3 text-center text-f1-small font-mono text-f1-pro-aluminum">
+                            <td className="px-4 py-3 text-center text-sm font-mono text-zinc-500">
                               {lap.turnNumber}
                             </td>
-                            <td className="px-4 py-3 text-center text-f1-small font-mono text-f1-pro-aluminum">
+                            <td className="px-4 py-3 text-center text-sm font-mono text-zinc-500">
                               {lap.lapNumber}
                             </td>
-                            <td className="px-4 py-3 text-center text-f1-small font-mono font-bold text-f1-pro-gold">
+                            <td className="px-4 py-3 text-center text-sm font-mono font-bold text-amber-400">
                               {formatTimeMs(lap.timeMs)}
                             </td>
-                            <td className="px-4 py-3 text-center text-f1-small font-mono text-f1-pro-silver">
+                            <td className="px-4 py-3 text-center text-sm font-mono text-zinc-300">
                               {lap.turnAverage ? formatTimeMs(Math.round(lap.turnAverage)) : '-'}
                             </td>
                           </tr>
@@ -444,11 +444,11 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
         {/* Modern Footer Info */}
         {!isLoading && !error && filteredLapTimes.length > 0 && (
           <div className="mt-8 text-center">
-            <div className="text-f1-small text-f1-pro-silver">
-              Displaying <span className="font-bold text-f1-pro-platinum">{filteredLapTimes.length}</span> lap times
+            <div className="text-sm text-zinc-300">
+              Displaying <span className="font-bold text-white">{filteredLapTimes.length}</span> lap times
             </div>
             {searchQuery && (
-              <div className="text-f1-tiny text-f1-pro-aluminum mt-1">
+              <div className="text-xs text-zinc-500 mt-1">
                 Search results for "<span className="font-medium">{searchQuery}</span>"
               </div>
             )}

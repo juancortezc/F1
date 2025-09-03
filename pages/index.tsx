@@ -1239,6 +1239,9 @@ function App() {
               onCancelGame={handleCancelGame}
               onRecalculateScores={handleRecalculateScores}
               onNavigateToHub={() => setGamePhase('hub')}
+              onTurnComplete={handleTurnComplete}
+              onNextCircuit={handleNextCircuit}
+              onGameEnd={handleGameEnd}
             />
           );
         }
