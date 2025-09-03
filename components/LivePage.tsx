@@ -124,10 +124,12 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
     // Calculate best average per turn for each player, then find the overall best
     const allPlayerAverages: number[] = [];
     
-    Object.values(playerAllLaps).forEach(playerTurns => {
-      Object.values(playerTurns).forEach(turnTimes => {
+    Object.keys(playerAllLaps).forEach(playerId => {
+      const playerTurns = playerAllLaps[playerId];
+      Object.keys(playerTurns).forEach(turnKey => {
+        const turnTimes = playerTurns[parseInt(turnKey)];
         if (turnTimes.length >= 3) { // Only count completed turns (3+ laps)
-          const turnAverage = turnTimes.reduce((sum, time) => sum + time, 0) / turnTimes.length;
+          const turnAverage = turnTimes.reduce((sum: number, time: number) => sum + time, 0) / turnTimes.length;
           allPlayerAverages.push(turnAverage);
         }
       });
@@ -215,12 +217,14 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
       }, {});
 
     // For each player, find their best turn average, then compare across players
-    Object.entries(playerAllLaps).forEach(([playerId, playerTurns]) => {
+    Object.keys(playerAllLaps).forEach(playerId => {
+      const playerTurns = playerAllLaps[playerId];
       const playerTurnAverages: number[] = [];
       
-      Object.values(playerTurns).forEach(turnTimes => {
+      Object.keys(playerTurns).forEach(turnKey => {
+        const turnTimes = playerTurns[parseInt(turnKey)];
         if (turnTimes.length >= 3) { // Only count completed turns
-          const turnAverage = turnTimes.reduce((sum, time) => sum + time, 0) / turnTimes.length;
+          const turnAverage = turnTimes.reduce((sum: number, time: number) => sum + time, 0) / turnTimes.length;
           playerTurnAverages.push(turnAverage);
         }
       });
