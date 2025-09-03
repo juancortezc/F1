@@ -209,39 +209,41 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
     return players?.find(p => p.id === playerId)?.name || 'Unknown Player';
   };
 
-  // New turn-based color system - Simple and clear
-  const getTurnLapColor = (timeMs: number, turnData: LapTimeData[], playerId: string, circuit: Circuit) => {
+  // Color system consistent with LIVE - session-wide records
+  const getLapColor = (timeMs: number, circuitId: string, playerId: string) => {
     if (timeMs <= 0) return 'bg-zinc-800';
 
-    // Get all valid times in this turn
-    const turnTimes = turnData
-      .filter(lap => lap.timeMs > 0)
-      .map(lap => lap.timeMs);
-    
-    if (turnTimes.length === 0) return 'bg-zinc-800';
+    const circuit = circuits.find(c => c.id === circuitId);
+    if (!circuit) return 'bg-zinc-800';
 
-    // Find VR of this turn (fastest time in turn)
-    const turnVR = Math.min(...turnTimes);
+    // Get session-wide bests for this circuit
+    const sessionLaps = lapTimesData?.data?.filter(
+      lap => lap.circuitId === circuitId && lap.timeMs > 0
+    ) || [];
     
-    // Get player's best time in this turn
-    const playerTurnTimes = turnData
-      .filter(lap => lap.playerId === playerId && lap.timeMs > 0)
-      .map(lap => lap.timeMs);
-    
-    const playerTurnBest = playerTurnTimes.length > 0 ? Math.min(...playerTurnTimes) : null;
+    if (sessionLaps.length === 0) return 'bg-zinc-800';
 
-    // 🟣 Morado: ES récord histórico del circuito
+    // Find VR of the session for this circuit
+    const sessionVR = Math.min(...sessionLaps.map(lap => lap.timeMs));
+    
+    // Get player's best time in this circuit (session-wide)
+    const playerSessionLaps = sessionLaps.filter(lap => lap.playerId === playerId);
+    const playerSessionBest = playerSessionLaps.length > 0 
+      ? Math.min(...playerSessionLaps.map(lap => lap.timeMs))
+      : null;
+
+    // 🟣 Morado: ES el récord histórico del circuito
     if (circuit.historicalBestLap && circuit.historicalBestLap > 0 && timeMs === circuit.historicalBestLap) {
       return 'bg-purple-600';
     }
     
-    // 🟢 Verde: ES el VR del turno (más rápido de este turno)
-    if (timeMs === turnVR) {
+    // 🟢 Verde: ES el VR de la sesión para este circuito
+    if (timeMs === sessionVR) {
       return 'bg-green-600';
     }
     
-    // 🟠 Naranja: ES el mejor personal del jugador en este turno (y no es VR del turno)
-    if (playerTurnBest && timeMs === playerTurnBest && timeMs !== turnVR) {
+    // 🟠 Naranja: ES el mejor tiempo personal del jugador en la sesión (y no es VR)
+    if (playerSessionBest && timeMs === playerSessionBest && timeMs !== sessionVR) {
       return 'bg-orange-600';
     }
 
@@ -355,7 +357,7 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
                                       <td key={i} className="p-1">
                                         {lap ? (
                                           <div 
-                                            className={`rounded px-1 py-0.5 text-center font-mono font-bold text-white text-xs ${getTurnLapColor(lap.timeMs, turnData, lap.playerId, circuits.find(c => c.id === lap.circuitId)!)}`}
+                                            className={`rounded px-1 py-0.5 text-center font-mono font-bold text-white text-xs ${getLapColor(lap.timeMs, lap.circuitId, lap.playerId)}`}
                                           >
                                             {formatTime(lap.timeMs).replace(/^0:/, '').substring(0, 6)}
                                           </div>

@@ -161,24 +161,24 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
     
     const playerSessionBest = getPlayerSessionBestLap(currentPlayer.id);
     const sessionBestLap = sessionBests.bestLap;
-    const historicalBest = currentCircuit.historicalBestLap;
+    const historicalBest = currentCircuitInfo?.historicalBestLap; // Use historicalBest from circuits data
     
-    // 🟣 Púrpura: NUEVO récord histórico del circuito (debe ser menor que el actual)
-    if (historicalBest && historicalBest > 0 && lapTime < historicalBest) {
+    // 🟣 Púrpura: ES el récord histórico del circuito
+    if (historicalBest && historicalBest > 0 && lapTime === historicalBest) {
       return 'bg-purple-500 text-white';
     }
     
-    // 🟢 Verde: NUEVO récord de sesión del circuito (debe ser menor que el actual)  
-    if (sessionBestLap && sessionBestLap > 0 && lapTime < sessionBestLap) {
+    // 🟢 Verde: ES el récord de sesión del circuito (VR de la sesión)
+    if (sessionBestLap && sessionBestLap > 0 && lapTime === sessionBestLap) {
       return 'bg-green-500 text-white';
     }
     
-    // 🟠 Naranja: Mejoró su mejor tiempo personal en la sesión
-    if (playerSessionBest && playerSessionBest > 0 && lapTime < playerSessionBest) {
+    // 🟠 Naranja: ES el mejor tiempo personal del jugador en la sesión
+    if (playerSessionBest && playerSessionBest > 0 && lapTime === playerSessionBest && lapTime !== sessionBestLap) {
       return 'bg-orange-500 text-white';
     }
     
-    // ⚪ Gris: Tiempo normal sin mejoras
+    // ⚪ Gris: Tiempo normal
     return 'bg-zinc-500 text-white';
   };
 
