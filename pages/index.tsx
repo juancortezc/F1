@@ -560,14 +560,22 @@ function App() {
     // Update global session bests (for backward compatibility)
     let newSessionBestLap = gameState.sessionBestLap;
     lapTimes.forEach(time => {
-        if(newSessionBestLap === null || time < newSessionBestLap) newSessionBestLap = time;
+        // Only consider valid lap times (not penalty times)
+        if(time < 120000 && (newSessionBestLap === null || time < newSessionBestLap)) {
+            newSessionBestLap = time;
+        }
     });
 
-    const timesToAverage = (gameState.settings.lapsPerTurn === 5 && gameState.settings.useBest4Of5Laps)
-        ? [...lapTimes].sort((a,b) => a - b).slice(0, 4)
-        : lapTimes;
+    // Filter out penalty times (120 seconds = 120000ms)
+    const validLapTimes = lapTimes.filter(time => time < 120000);
     
-    const averageTime = Math.round(timesToAverage.reduce((a, b) => a + b, 0) / timesToAverage.length);
+    const timesToAverage = (gameState.settings.lapsPerTurn === 5 && gameState.settings.useBest4Of5Laps && validLapTimes.length >= 4)
+        ? [...validLapTimes].sort((a,b) => a - b).slice(0, 4)
+        : validLapTimes;
+    
+    const averageTime = timesToAverage.length > 0 
+        ? Math.round(timesToAverage.reduce((a, b) => a + b, 0) / timesToAverage.length)
+        : 120000; // If no valid times, use penalty time as average
     
     let newSessionBestAverage = gameState.sessionBestAverage;
     if (newSessionBestAverage === null || averageTime < newSessionBestAverage) {
@@ -589,15 +597,16 @@ function App() {
     
     // Check if this is a new circuit-specific session best lap
     const currentCircuitBests = newSessionBestTimes[currentCircuitId];
-    const fastestLapThisTurn = Math.min(...lapTimes);
+    const validLapsForBest = lapTimes.filter(time => time < 120000);
+    const fastestLapThisTurn = validLapsForBest.length > 0 ? Math.min(...validLapsForBest) : null;
     
-    if (currentCircuitBests.bestLap === null || fastestLapThisTurn < currentCircuitBests.bestLap) {
+    if (fastestLapThisTurn !== null && (currentCircuitBests.bestLap === null || fastestLapThisTurn < currentCircuitBests.bestLap)) {
         currentCircuitBests.bestLap = fastestLapThisTurn;
         currentCircuitBests.bestLapPlayerId = playerId;
     }
     
     // Check if this is a new circuit-specific session best average
-    if (currentCircuitBests.bestAverage === null || averageTime < currentCircuitBests.bestAverage) {
+    if (averageTime < 120000 && (currentCircuitBests.bestAverage === null || averageTime < currentCircuitBests.bestAverage)) {
         currentCircuitBests.bestAverage = averageTime;
         currentCircuitBests.bestAveragePlayerId = playerId;
     }
@@ -665,10 +674,13 @@ function App() {
         }
 
         if (scoringMethod === 'lap' || scoringMethod === 'both') {
-            const playerBests = turnResults.map(tr => ({
-                playerId: tr.playerId,
-                bestLap: Math.min(...tr.lapTimes)
-            }));
+            const playerBests = turnResults.map(tr => {
+                const validLaps = tr.lapTimes.filter(time => time < 120000);
+                return {
+                    playerId: tr.playerId,
+                    bestLap: validLaps.length > 0 ? Math.min(...validLaps) : 120000
+                };
+            });
             const sortedByLap = playerBests.sort((a, b) => a.bestLap - b.bestLap);
             const totalPlayers = sortedByLap.length;
             
@@ -692,21 +704,27 @@ function App() {
         if (awardBestTimeFor === 'turn' || awardBestTimeFor === 'both') {
             // Best lap bonus
             if (pointsForBestLap > 0) {
-                const playerBests = turnResults.map(tr => ({
-                    playerId: tr.playerId,
-                    bestLap: Math.min(...tr.lapTimes)
-                }));
+                const playerBests = turnResults.map(tr => {
+                    const validLaps = tr.lapTimes.filter(time => time < 120000);
+                    return {
+                        playerId: tr.playerId,
+                        bestLap: validLaps.length > 0 ? Math.min(...validLaps) : 120000
+                    };
+                });
                 const bestLapPlayer = playerBests.reduce((best, current) => 
                     current.bestLap < best.bestLap ? current : best
                 );
                 
-                newPlayerStats[bestLapPlayer.playerId].totalScore += pointsForBestLap;
-                newPlayerStats[bestLapPlayer.playerId].bestLaps += 1;
-                
-                // Add bonus to turn score display
-                const bestLapResult = turnResults.find(r => r.playerId === bestLapPlayer.playerId);
-                if (bestLapResult) {
-                    bestLapResult.turnScore += pointsForBestLap;
+                // Only award bonus if the best lap is not a penalty time
+                if (bestLapPlayer.bestLap < 120000) {
+                    newPlayerStats[bestLapPlayer.playerId].totalScore += pointsForBestLap;
+                    newPlayerStats[bestLapPlayer.playerId].bestLaps += 1;
+                    
+                    // Add bonus to turn score display
+                    const bestLapResult = turnResults.find(r => r.playerId === bestLapPlayer.playerId);
+                    if (bestLapResult) {
+                        bestLapResult.turnScore += pointsForBestLap;
+                    }
                 }
             }
 
@@ -716,7 +734,7 @@ function App() {
                     (current.averageTime ?? Infinity) < (best.averageTime ?? Infinity) ? current : best
                 );
                 
-                if (bestAveragePlayer.averageTime !== undefined) {
+                if (bestAveragePlayer.averageTime !== undefined && bestAveragePlayer.averageTime < 120000) {
                     newPlayerStats[bestAveragePlayer.playerId].totalScore += pointsForBestAverage;
                     newPlayerStats[bestAveragePlayer.playerId].bestAverages += 1;
                     bestAveragePlayer.turnScore += pointsForBestAverage;
@@ -812,20 +830,24 @@ function App() {
     
     // Update historical records if new records were set
     const currentCircuit = gameState.circuits[gameState.currentCircuitIndex];
-    const fastestLap = Math.min(...lapTimes);
+    const validLapsForRecord = lapTimes.filter(time => time < 120000);
+    const fastestLap = validLapsForRecord.length > 0 ? Math.min(...validLapsForRecord) : null;
     
     try {
-      await fetch('/api/circuits/update-records', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          circuitId: currentCircuit.id,
-          bestLap: fastestLap,
-          bestAverage: averageTime,
-          bestLapPlayerId: playerId,
-          bestAveragePlayerId: playerId
-        })
-      });
+      // Only update records if we have valid times
+      if (fastestLap !== null && averageTime < 120000) {
+        await fetch('/api/circuits/update-records', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            circuitId: currentCircuit.id,
+            bestLap: fastestLap,
+            bestAverage: averageTime,
+            bestLapPlayerId: playerId,
+            bestAveragePlayerId: playerId
+          })
+        });
+      }
       
       // Refresh circuits data to get updated historical records
       mutate('/api/circuits');
@@ -833,6 +855,23 @@ function App() {
       console.error('Failed to update historical records:', error);
     }
     
+    // Call complete-turn API to properly save turn completion with scores
+    try {
+      await fetch('/api/lap-times/complete-turn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: activeGame.id,
+          playerId,
+          circuitId: currentCircuit.id,
+          turnNumber: gameState.currentTurn,
+          useBest4Of5: gameState.settings.lapsPerTurn === 5 && gameState.settings.useBest4Of5Laps
+        })
+      });
+    } catch (error) {
+      console.error('Failed to complete turn in API:', error);
+    }
+
     await updateGameState(newGameState);
     
     // Show success toast
@@ -977,23 +1016,34 @@ function App() {
 
   const handleGameEnd = async () => {
       if (!activeGame) return;
-      const newGameState = {
-        ...activeGame.state,
-        currentCircuitIndex: activeGame.state.settings.circuits.length 
+      
+      // Fetch the latest game state to ensure we have the most recent scores
+      const latestGameResponse = await fetch('/api/game/active');
+      const latestGameData = await latestGameResponse.json();
+      const latestGame = latestGameData?.game;
+      
+      if (!latestGame || !latestGame.state) {
+        console.error('Could not fetch latest game state');
+        return;
+      }
+      
+      const finalGameState = {
+        ...latestGame.state,
+        currentCircuitIndex: latestGame.state.settings.circuits.length 
       };
       
       try {
-        mutate('/api/game/active', { game: { ...activeGame, state: newGameState } }, false);
+        mutate('/api/game/active', { game: { ...latestGame, state: finalGameState } }, false);
         
-        // Update the game as completed
+        // Update the game as completed with the final state including all scores
         await fetch(`/api/game/update`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: activeGame.id, state: newGameState, status: 'COMPLETED' })
+            body: JSON.stringify({ id: latestGame.id, state: finalGameState, status: 'COMPLETED' })
         });
 
         // If this game is part of a tournament, award tournament points
-        const gameState = activeGame.state as any;
+        const gameState = latestGame.state as any;
         if (gameState.tournamentId && gameState.championshipId) {
           addToast({
             type: 'info',
@@ -1002,7 +1052,7 @@ function App() {
           });
 
           // Calculate final results for tournament points
-          const playerStats = newGameState.playerStats;
+          const playerStats = finalGameState.playerStats;
           const finalResults = Object.entries(playerStats)
             .sort((a, b) => (b[1] as PlayerStats).totalScore - (a[1] as PlayerStats).totalScore)
             .map(([playerId, stats], index) => ({
@@ -1016,7 +1066,7 @@ function App() {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              gameState: newGameState,
+              gameState: finalGameState,
               finalResults
             })
           });
