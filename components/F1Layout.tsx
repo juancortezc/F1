@@ -168,7 +168,7 @@ const F1Layout: React.FC<F1LayoutProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: '#1A1A1A', height: '100vh', height: 'var(--app-height, 100vh)' }}>
+    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: '#1A1A1A', height: 'var(--app-height, 100vh)' }}>
       {/* F1 Header */}
       <div className="fixed-top-nav">
         <F1Header

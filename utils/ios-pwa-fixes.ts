@@ -27,7 +27,7 @@ export function applyIOSFixes() {
 
     // Lock orientation to portrait
     if ('orientation' in window.screen && 'lock' in window.screen.orientation) {
-      window.screen.orientation.lock('portrait').catch(() => {
+      (window.screen.orientation as any).lock('portrait').catch(() => {
         // Orientation lock not supported or failed
         console.log('Orientation lock not supported');
       });
@@ -41,7 +41,7 @@ export function applyIOSFixes() {
       
       document.body.style.height = '100%';
       document.body.style.overflow = 'hidden';
-      document.body.style.webkitOverflowScrolling = 'touch';
+      (document.body.style as any).webkitOverflowScrolling = 'touch';
       document.body.style.position = 'relative';
 
       // Fix viewport height for iOS PWA
