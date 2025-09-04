@@ -4,9 +4,10 @@
   "description": "Professional F1 racing session tracker and championship manager",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
   "background_color": "#000000",
   "theme_color": "#FF1801",
-  "orientation": "any",
+  "orientation": "portrait",
   "scope": "/",
   "categories": ["sports", "racing", "entertainment"],
   "icons": [
@@ -39,9 +40,31 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icon-120.png",
+      "sizes": "120x120",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "prefer_related_applications": false,
   "related_applications": [],
-  "lang": "es"
+  "lang": "es",
+  "dir": "ltr",
+  "iarc_rating_id": "",
+  "shortcuts": [
+    {
+      "name": "Timing en Vivo",
+      "short_name": "LIVE",
+      "url": "/live",
+      "icons": [{"src": "/icon-96.png", "sizes": "96x96"}]
+    }
+  ]
 }

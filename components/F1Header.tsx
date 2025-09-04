@@ -23,13 +23,13 @@ const F1Header: React.FC<F1HeaderProps> = ({
 }) => {
   return (
     <div 
-      className="sticky top-0 z-40 border-b border-zinc-800"
+      className="w-full border-b border-zinc-800 safe-top bg-f1-background z-navigation-bar"
       style={{ 
         background: 'linear-gradient(to bottom, #1A1A1A, #2A2A2A)',
         backdropFilter: 'blur(8px)'
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="max-w-7xl mx-auto px-4 py-3 safe-left safe-right">
         <div className="flex justify-between items-center">
           {/* Left - Logo and Title */}
           <div className="flex items-center gap-3">

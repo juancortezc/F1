@@ -66,9 +66,9 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
   const rightButtons = visibleButtons.filter(btn => btn.position === 'right');
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
+    <div className="w-full safe-bottom">
       <div 
-        className="border-t border-zinc-700 px-4 py-3 backdrop-blur-md"
+        className="border-t border-zinc-700 px-4 py-3 backdrop-blur-md safe-left safe-right"
         style={{ 
           background: 'linear-gradient(to top, #000000 0%, #1A1A1A 100%)',
           boxShadow: '0 -4px 6px -1px rgb(0 0 0 / 0.3)'

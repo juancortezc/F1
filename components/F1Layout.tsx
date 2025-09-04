@@ -168,30 +168,36 @@ const F1Layout: React.FC<F1LayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#1A1A1A' }}>
+    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: '#1A1A1A', height: '100vh', height: 'var(--app-height, 100vh)' }}>
       {/* F1 Header */}
-      <F1Header
-        currentUser={currentUser}
-        currentPlayer={currentPlayer}
-        onLogout={onLogout}
-        onCancelGame={onCancelGame}
-        onAdminAccess={handleAdminAccess}
-        hasActiveGame={hasActiveGameRunning}
-        hasAdminPrivileges={hasAdminPrivileges}
-      />
+      <div className="fixed-top-nav">
+        <F1Header
+          currentUser={currentUser}
+          currentPlayer={currentPlayer}
+          onLogout={onLogout}
+          onCancelGame={onCancelGame}
+          onAdminAccess={handleAdminAccess}
+          hasActiveGame={hasActiveGameRunning}
+          hasAdminPrivileges={hasAdminPrivileges}
+        />
+      </div>
 
-      {/* Main Content */}
-      <main className="pb-20">
-        {renderContent()}
+      {/* Main Content - Scrollable with proper padding */}
+      <main className="flex-1 main-content content-with-nav ios-scroll-fix">
+        <div className="min-h-full">
+          {renderContent()}
+        </div>
       </main>
 
       {/* F1 Bottom Navigation */}
-      <F1Navigation
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        hasActiveGame={hasActiveGameRunning || false}
-        hasAdminPrivileges={hasAdminPrivileges}
-      />
+      <div className="fixed-bottom-nav z-bottom-nav">
+        <F1Navigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          hasActiveGame={hasActiveGameRunning || false}
+          hasAdminPrivileges={hasAdminPrivileges}
+        />
+      </div>
     </div>
   );
 };

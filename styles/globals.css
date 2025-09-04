@@ -51,7 +51,14 @@
   }
 }
 
-html,
+html {
+  /* Prevent pull-to-refresh and overscroll on iOS */
+  position: fixed;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
 body {
   padding: 0;
   margin: 0;
@@ -67,11 +74,16 @@ body {
   /* Prevent zoom on iOS */
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
-  /* Smooth scrolling */
-  scroll-behavior: smooth;
   /* Better text rendering */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS scroll behavior */
+  position: fixed;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 a {
@@ -156,8 +168,30 @@ a {
 
 /* iOS-specific fixes */
 @supports (-webkit-touch-callout: none) {
+  /* Proper viewport handling */
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  #__next {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
   .min-h-screen {
+    min-height: 100vh;
     min-height: -webkit-fill-available;
+  }
+  
+  /* Main content area should be scrollable */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
   
   /* Fix for iOS input focus zoom */
@@ -168,16 +202,21 @@ a {
   input[type="number"],
   select,
   textarea {
-    font-size: 18px !important; /* Larger to prevent zoom */
+    font-size: 18px !important; /* Prevents zoom on focus */
+    transform: scale(0.875); /* Scale down visually */
+    transform-origin: left top;
+    width: 114.28%; /* Compensate for scale */
   }
   
-  /* Force landscape support on iOS Safari PWA */
-  @media screen and (orientation: landscape) {
-    html, body {
-      -webkit-text-size-adjust: none;
-      transform: rotate(0deg) !important;
-      -webkit-transform: rotate(0deg) !important;
-    }
+  /* Prevent rubber band scrolling */
+  body {
+    overscroll-behavior: none;
+  }
+  
+  /* Fix positioning issues with fixed elements */
+  .fixed {
+    position: fixed;
+    transform: translateZ(0); /* Force hardware acceleration */
   }
 }
 
@@ -198,48 +237,83 @@ a {
   padding-right: env(safe-area-inset-right);
 }
 
-/* Landscape optimizations for LIVE tab */
-@media (orientation: landscape) {
-  /* Reduce header height in landscape */
-  .landscape\:compact-header {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+/* Z-index hierarchy to prevent navbar overlap */
+.z-navigation-bar {
+  z-index: 40;
+}
+
+.z-bottom-nav {
+  z-index: 50;
+}
+
+.z-modal {
+  z-index: 60;
+}
+
+.z-tooltip {
+  z-index: 70;
+}
+
+/* iOS navbar fix */
+@supports (-webkit-touch-callout: none) {
+  /* Fixed positioning that respects safe areas */
+  .fixed-top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    padding-top: env(safe-area-inset-top);
   }
   
-  /* Better table display in landscape */
-  .landscape\:max-h-screen {
-    max-height: 100vh;
-    overflow-y: auto;
+  .fixed-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   
-  /* Adjust font sizes for landscape */
-  .landscape\:text-sm {
-    font-size: 0.875rem;
+  /* Content padding to avoid navigation overlap */
+  .content-with-nav {
+    padding-top: calc(64px + env(safe-area-inset-top)); /* navbar height + safe area */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* bottom nav + safe area */
+  }
+}
+
+/* Remove landscape optimizations since we're locking to portrait */
+/* PWA-specific styles */
+@media (display-mode: standalone) {
+  /* Additional padding for PWA mode */
+  .safe-top {
+    padding-top: calc(env(safe-area-inset-top) + 4px);
   }
   
-  .landscape\:text-base {
-    font-size: 1rem;
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
   }
   
-  /* Force horizontal layout */
-  .landscape\:overflow-x-auto {
-    overflow-x: auto;
-    overflow-y: hidden;
+  /* Fix navigation positioning in PWA */
+  .fixed {
+    position: fixed;
   }
   
-  /* Prevent body scroll in landscape */
+  /* Prevent overscroll in PWA */
   body {
-    overflow: hidden;
-    height: 100vh;
+    overscroll-behavior-y: contain;
   }
-  
-  /* Table optimizations */
-  table {
-    table-layout: fixed;
-  }
-  
-  /* Ensure minimum widths for table cells */
-  td, th {
-    white-space: nowrap;
-  }
+}
+
+/* Utility classes for iOS fixes */
+.ios-scroll-fix {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+.no-scroll {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
 }
