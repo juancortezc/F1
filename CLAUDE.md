@@ -623,6 +623,28 @@ const eligiblePlayers = players.filter(p => !p.isGuest);
   - Card de récords oculto en landscape para maximizar tabla
   - Tamaños de fuente responsive mejorados
 
+#### **5. Sistema de orden de turnos incorrecto (17/09/2025)**
+- **Problema**: Los jugadores mantenían el orden original durante todo el circuito
+- **Causa**: Reordenamiento solo se aplicaba al cambiar de circuito, no después de cada turno
+- **Solución**:
+  - Extraída función `calculateCircuitStandings()` para reutilizar lógica
+  - Reordenamiento aplicado inmediatamente después de cada jugador individual
+  - `nextPlayerIndex = 0` para comenzar con el mejor jugador del nuevo orden
+  - El ganador del turno anterior ahora va primero en el siguiente turno
+
+#### **6. Hall of Fame no actualizándose (17/09/2025)**
+- **Problema**: Borgia ganó 2 campeonatos pero no aparecían en Hall of Fame
+- **Causa**: API `/api/game/history` muy lento (~19KB) causando timeouts, SWR recibía `[]` vacío
+- **Diagnóstico**:
+  - Datos correctos en BD: 2 juegos con status 'COMPLETED'
+  - Script debug confirmó: Borgia tiene 2 campeonatos ganados
+  - Componente `F1HallOfFame` tenía lógica correcta
+- **Solución**:
+  - Optimizado API `/api/game/history` (49.5% reducción de tamaño: 19KB → 9.6KB)
+  - Mantiene campos esenciales: `playerStats`, `circuitResults`, `circuits`
+  - Elimina campos pesados: `lapTimesLog`, `sessionBestTimes`
+  - Hall of Fame debería mostrar datos correctos tras refresh
+
 ### 🚀 Ready for Production
 - ✅ **Build exitoso** sin errores TypeScript
 - ✅ **Deploy funcionando** en master branch
@@ -630,8 +652,10 @@ const eligiblePlayers = players.filter(p => !p.isGuest);
 - ✅ **Error resilience** para conexión inestable
 - ✅ **Mobile-first responsive** para dispositivos 50+
 - ✅ **Una sola branch** (master) para evitar confusión
+- ✅ **Sistema de turnos competitivo** funcionando correctamente
+- ✅ **Hall of Fame optimizado** con API rápido y datos precisos
 
-#### **5. Guest System - Errores de Implementación**
+#### **7. Guest System - Errores de Implementación**
 - **Error TypeScript**: `Type 'string' is not assignable to type 'object'` al verificar PIN
 - **Solución**: `typeof editingItem === 'object' && 'pin' in editingItem`
 - **Error Build**: Property 'isGuest' is missing in type 'Player'
@@ -643,7 +667,7 @@ const eligiblePlayers = players.filter(p => !p.isGuest);
 - **Error PUT undefined**: `PUT /api/players/undefined` al salvar guest
 - **Solución**: `const isNew = editingItem === 'new-player' || editingItem === 'new-guest'`
 
-#### **6. Landing Page UI Simplificación**
+#### **8. Landing Page UI Simplificación**
 - **Problema**: Redundancia entre sistema Guest y Espectador
 - **Solución**: Mantener backend Guest completo, simplificar solo UI
 - **Cambios**:
@@ -651,16 +675,6 @@ const eligiblePlayers = players.filter(p => !p.isGuest);
   - ESPECTADOR → LIVE con descripción F1
   - PILOTO → PARC FERMÉ con descripción F1
   - Loading messages actualizados con terminología F1
-
-### 🚀 Ready for Production
-- ✅ **Build exitoso** sin errores TypeScript
-- ✅ **Deploy funcionando** en master branch
-- ✅ **Database prístina** lista para uso en vivo
-- ✅ **Error resilience** para conexión inestable
-- ✅ **Mobile-first responsive** para dispositivos 50+
-- ✅ **Una sola branch** (master) para evitar confusión
-- ✅ **Guest system completo** funcionando correctamente
-- ✅ **Landing page simplificado** con terminología F1
 
 ### 🏎️ F1 Professional Design System (2025) - NUEVO REDISEÑO COMPLETO
 
@@ -764,6 +778,39 @@ const eligiblePlayers = players.filter(p => !p.isGuest);
 - **Estética F1 profesional** - colores, tipografía, spacing
 - **Performance mejorado** - animaciones sutiles, layouts eficientes
 - **Funcionalidad preservada** - todas las features racing existentes
+
+## 🔧 Scripts de Debug y Testing (17/09/2025)
+
+### Scripts Disponibles para Troubleshooting
+```bash
+# Debug Hall of Fame - Verificar cálculos de campeonatos ganados
+node scripts/debug-hall-of-fame.js
+
+# Verificar API optimizado - Comprobar performance del /api/game/history
+node scripts/verify-optimized-api.js
+
+# Test completo de datos Hall of Fame - Comparar lógica BD vs componente
+node scripts/test-hall-of-fame-data.js
+
+# Verificar timing de lapTimes - Análisis de datos de carrera
+node scripts/check-lap-times.js
+
+# Test API en vivo - Verificar respuesta de endpoints
+node scripts/final-test-api.js
+```
+
+### Propósito de Scripts
+- **Troubleshooting Hall of Fame**: Detectar problemas en cálculo de estadísticas
+- **Performance testing**: Verificar optimizaciones de APIs
+- **Data validation**: Comparar resultados entre BD y componentes
+- **API monitoring**: Detectar timeouts y problemas de conectividad
+- **Debugging futuro**: Base para diagnósticos rápidos de problemas
+
+### Uso Recomendado
+1. **Antes de reportar bugs**: Ejecutar scripts relevantes para confirmar problema
+2. **Después de cambios**: Verificar que optimizaciones funcionen correctamente
+3. **Mantenimiento periódico**: Comprobar integridad de datos históricos
+4. **Deploy validation**: Confirmar que APIs responden correctamente
 
 ## 🎯 Próximas Mejoras Sugeridas
 - **Fase 3**: Sistema de notificaciones push para eventos importantes
