@@ -9,7 +9,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 where: { status: 'COMPLETED' },
                 orderBy: { updatedAt: 'desc' },
             });
-            res.status(200).json(completedGames);
+            
+            // Optimize the response by removing heavy fields not needed for Hall of Fame
+            const optimizedGames = completedGames.map(game => {
+                const gameState = game.state as any; // Cast to any to handle Prisma JSON type
+                return {
+                    id: game.id,
+                    status: game.status,
+                    createdAt: game.createdAt,
+                    updatedAt: game.updatedAt,
+                    state: gameState ? {
+                        // Keep only essential fields for Hall of Fame calculations
+                        playerStats: gameState.playerStats,
+                        circuitResults: gameState.circuitResults,
+                        circuits: gameState.circuits,
+                        settings: gameState.settings ? {
+                            players: gameState.settings.players,
+                            circuits: gameState.settings.circuits
+                        } : undefined
+                        // Remove heavy fields: lapTimesLog, sessionBestTimes, etc.
+                    } : null
+                };
+            });
+            
+            res.status(200).json(optimizedGames);
         } catch (error) {
             console.error(error);
             res.status(500).json({ error: 'Failed to fetch game history' });
