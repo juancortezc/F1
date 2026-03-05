@@ -884,15 +884,54 @@ function App() {
       console.error('Failed to complete turn in API:', error);
     }
 
-    await updateGameState(newGameState);
-    
-    // Show success toast
-    const playerName = players?.find(p => p.id === playerId)?.name || 'Piloto';
-    addToast({
-      type: 'success',
-      title: 'Tiempos guardados',
-      message: `Vuelta de ${playerName} registrada correctamente`
-    });
+    // Check if the game is now complete (all circuits finished)
+    const isGameComplete = nextCircuitIndex >= gameState.settings.circuits.length;
+
+    if (isGameComplete) {
+      // Mark game as COMPLETED
+      try {
+        mutate('/api/game/active', { game: { ...activeGame, state: newGameState, status: 'COMPLETED' } }, false);
+
+        await fetch(`/api/game/update`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: activeGame.id,
+            state: newGameState,
+            status: 'COMPLETED'
+          })
+        });
+
+        // Refresh data
+        mutate('/api/game/active');
+        mutate('/api/game/history');
+
+        // Show game complete toast
+        const playerName = players?.find(p => p.id === playerId)?.name || 'Piloto';
+        addToast({
+          type: 'success',
+          title: '¡Campeonato completado!',
+          message: `Último tiempo de ${playerName} registrado. Ve a Resultados para ver el podio.`
+        });
+      } catch (error) {
+        console.error('Failed to complete game:', error);
+        addToast({
+          type: 'error',
+          title: 'Error',
+          message: 'No se pudo finalizar el campeonato automáticamente'
+        });
+      }
+    } else {
+      await updateGameState(newGameState);
+
+      // Show success toast
+      const playerName = players?.find(p => p.id === playerId)?.name || 'Piloto';
+      addToast({
+        type: 'success',
+        title: 'Tiempos guardados',
+        message: `Vuelta de ${playerName} registrada correctamente`
+      });
+    }
 
   }, [activeGame, updateGameState, players, addToast]);
 
