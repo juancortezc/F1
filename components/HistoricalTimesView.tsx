@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Player, Circuit, GameHistoryEntry, GameState, PlayerStats } from '../types';
 import { fetcher } from '../lib/fetcher';
@@ -11,6 +11,23 @@ interface HistoricalTimesViewProps {
   gameHistory: GameHistoryEntry[];
   activeGame?: { id: string; state: GameState } | null;
 }
+
+// Helper to format date for display
+const formatGameDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
+// Helper to get circuits from game state
+const getGameCircuits = (state: GameState): string => {
+  if (!state?.settings?.circuits) return '';
+  return state.settings.circuits.map(c => c.name).join(', ');
+};
 
 interface LapTimeData {
   id: string;
@@ -156,8 +173,71 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
   gameHistory,
   activeGame
 }) => {
-  // Fetch all lap times for current or latest game
-  const gameId = activeGame?.id || (gameHistory?.[0]?.id);
+  // Determine if there's an active game that's actually in progress
+  const isActiveGameInProgress = useMemo(() => {
+    if (!activeGame?.state) return false;
+    const { currentCircuitIndex, settings } = activeGame.state;
+    return currentCircuitIndex < (settings?.circuits?.length || 0);
+  }, [activeGame]);
+
+  // Build list of available games (active first if in progress, then completed)
+  const availableGames = useMemo(() => {
+    const games: Array<{
+      id: string;
+      label: string;
+      date: string;
+      state: GameState;
+      isActive: boolean;
+    }> = [];
+
+    // Add active game only if it's actually in progress
+    if (activeGame && isActiveGameInProgress) {
+      games.push({
+        id: activeGame.id,
+        label: 'CAMPEONATO ACTIVO',
+        date: 'En progreso',
+        state: activeGame.state,
+        isActive: true
+      });
+    }
+
+    // Add completed games from history
+    if (gameHistory && gameHistory.length > 0) {
+      gameHistory.forEach((game, index) => {
+        if (game.state) {
+          const circuitNames = getGameCircuits(game.state);
+          games.push({
+            id: game.id,
+            label: circuitNames || `Campeonato ${index + 1}`,
+            date: formatGameDate(game.updatedAt),
+            state: game.state,
+            isActive: false
+          });
+        }
+      });
+    }
+
+    return games;
+  }, [activeGame, gameHistory, isActiveGameInProgress]);
+
+  // Selected game state - default to active game if in progress, otherwise first completed
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+
+  // Set initial selection when data loads
+  useEffect(() => {
+    if (availableGames.length > 0 && !selectedGameId) {
+      setSelectedGameId(availableGames[0].id);
+    }
+  }, [availableGames, selectedGameId]);
+
+  // Get selected game data
+  const selectedGame = useMemo(() => {
+    return availableGames.find(g => g.id === selectedGameId) || availableGames[0];
+  }, [availableGames, selectedGameId]);
+
+  const gameId = selectedGame?.id;
+
+  // Fetch all lap times for selected game
   const { data: lapTimesData, error, isLoading } = useSWR<{
     success: boolean;
     data: LapTimeData[];
@@ -289,16 +369,48 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
     );
   }
 
+  // If no games available
+  if (availableGames.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1A1A1A' }}>
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏁</div>
+          <h2 className="text-2xl font-bold text-white mb-2">Sin campeonatos</h2>
+          <p className="text-zinc-400">No hay campeonatos completados para mostrar</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-32" style={{ backgroundColor: '#1A1A1A' }}>
       <div className="max-w-6xl mx-auto px-2 pt-4">
-        
+
+        {/* Game Selector */}
+        {availableGames.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-zinc-400 mb-2">
+              Seleccionar Campeonato
+            </label>
+            <select
+              value={selectedGameId || ''}
+              onChange={(e) => setSelectedGameId(e.target.value)}
+              className="w-full min-h-[48px] bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-base text-white focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/50"
+            >
+              {availableGames.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {game.isActive ? '🔴 ' : '✓ '}{game.label} — {game.date}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Podium Cards */}
         <PodiumCards
-          gameState={activeGame?.state}
+          gameState={selectedGame?.state}
           players={players}
-          isActive={!!activeGame && activeGame.state &&
-            activeGame.state.currentCircuitIndex < (activeGame.state.settings?.circuits?.length || 0)}
+          isActive={selectedGame?.isActive || false}
         />
 
         {/* Color Legend */}
@@ -418,11 +530,11 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
         </div>
 
         {/* Results Cards Section - From RaceProgress */}
-        {(activeGame?.state || gameHistory?.[0]?.state) && (
+        {selectedGame?.state && (
           <div className="space-y-6 mt-8">
             {(() => {
               // Get the appropriate game state
-              const displayGameState = activeGame?.state || gameHistory?.[0]?.state;
+              const displayGameState = selectedGame.state;
               if (!displayGameState || !displayGameState.playerStats) return null;
 
               const calculator = new ScoreCalculator(displayGameState, players);
