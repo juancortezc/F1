@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { UserSession, Player } from '../types';
+import React from 'react';
 
 type F1Tab = 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos';
 
@@ -14,156 +13,129 @@ const F1Navigation: React.FC<F1NavigationProps> = ({
   activeTab,
   onTabChange,
   hasActiveGame,
-  hasAdminPrivileges
 }) => {
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
-  const sideButtons: Array<{id: F1Tab, icon: React.ReactNode, position: 'left' | 'right', label: string, tooltip: string, adminOnly?: boolean}> = [
+  const tabs: Array<{
+    id: F1Tab;
+    label: string;
+    icon: React.ReactNode;
+  }> = [
     {
       id: 'tiempos-historicos',
-      position: 'left',
-      label: 'HISTÓRICO',
-      tooltip: 'Resultados',
+      label: 'RESULTADOS',
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       )
     },
     {
       id: 'hall-of-fame',
-      position: 'left',
-      label: 'HALL OF FAME',
-      tooltip: 'Hall of Fame',
+      label: 'HOF',
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        </svg>
+      )
+    },
+    {
+      id: 'live',
+      label: 'LIVE',
+      icon: (
+        <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
         </svg>
       )
     },
     {
       id: 'tiempos',
-      position: 'right',
       label: 'REGISTRO',
-      tooltip: 'Registrar',
-      adminOnly: false,
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       )
     }
   ];
 
-  // Filter buttons based on admin privileges
-  const visibleButtons = sideButtons.filter(button => !button.adminOnly || hasAdminPrivileges);
-
-  const getLiveButtonColor = () => {
-    return hasActiveGame ? 'bg-f1-red text-white' : 'bg-zinc-600 text-white';
-  };
-
-  const leftButtons = visibleButtons.filter(btn => btn.position === 'left');
-  const rightButtons = visibleButtons.filter(btn => btn.position === 'right');
-
   return (
-    <div className="w-full safe-bottom">
-      <div 
-        className="border-t border-zinc-700 px-4 py-3 backdrop-blur-md safe-left safe-right"
-        style={{ 
+    <nav
+      className="w-full safe-bottom"
+      role="tablist"
+      aria-label="Navegación principal"
+    >
+      <div
+        className="border-t border-zinc-700 px-2 py-2 backdrop-blur-md safe-left safe-right"
+        style={{
           background: 'linear-gradient(to top, #000000 0%, #1A1A1A 100%)',
           boxShadow: '0 -4px 6px -1px rgb(0 0 0 / 0.3)'
         }}
       >
-        <div className="flex justify-between items-center max-w-lg mx-auto">
-          {/* Left side buttons */}
-          <div className="flex gap-4">
-            {leftButtons.map((button) => {
-              const isActive = activeTab === button.id;
-              return (
-                <div key={button.id} className="relative">
-                  <button
-                    onClick={() => onTabChange(button.id)}
-                    onMouseEnter={() => setHoveredButton(button.id)}
-                    onMouseLeave={() => setHoveredButton(null)}
-                    className={`
-                      p-3 rounded-xl transition-all duration-200
-                      ${isActive 
-                        ? 'bg-zinc-700 text-white transform scale-105' 
-                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
-                      }
-                    `}
-                  >
-                    {button.icon}
-                  </button>
-                  {hoveredButton === button.id && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 border border-zinc-600">
-                      <div className="text-center font-medium">{button.tooltip}</div>
-                      {/* Arrow pointing down */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-800"></div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        <div className="flex justify-around items-center max-w-lg mx-auto">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const isLive = tab.id === 'live';
 
-          {/* Center LIVE button */}
-          <button
-            onClick={() => onTabChange('live')}
-            className={`
-              relative w-20 h-20 rounded-full font-bold text-base transition-all duration-300 transform
-              ${getLiveButtonColor()}
-              ${activeTab === 'live' ? 'scale-110 shadow-lg' : 'hover:scale-105'}
-              ${hasActiveGame ? 'shadow-red-500/30' : 'shadow-zinc-800/50'}
-            `}
-          >
-            {/* Pulse effect when active game */}
-            {hasActiveGame && (
-              <div className="absolute inset-0 rounded-full bg-f1-red opacity-30 animate-pulse"></div>
-            )}
-            <div className="relative flex items-center justify-center">
-              <span className="font-bold tracking-wider">LIVE</span>
-            </div>
-          </button>
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                aria-label={`${tab.label}${isLive && hasActiveGame ? ' - Carrera en vivo' : ''}`}
+                className={`
+                  relative flex flex-col items-center justify-center
+                  min-w-[72px] min-h-[56px] px-2 py-1.5
+                  rounded-xl transition-all duration-200
+                  focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-black
+                  active:scale-95
+                  ${isLive
+                    ? isActive
+                      ? hasActiveGame
+                        ? 'bg-f1-red text-white shadow-lg shadow-red-500/30'
+                        : 'bg-zinc-600 text-white'
+                      : hasActiveGame
+                        ? 'bg-f1-red/80 text-white hover:bg-f1-red'
+                        : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+                    : isActive
+                      ? 'bg-zinc-700 text-white'
+                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 active:bg-zinc-700'
+                  }
+                `}
+              >
+                {/* Pulse indicator for LIVE with active game */}
+                {isLive && hasActiveGame && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                )}
 
-          {/* Right side buttons */}
-          <div className="flex gap-4">
-            {rightButtons.map((button) => {
-              const isActive = activeTab === button.id;
-              return (
-                <div key={button.id} className="relative">
-                  <button
-                    onClick={() => onTabChange(button.id)}
-                    onMouseEnter={() => setHoveredButton(button.id)}
-                    onMouseLeave={() => setHoveredButton(null)}
-                    className={`
-                      p-3 rounded-xl transition-all duration-200
-                      ${isActive 
-                        ? 'bg-zinc-700 text-white transform scale-105'
-                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
-                      }
-                    `}
-                  >
-                    {button.icon}
-                  </button>
-                  {hoveredButton === button.id && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 border border-zinc-600">
-                      <div className="text-center font-medium">{button.tooltip}</div>
-                      {/* Arrow pointing down */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-800"></div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {/* Spacer if no right buttons to maintain symmetry */}
-            {rightButtons.length === 0 && (
-              <div className="w-12"></div>
-            )}
-          </div>
+                {/* Icon */}
+                <span className={`
+                  ${isActive ? 'text-white' : isLive && hasActiveGame ? 'text-white' : 'text-current'}
+                `}>
+                  {tab.icon}
+                </span>
+
+                {/* Label - ALWAYS visible */}
+                <span className={`
+                  mt-1 text-xs font-bold tracking-wide
+                  ${isActive
+                    ? 'text-white'
+                    : isLive && hasActiveGame
+                      ? 'text-white'
+                      : 'text-zinc-400'
+                  }
+                `}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

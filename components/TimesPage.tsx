@@ -188,9 +188,10 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
-                className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-md text-zinc-400 transition-colors"
+                aria-label={viewMode === 'cards' ? 'Ver como tabla' : 'Ver como tarjetas'}
+                className="min-w-[48px] min-h-[48px] flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 rounded-lg text-zinc-400 transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500"
               >
-                <ChartBarIcon className="w-5 h-5" />
+                <ChartBarIcon className="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -199,23 +200,26 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Bar */}
             <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-500" />
+              <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Search by player, circuit, or turn..."
+                placeholder="Buscar jugador, circuito o turno..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:border-red-600 focus:outline-none transition-colors"
+                aria-label="Buscar tiempos"
+                className="w-full min-h-[48px] pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg text-base text-white placeholder-zinc-500 focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/50 transition-colors"
               />
             </div>
             
             {/* Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2 min-w-[120px] justify-center ${
-                showFilters 
-                  ? 'bg-red-600 text-white' 
-                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
+              aria-label="Mostrar filtros"
+              aria-expanded={showFilters}
+              className={`min-h-[48px] px-4 py-3 rounded-lg font-medium transition-colors flex items-center space-x-2 min-w-[120px] justify-center focus:outline-none focus:ring-2 focus:ring-zinc-500 active:scale-95 ${
+                showFilters
+                  ? 'bg-red-600 text-white'
+                  : 'bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-400'
               }`}
             >
               <FunnelIcon className="w-5 h-5" />
@@ -233,24 +237,24 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
             <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-2">Game</label>
-                  <select 
-                    value={activeFilters.gameId} 
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Game</label>
+                  <select
+                    value={activeFilters.gameId}
                     onChange={(e) => setActiveFilters({...activeFilters, gameId: e.target.value})}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none"
+                    className="w-full min-h-[48px] bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-base text-white focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/50"
                   >
-                    <option value="all">All Games</option>
-                    {currentGameId && <option value={currentGameId}>Current Game</option>}
+                    <option value="all">Todos los juegos</option>
+                    {currentGameId && <option value={currentGameId}>Juego actual</option>}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-2">Circuit</label>
-                  <select 
-                    value={activeFilters.circuitId} 
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Circuito</label>
+                  <select
+                    value={activeFilters.circuitId}
                     onChange={(e) => setActiveFilters({...activeFilters, circuitId: e.target.value})}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none"
+                    className="w-full min-h-[48px] bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-base text-white focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/50"
                   >
-                    <option value="all">All Circuits</option>
+                    <option value="all">Todos los circuitos</option>
                     {circuits?.map(circuit => (
                       <option key={circuit.id} value={circuit.id}>
                         {circuit.name}
@@ -259,13 +263,13 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-2">Player</label>
-                  <select 
-                    value={activeFilters.playerId} 
+                  <label className="block text-sm font-medium text-zinc-400 mb-2">Jugador</label>
+                  <select
+                    value={activeFilters.playerId}
                     onChange={(e) => setActiveFilters({...activeFilters, playerId: e.target.value})}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2 text-sm text-white focus:border-red-600 focus:outline-none"
+                    className="w-full min-h-[48px] bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-base text-white focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/50"
                   >
-                    <option value="all">All Players</option>
+                    <option value="all">Todos los jugadores</option>
                     {players?.map(player => (
                       <option key={player.id} value={player.id}>
                         {player.name}
@@ -349,7 +353,7 @@ export default function TimesPage({ players, circuits, currentGameId }: TimesPag
                   </div>
                 ) : (
                   filteredLapTimes.map((lap) => (
-                    <div key={lap.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700 hover:border-zinc-500 transition-colors">
+                    <div key={lap.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700 hover:border-zinc-500 active:bg-zinc-700/50 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-3 mb-2">

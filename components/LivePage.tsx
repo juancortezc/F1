@@ -396,12 +396,12 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
               currentPlayerLaps.map((lap: any, index: number) => (
                 <div
                   key={index}
-                  className={`h-8 w-16 rounded flex items-center justify-center ${
+                  className={`min-h-[44px] min-w-[72px] px-2 rounded-lg flex items-center justify-center ${
                     getLapBoxColor(lap.timeMs, index)
                   }`}
                   title={`Vuelta ${index + 1}: ${formatTime(lap.timeMs)}`}
                 >
-                  <span className="text-white text-xs font-mono font-bold">
+                  <span className="text-white text-sm font-mono font-bold">
                     {formatTime(lap.timeMs).replace(/^0:/, '')}
                   </span>
                 </div>
@@ -485,15 +485,15 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
           </div>
         </div>
 
-        {/* Turn Positions Card */}
-        <div className="bg-zinc-800 rounded-lg overflow-x-auto -webkit-overflow-scrolling-touch">
-          <table className="w-full min-w-[350px]">
+        {/* Turn Positions Card - Mobile optimized, no horizontal scroll */}
+        <div className="bg-zinc-800 rounded-lg">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="bg-zinc-700">
-                <th className="px-4 py-2 text-left text-white font-bold text-sm"></th>
-                <th className="px-2 py-2 text-center text-white font-bold text-sm">T1</th>
-                <th className="px-2 py-2 text-center text-white font-bold text-sm">T2</th>
-                <th className="px-2 py-2 text-center text-white font-bold text-sm">T3</th>
+                <th className="w-[40%] px-3 py-3 text-left text-white font-bold text-sm">Jugador</th>
+                <th className="w-[20%] px-1 py-3 text-center text-white font-bold text-sm">T1</th>
+                <th className="w-[20%] px-1 py-3 text-center text-white font-bold text-sm">T2</th>
+                <th className="w-[20%] px-1 py-3 text-center text-white font-bold text-sm">T3</th>
               </tr>
             </thead>
             <tbody>
@@ -501,42 +501,40 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
                 <tr
                   key={playerData.playerId}
                   className={`${
-                    playerData.playerId === currentPlayer?.id 
-                      ? 'bg-zinc-700' 
+                    playerData.playerId === currentPlayer?.id
+                      ? 'bg-zinc-700'
                       : 'bg-zinc-800'
-                  } hover:bg-zinc-600 transition-colors`}
+                  } active:bg-zinc-600 transition-colors`}
                 >
-                  <td className="px-4 py-3 font-bold text-white">
-                    <div className="flex items-center gap-2">
-                      {playerData.player?.name}
+                  <td className="px-3 py-3 font-bold text-white truncate">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-sm">{playerData.player?.name}</span>
                       {/* Session record indicators */}
                       {sessionRecordHolders.vrHolder === playerData.playerId && (
-                        <div 
-                          className="w-2 h-2 bg-green-400 rounded-full" 
+                        <div
+                          className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"
                           title="Vuelta Rápida de Sesión"
-                        >
-                        </div>
+                        />
                       )}
                       {sessionRecordHolders.prHolder === playerData.playerId && (
-                        <div 
-                          className="w-2 h-2 bg-cyan-400 rounded-full" 
+                        <div
+                          className="w-2 h-2 bg-cyan-400 rounded-full flex-shrink-0"
                           title="Mejor Promedio de Sesión"
-                        >
-                        </div>
+                        />
                       )}
                     </div>
                   </td>
                   {playerData.positions.slice(0, 3).map((position, index) => (
-                    <td key={index} className="px-2 py-3 text-center">
-                      <span className="text-white font-mono font-bold text-lg">
+                    <td key={index} className="px-1 py-3 text-center">
+                      <span className="text-white font-mono font-bold text-base">
                         {position || '-'}
                       </span>
                     </td>
                   ))}
                   {/* Fill remaining columns if needed */}
                   {Array.from({ length: Math.max(0, 3 - playerData.positions.length) }).map((_, index) => (
-                    <td key={`empty-${index}`} className="px-2 py-3 text-center">
-                      <span className="text-zinc-500 font-mono font-bold text-lg">-</span>
+                    <td key={`empty-${index}`} className="px-1 py-3 text-center">
+                      <span className="text-zinc-500 font-mono font-bold text-base">-</span>
                     </td>
                   ))}
                 </tr>
