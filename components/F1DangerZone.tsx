@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState } from '../types';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
+import { fetcher } from '../lib/fetcher';
 
 interface F1DangerZoneProps {
   onBack: () => void;
   onRecalculateScores?: () => Promise<void>;
   onCancelGame?: () => Promise<void>;
+}
+
+interface Settings {
+  historicalCutoffDate: string | null;
 }
 
 type DangerTab = 'cancelar' | 'recalcular' | 'corte';
@@ -20,10 +25,23 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
   const [lastRecalculation, setLastRecalculation] = useState<Date | null>(null);
   const [cutoffDate, setCutoffDate] = useState<string>('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  
+  const [showCutoffConfirm, setShowCutoffConfirm] = useState(false);
+  const [cutoffSuccess, setCutoffSuccess] = useState(false);
+
   // Fetch active game
   const { data: activeGameData } = useSWR<{game: {id: string, state: GameState} | null}>('/api/game/active');
   const activeGame = activeGameData?.game;
+
+  // Fetch settings to get current cutoff date
+  const { data: settings } = useSWR<Settings>('/api/settings', fetcher);
+
+  // Initialize cutoff date from settings
+  useEffect(() => {
+    if (settings?.historicalCutoffDate) {
+      const date = new Date(settings.historicalCutoffDate);
+      setCutoffDate(date.toISOString().split('T')[0]);
+    }
+  }, [settings]);
 
   // Tab content components
   const renderCancelarTab = () => (
@@ -235,6 +253,29 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
           </p>
         </div>
 
+        {/* Current Cutoff Status */}
+        {settings?.historicalCutoffDate && (
+          <div className="bg-purple-900/30 border border-purple-600/50 rounded-md p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-purple-400 font-medium mb-1">Corte Activo</h3>
+                <p className="text-white text-sm">
+                  Desde: {new Date(settings.historicalCutoffDate).toLocaleDateString('es-ES', {
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={handleRemoveCutoff}
+                disabled={isProcessing}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                QUITAR
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Preview Section */}
         {cutoffDate && (
           <div className="bg-purple-900/20 border border-purple-700 rounded-md p-4">
@@ -253,31 +294,31 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
           </div>
         )}
 
-        {/* Warning */}
-        <div className="bg-zinc-800/50 border border-zinc-700 rounded-md p-4">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="text-sm text-zinc-400">
-              <p className="font-medium text-zinc-300 mb-1">Función en Desarrollo</p>
-              <p>Esta funcionalidad estará disponible cuando se carguen datos históricos en la base de datos.</p>
+        {/* Success Message */}
+        {cutoffSuccess && (
+          <div className="bg-green-900/20 border border-green-700 rounded-md p-4">
+            <div className="flex items-center gap-2 text-green-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="font-medium">¡Corte aplicado exitosamente!</span>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Apply Button */}
         <button
-          disabled={!cutoffDate}
+          onClick={() => setShowCutoffConfirm(true)}
+          disabled={!cutoffDate || isProcessing}
           className={`
             w-full py-4 px-8 rounded-xl font-bold text-lg transition-all duration-200
-            ${cutoffDate
+            ${cutoffDate && !isProcessing
               ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg transform hover:scale-105 active:scale-95'
               : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'
             }
           `}
         >
-          APLICAR CORTE
+          {isProcessing ? 'APLICANDO...' : 'APLICAR CORTE'}
         </button>
       </div>
     </div>
@@ -299,13 +340,73 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
 
   const handleCancelGame = async () => {
     if (!onCancelGame || isProcessing || !activeGame) return;
-    
+
     setIsProcessing(true);
     setShowConfirmDialog(false);
     try {
       await onCancelGame();
     } catch (error) {
       console.error('Error canceling game:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleApplyCutoff = async () => {
+    if (!cutoffDate || isProcessing) return;
+
+    setIsProcessing(true);
+    setShowCutoffConfirm(false);
+    setCutoffSuccess(false);
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ historicalCutoffDate: cutoffDate })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to apply cutoff');
+      }
+
+      // Refresh data
+      mutate('/api/settings');
+      mutate('/api/game/history');
+
+      setCutoffSuccess(true);
+      setTimeout(() => setCutoffSuccess(false), 5000);
+    } catch (error) {
+      console.error('Error applying cutoff:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRemoveCutoff = async () => {
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    setCutoffSuccess(false);
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ historicalCutoffDate: null })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove cutoff');
+      }
+
+      // Refresh data
+      mutate('/api/settings');
+      mutate('/api/game/history');
+
+      setCutoffDate('');
+    } catch (error) {
+      console.error('Error removing cutoff:', error);
     } finally {
       setIsProcessing(false);
     }
@@ -381,13 +482,13 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
           </div>
         </div>
 
-        {/* Confirmation Dialog */}
+        {/* Confirmation Dialog for Cancel Game */}
         {showConfirmDialog && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-zinc-900 rounded-lg p-6 max-w-md w-full border border-red-800">
               <h3 className="text-xl font-bold text-white mb-4 text-center">⚠️ Confirmar Cancelación</h3>
               <p className="text-zinc-400 mb-6 text-center">
-                ¿Estás seguro de que quieres cancelar el campeonato activo? 
+                ¿Estás seguro de que quieres cancelar el campeonato activo?
                 Esta acción no se puede deshacer.
               </p>
               <div className="flex gap-3">
@@ -402,6 +503,40 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded font-medium transition-colors"
                 >
                   SÍ, CANCELAR
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Dialog for Cutoff */}
+        {showCutoffConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 rounded-lg p-6 max-w-md w-full border border-purple-800">
+              <h3 className="text-xl font-bold text-white mb-4 text-center">📅 Confirmar Corte</h3>
+              <p className="text-zinc-400 mb-4 text-center">
+                Se aplicará un corte desde:
+              </p>
+              <p className="text-purple-400 font-bold text-lg text-center mb-4">
+                {cutoffDate ? new Date(cutoffDate).toLocaleDateString('es-ES', {
+                  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                }) : ''}
+              </p>
+              <p className="text-zinc-500 text-sm text-center mb-6">
+                Los campeonatos anteriores a esta fecha no aparecerán en el Hall of Fame ni en las estadísticas históricas.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCutoffConfirm(false)}
+                  className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded font-medium transition-colors"
+                >
+                  VOLVER
+                </button>
+                <button
+                  onClick={handleApplyCutoff}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded font-medium transition-colors"
+                >
+                  APLICAR
                 </button>
               </div>
             </div>

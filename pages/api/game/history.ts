@@ -5,11 +5,27 @@ import prisma from '../../../lib/prisma';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'GET') {
         try {
+            // Get settings to check for cutoff date
+            const settings = await prisma.settings.findUnique({
+                where: { id: 'singleton' },
+            });
+
+            const cutoffDate = settings?.historicalCutoffDate;
+
+            // Build query with optional cutoff date filter
+            const whereClause: { status: string; updatedAt?: { gte: Date } } = {
+                status: 'COMPLETED'
+            };
+
+            if (cutoffDate) {
+                whereClause.updatedAt = { gte: cutoffDate };
+            }
+
             const completedGames = await prisma.game.findMany({
-                where: { status: 'COMPLETED' },
+                where: whereClause,
                 orderBy: { updatedAt: 'desc' },
             });
-            
+
             // Optimize the response by removing heavy fields not needed for Hall of Fame
             const optimizedGames = completedGames.map(game => {
                 const gameState = game.state as any; // Cast to any to handle Prisma JSON type

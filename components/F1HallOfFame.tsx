@@ -1,12 +1,18 @@
 import React, { useMemo } from 'react';
+import useSWR from 'swr';
 import { GameState, Player, Circuit, GameHistoryEntry, PlayerStats } from '../types';
 import UserAvatar from './UserAvatar';
+import { fetcher } from '../lib/fetcher';
 
 interface F1HallOfFameProps {
   gameState: GameState;
   players: Player[];
   circuits: Circuit[];
   gameHistory: GameHistoryEntry[];
+}
+
+interface Settings {
+  historicalCutoffDate: string | null;
 }
 
 interface AccumulatedStats {
@@ -19,12 +25,16 @@ interface AccumulatedStats {
   favoriteCircuit: string | null;
 }
 
-const F1HallOfFame: React.FC<F1HallOfFameProps> = ({ 
-  gameState, 
-  players = [], 
-  circuits = [], 
+const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
+  gameState,
+  players = [],
+  circuits = [],
   gameHistory = []
 }) => {
+  // Fetch settings to check for cutoff date
+  const { data: settings } = useSWR<Settings>('/api/settings', fetcher);
+  const cutoffDate = settings?.historicalCutoffDate ? new Date(settings.historicalCutoffDate) : null;
+
   const { accumulatedStats } = useMemo(() => {
     // Filter out guest players from stats (same logic as StatsView)
     const eligiblePlayers = players.filter(p => !p.isGuest);
@@ -198,6 +208,16 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
         {/* Hall of Fame Title */}
         <div className="text-center mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">HALL OF FAME</h1>
+          {cutoffDate && (
+            <div className="inline-flex items-center gap-2 bg-purple-900/30 border border-purple-600/50 rounded-md px-3 py-1.5 mt-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-purple-300 text-sm">
+                Desde: {cutoffDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Podium Cards */}
