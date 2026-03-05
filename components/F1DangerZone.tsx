@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GameState } from '../types';
 import useSWR, { mutate } from 'swr';
 import { fetcher } from '../lib/fetcher';
+import { formatFullDateEC, formatShortDateEC, formatDateTimeEC } from '../utils/dateUtils';
 
 interface F1DangerZoneProps {
   onBack: () => void;
@@ -179,13 +180,7 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
             <span className="font-medium">Última recalculación exitosa</span>
           </div>
           <p className="text-green-300 text-sm mt-1 text-center">
-            {lastRecalculation.toLocaleDateString('es-ES', { 
-              day: '2-digit', 
-              month: '2-digit', 
-              year: 'numeric',
-              hour: '2-digit', 
-              minute: '2-digit'
-            })}
+            {formatDateTimeEC(lastRecalculation.toISOString())}
           </p>
         </div>
       )}
@@ -260,9 +255,7 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
               <div>
                 <h3 className="text-purple-400 font-medium mb-1">Corte Activo</h3>
                 <p className="text-white text-sm">
-                  Desde: {new Date(settings.historicalCutoffDate).toLocaleDateString('es-ES', {
-                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-                  })}
+                  Desde: {formatFullDateEC(settings.historicalCutoffDate)}
                 </p>
               </div>
               <button
@@ -282,7 +275,7 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
             <h3 className="text-purple-400 font-medium mb-2">Vista Previa del Corte</h3>
             <div className="space-y-1 text-sm">
               <p className="text-zinc-300">
-                <span className="text-purple-400">•</span> Datos desde: {new Date(cutoffDate).toLocaleDateString('es-ES')}
+                <span className="text-purple-400">•</span> Datos desde: {formatShortDateEC(cutoffDate)}
               </p>
               <p className="text-zinc-300">
                 <span className="text-purple-400">•</span> Afectará: Hall of Fame, Récords, Estadísticas
@@ -518,9 +511,7 @@ const F1DangerZone: React.FC<F1DangerZoneProps> = ({
                 Se aplicará un corte desde:
               </p>
               <p className="text-purple-400 font-bold text-lg text-center mb-4">
-                {cutoffDate ? new Date(cutoffDate).toLocaleDateString('es-ES', {
-                  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-                }) : ''}
+                {cutoffDate ? formatFullDateEC(cutoffDate) : ''}
               </p>
               <p className="text-zinc-500 text-sm text-center mb-6">
                 Los campeonatos anteriores a esta fecha no aparecerán en el Hall of Fame ni en las estadísticas históricas.

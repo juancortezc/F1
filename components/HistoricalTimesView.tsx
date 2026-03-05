@@ -4,6 +4,7 @@ import { Player, Circuit, GameHistoryEntry, GameState, PlayerStats } from '../ty
 import { fetcher } from '../lib/fetcher';
 import UserAvatar from './UserAvatar';
 import { ScoreCalculator } from '../utils/ScoreCalculator';
+import { formatGameDateEC } from '../utils/dateUtils';
 
 interface HistoricalTimesViewProps {
   players: Player[];
@@ -11,17 +12,6 @@ interface HistoricalTimesViewProps {
   gameHistory: GameHistoryEntry[];
   activeGame?: { id: string; state: GameState } | null;
 }
-
-// Helper to format date for display
-const formatGameDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('es-ES', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-};
 
 // Helper to get circuits from game state
 const getGameCircuits = (state: GameState): string => {
@@ -209,7 +199,7 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
           games.push({
             id: game.id,
             label: circuitNames || `Campeonato ${index + 1}`,
-            date: formatGameDate(game.updatedAt),
+            date: formatGameDateEC(game.updatedAt),
             state: game.state,
             isActive: false
           });
