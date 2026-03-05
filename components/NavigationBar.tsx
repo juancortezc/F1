@@ -26,8 +26,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   children
 }) => {
   return (
-    <div className="bg-f1-black border-b border-subtle sticky top-0 z-10">
-      <div className="max-w-2xl mx-auto px-4">
+    <div className="bg-f1-black border-b border-subtle sticky top-0 z-40 safe-top">
+      <div className="max-w-2xl mx-auto px-4 safe-left safe-right">
         <div className="flex justify-between items-center h-16">
           {/* Left */}
           <div className="flex items-center gap-3">

@@ -355,8 +355,8 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="bg-black">
+      <div className="max-w-4xl mx-auto p-4 space-y-6 safe-left safe-right">
         {/* Header - Current Player, Next Player, Circuit */}
         <div className="space-y-2">
           {/* Current Player */}
@@ -486,8 +486,8 @@ const LivePage: React.FC<LivePageProps> = ({ gameState, players, circuits, gameI
         </div>
 
         {/* Turn Positions Card */}
-        <div className="bg-zinc-800 rounded-lg overflow-hidden">
-          <table className="w-full">
+        <div className="bg-zinc-800 rounded-lg overflow-x-auto -webkit-overflow-scrolling-touch">
+          <table className="w-full min-w-[350px]">
             <thead>
               <tr className="bg-zinc-700">
                 <th className="px-4 py-2 text-left text-white font-bold text-sm"></th>

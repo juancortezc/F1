@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from './Toast';
+import { checkPWAInstallability } from '../utils/ios-pwa-fixes';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -9,9 +10,20 @@ interface BeforeInstallPromptEvent extends Event {
 const PWAInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
+    // Check if we should show iOS instructions
+    const installability = checkPWAInstallability();
+    if (installability === 'ios-instructions') {
+      // Only show on first visit
+      if (!sessionStorage.getItem('ios-install-shown')) {
+        setShowIOSInstructions(true);
+        sessionStorage.setItem('ios-install-shown', 'true');
+      }
+    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
@@ -73,10 +85,41 @@ const PWAInstallPrompt: React.FC = () => {
     return null;
   }
 
+  // Show iOS instructions
+  if (showIOSInstructions) {
+    return (
+      <div className="fixed bottom-20 left-4 right-4 z-40 max-w-sm mx-auto safe-bottom">
+        <div className="bg-zinc-800 border border-zinc-600 rounded-lg p-4 shadow-lg">
+          <div className="flex items-start gap-3">
+            <img 
+              src="/icon-192.png" 
+              alt="F1 Logo" 
+              className="w-10 h-10 rounded-lg flex-shrink-0"
+            />
+            <div className="flex-1">
+              <h3 className="font-semibold text-white text-base">Instalar F1 Night en iOS</h3>
+              <ol className="text-zinc-300 text-sm mt-2 space-y-1">
+                <li>1. Toca el botón compartir <span className="inline-block w-4 h-4 align-text-bottom">⬆️</span></li>
+                <li>2. Desliza y toca "Añadir a pantalla de inicio"</li>
+                <li>3. Toca "Añadir" en la esquina superior</li>
+              </ol>
+              <button
+                onClick={() => setShowIOSInstructions(false)}
+                className="mt-3 text-zinc-400 text-sm font-medium py-2 hover:text-zinc-300 transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!showInstallButton) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+    <div className="fixed bottom-20 right-4 z-40 max-w-sm safe-bottom">
       <div className="bg-slate-800 border border-slate-600 rounded-lg p-4 shadow-lg">
         <div className="flex items-start gap-3">
           <img 
