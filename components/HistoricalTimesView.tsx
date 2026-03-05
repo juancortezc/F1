@@ -79,9 +79,9 @@ const PodiumCards: React.FC<{
       <div className="flex justify-center items-end gap-4 mb-8">
         {/* Second Place - Left */}
         {second && (
-          <div 
-            className="relative rounded-lg border-2 border-f1-red p-4 text-center bg-black"
-            style={{ minHeight: '140px', width: '100px' }}
+          <div
+            className="relative rounded-lg border-2 border-f1-red p-3 text-center bg-black flex-shrink-0"
+            style={{ minHeight: '140px', minWidth: '100px', maxWidth: '110px' }}
           >
             {/* Position Badge */}
             <div className="absolute -top-2 -right-2 w-8 h-8 bg-zinc-300 rounded-full flex items-center justify-center z-10 border-2 border-black">
@@ -94,7 +94,7 @@ const PodiumCards: React.FC<{
                 className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
               />
             </div>
-            <h3 className="text-white font-bold text-sm mb-1">{second.player.name}</h3>
+            <h3 className="text-white font-bold text-xs mb-1 truncate px-1">{second.player.name}</h3>
             <div className="text-zinc-300 font-mono font-bold text-lg">{second.totalScore}</div>
             <div className="text-zinc-400 text-xs">PUNTOS</div>
           </div>
@@ -102,9 +102,9 @@ const PodiumCards: React.FC<{
 
         {/* First Place - Center (Larger) */}
         {first && (
-          <div 
-            className="relative rounded-lg border-2 border-f1-red p-6 text-center bg-black"
-            style={{ minHeight: '160px', width: '120px' }}
+          <div
+            className="relative rounded-lg border-2 border-f1-red p-4 text-center bg-black flex-shrink-0"
+            style={{ minHeight: '160px', minWidth: '120px', maxWidth: '140px' }}
           >
             {/* Position Badge */}
             <div className="absolute -top-3 -right-3 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center z-10 border-2 border-black shadow-lg">
@@ -117,7 +117,7 @@ const PodiumCards: React.FC<{
                 className="w-20 h-20 mx-auto mb-3 ring-2 ring-f1-red"
               />
             </div>
-            <h3 className="text-white font-bold text-base mb-2">{first.player.name}</h3>
+            <h3 className="text-white font-bold text-sm mb-2 truncate px-1">{first.player.name}</h3>
             <div className="text-white font-mono font-bold text-xl">{first.totalScore}</div>
             <div className="text-zinc-400 text-xs">PUNTOS</div>
           </div>
@@ -125,9 +125,9 @@ const PodiumCards: React.FC<{
 
         {/* Third Place - Right */}
         {third && (
-          <div 
-            className="relative rounded-lg border-2 border-f1-red p-4 text-center bg-black"
-            style={{ minHeight: '140px', width: '100px' }}
+          <div
+            className="relative rounded-lg border-2 border-f1-red p-3 text-center bg-black flex-shrink-0"
+            style={{ minHeight: '140px', minWidth: '100px', maxWidth: '110px' }}
           >
             {/* Position Badge */}
             <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center z-10 border-2 border-black">
@@ -140,7 +140,7 @@ const PodiumCards: React.FC<{
                 className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
               />
             </div>
-            <h3 className="text-white font-bold text-sm mb-1">{third.player.name}</h3>
+            <h3 className="text-white font-bold text-xs mb-1 truncate px-1">{third.player.name}</h3>
             <div className="text-zinc-300 font-mono font-bold text-lg">{third.totalScore}</div>
             <div className="text-zinc-400 text-xs">PUNTOS</div>
           </div>
@@ -294,11 +294,35 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
       <div className="max-w-6xl mx-auto px-2 pt-4">
         
         {/* Podium Cards */}
-        <PodiumCards 
-          gameState={activeGame?.state} 
-          players={players} 
-          isActive={!!activeGame} 
+        <PodiumCards
+          gameState={activeGame?.state}
+          players={players}
+          isActive={!!activeGame && activeGame.state &&
+            activeGame.state.currentCircuitIndex < (activeGame.state.settings?.circuits?.length || 0)}
         />
+
+        {/* Color Legend */}
+        <div className="bg-zinc-900 rounded-lg p-3 mb-4">
+          <h3 className="text-sm font-bold text-zinc-300 mb-2">Leyenda de Colores</h3>
+          <div className="flex flex-wrap gap-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 bg-purple-600 rounded"></div>
+              <span className="text-zinc-400">Récord Histórico</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 bg-green-600 rounded"></div>
+              <span className="text-zinc-400">VR Sesión</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 bg-orange-600 rounded"></div>
+              <span className="text-zinc-400">Mejor Personal</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 bg-zinc-800 rounded border border-zinc-700"></div>
+              <span className="text-zinc-400">Normal</span>
+            </div>
+          </div>
+        </div>
 
         {/* Excel-style Tables */}
         <div className="space-y-4">
@@ -326,12 +350,24 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
                   });
 
                   const playerIds = Object.keys(playerGroups);
-                  const maxLaps = Math.max(...Object.values(playerGroups).map(laps => laps.length));
+                  const maxLaps = playerIds.length > 0
+                    ? Math.max(...Object.values(playerGroups).map(laps => laps.length))
+                    : 0;
+
+                  // Skip empty turns
+                  if (playerIds.length === 0 || maxLaps === 0) {
+                    return (
+                      <div key={turnNumber} className="mb-4">
+                        <h3 className="text-sm font-bold text-zinc-300 mb-2">T{turnNumber}</h3>
+                        <div className="text-center text-zinc-500 text-xs py-2">Sin datos registrados</div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div key={turnNumber} className="mb-4">
                       <h3 className="text-sm font-bold text-zinc-300 mb-2">T{turnNumber}</h3>
-                      
+
                       {/* Excel-style table */}
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
