@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { GameState, Player, Circuit, GameHistoryEntry, PlayerStats } from '../types';
 import UserAvatar from './UserAvatar';
@@ -35,6 +35,9 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
   // Fetch settings to check for cutoff date
   const { data: settings } = useSWR<Settings>('/api/settings', fetcher);
   const cutoffDate = settings?.historicalCutoffDate ? new Date(settings.historicalCutoffDate) : null;
+
+  // State for showing PTS explanation modal
+  const [showPtsExplanation, setShowPtsExplanation] = useState(false);
 
   const { accumulatedStats } = useMemo(() => {
     // Filter out guest players from stats (same logic as StatsView)
@@ -305,6 +308,17 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                 <tr style={{ backgroundColor: '#2A2A2A' }}>
                   <th className="px-1 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">POS</th>
                   <th className="px-2 py-2 text-left text-xs font-mono uppercase tracking-wider text-zinc-400">JUG</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">
+                    <button
+                      onClick={() => setShowPtsExplanation(true)}
+                      className="inline-flex items-center gap-1 hover:text-white transition-colors"
+                    >
+                      PTS
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                  </th>
                   <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CMP</th>
                   <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VIC</th>
                   <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VR</th>
@@ -329,6 +343,11 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                       <div className="text-white font-semibold text-sm">
                         {stats.player.name}
                       </div>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-yellow-400 text-base">
+                        {stats.rankingScore}
+                      </span>
                     </td>
                     <td className="px-2 py-3 text-center">
                       <span className="font-mono font-bold text-white text-base">
@@ -362,6 +381,61 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
           </div>
         </div>
       </div>
+
+      {/* PTS Explanation Modal */}
+      {showPtsExplanation && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-lg p-6 max-w-md w-full border border-zinc-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Cálculo de PTS</h3>
+              <button
+                onClick={() => setShowPtsExplanation(false)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="text-zinc-400 mb-4">
+              Los puntos del Hall of Fame se calculan con la siguiente fórmula:
+            </p>
+
+            <div className="bg-zinc-800 rounded-lg p-4 mb-4">
+              <p className="text-white font-mono text-center text-lg">
+                PTS = (CMP × 10) + (VIC × 3) + (VR × 2) + (PR × 1)
+              </p>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between text-zinc-300">
+                <span><strong>CMP</strong> - Campeonatos ganados</span>
+                <span className="font-mono text-yellow-400">×10 pts</span>
+              </div>
+              <div className="flex justify-between text-zinc-300">
+                <span><strong>VIC</strong> - Victorias en circuitos</span>
+                <span className="font-mono text-yellow-400">×3 pts</span>
+              </div>
+              <div className="flex justify-between text-zinc-300">
+                <span><strong>VR</strong> - Vueltas Rápidas</span>
+                <span className="font-mono text-yellow-400">×2 pts</span>
+              </div>
+              <div className="flex justify-between text-zinc-300">
+                <span><strong>PR</strong> - Mejores Promedios</span>
+                <span className="font-mono text-yellow-400">×1 pt</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowPtsExplanation(false)}
+              className="w-full mt-6 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            >
+              ENTENDIDO
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
