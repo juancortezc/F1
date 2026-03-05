@@ -197,6 +197,22 @@ export class TimingService {
   }
 
   /**
+   * Check if a time is a penalty time (over 3 minutes)
+   * Penalty times are typically excluded from averages
+   */
+  isPenaltyTime(timeMs: number): boolean {
+    const PENALTY_THRESHOLD = 180000; // 3 minutes
+    return timeMs > PENALTY_THRESHOLD;
+  }
+
+  /**
+   * Filter out penalty times from an array
+   */
+  filterPenaltyTimes(lapTimes: number[]): number[] {
+    return lapTimes.filter(t => !this.isPenaltyTime(t));
+  }
+
+  /**
    * Calculate statistics for a set of lap times
    */
   calculateStats(lapTimes: number[]): {

@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "check-games": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' check-games.ts"
   },

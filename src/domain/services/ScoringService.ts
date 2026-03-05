@@ -321,6 +321,24 @@ export class ScoringService {
   calculatePlayerTotal(playerId: string, gameState: GameState): number {
     return gameState.playerStats[playerId]?.totalScore ?? 0;
   }
+
+  /**
+   * Sort players by score (lower is better - like race times)
+   */
+  sortByPosition<T extends { score: number }>(players: T[]): T[] {
+    return [...players].sort((a, b) => a.score - b.score);
+  }
+
+  /**
+   * Assign positions to sorted players
+   */
+  assignPositions<T extends { score: number }>(players: T[]): (T & { position: number })[] {
+    const sorted = this.sortByPosition(players);
+    return sorted.map((player, index) => ({
+      ...player,
+      position: index + 1,
+    }));
+  }
 }
 
 // Export singleton instance
