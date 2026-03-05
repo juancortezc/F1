@@ -39,11 +39,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         playerStats: gameState.playerStats,
                         circuitResults: gameState.circuitResults,
                         circuits: gameState.circuits,
+                        sessionBestTimes: gameState.sessionBestTimes, // Needed for VR/PR counting
                         settings: gameState.settings ? {
                             players: gameState.settings.players,
                             circuits: gameState.settings.circuits
                         } : undefined
-                        // Remove heavy fields: lapTimesLog, sessionBestTimes, etc.
+                        // Remove heavy fields: lapTimesLog, etc.
                     } : null
                 };
             });

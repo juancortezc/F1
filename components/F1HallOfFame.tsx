@@ -124,16 +124,26 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
       }
     });
 
-    // Count VR and PR from historical circuit records (database records)
-    circuits.forEach(circuit => {
-      // VR: Count fastest lap records
-      if (circuit.bestLapHolderId && playerAccStats[circuit.bestLapHolderId]) {
-        playerAccStats[circuit.bestLapHolderId].fastestLaps++;
-      }
-      
-      // PR: Count best average records  
-      if (circuit.bestAverageHolderId && playerAccStats[circuit.bestAverageHolderId]) {
-        playerAccStats[circuit.bestAverageHolderId].bestAverages++;
+    // Count VR and PR from sessionBestTimes in each filtered game
+    // This respects the cutoff date filter applied to gameHistory
+    gameHistory.forEach((game) => {
+      if (game.state && game.state.sessionBestTimes) {
+        const sessionBestTimes = game.state.sessionBestTimes as Record<string, {
+          bestLapPlayerId?: string;
+          bestAveragePlayerId?: string;
+        }>;
+
+        Object.values(sessionBestTimes).forEach((circuitBest) => {
+          // VR: Count fastest lap records from this game's session
+          if (circuitBest.bestLapPlayerId && playerAccStats[circuitBest.bestLapPlayerId]) {
+            playerAccStats[circuitBest.bestLapPlayerId].fastestLaps++;
+          }
+
+          // PR: Count best average records from this game's session
+          if (circuitBest.bestAveragePlayerId && playerAccStats[circuitBest.bestAveragePlayerId]) {
+            playerAccStats[circuitBest.bestAveragePlayerId].bestAverages++;
+          }
+        });
       }
     });
 
