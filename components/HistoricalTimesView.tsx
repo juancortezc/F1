@@ -42,16 +42,18 @@ const formatTime = (ms: number | null | undefined): string => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 };
 
-// PodiumCards Component - Restored from ResultsView
-const PodiumCards: React.FC<{ 
-  gameState?: GameState; 
-  players: Player[]; 
+// Tab types
+type ResultsTab = 'tiempos' | 'puntos' | 'top';
+
+// PodiumCards Component
+const PodiumCards: React.FC<{
+  gameState?: GameState;
+  players: Player[];
   isActive: boolean;
 }> = ({ gameState, players, isActive }) => {
-  // Get standings from current gameState
   const standings = useMemo(() => {
     if (!gameState?.playerStats) return [];
-    
+
     return Object.entries(gameState.playerStats)
       .map(([playerId, stats]) => ({
         player: players.find(p => p.id === playerId)!,
@@ -73,83 +75,71 @@ const PodiumCards: React.FC<{
   }
 
   return (
-    <div className="space-y-8 mb-6">
+    <div className="space-y-6 mb-4">
       {/* Championship Status Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          {isActive ? 'CAMPEONATO ACTIVO' : 'ÚLTIMO CAMPEONATO'}
+        <h1 className="text-2xl font-bold text-white mb-2">
+          {isActive ? 'CAMPEONATO ACTIVO' : 'RESULTADOS'}
         </h1>
-        <div className="w-20 h-1 bg-f1-red mx-auto"></div>
+        <div className="w-16 h-1 bg-f1-red mx-auto"></div>
       </div>
 
-      {/* Podium Cards - Matching Hall of Fame style */}
-      <div className="flex justify-center items-end gap-4 mb-8">
-        {/* Second Place - Left */}
+      {/* Podium Cards */}
+      <div className="flex justify-center items-end gap-3">
+        {/* Second Place */}
         {second && (
           <div
-            className="relative rounded-lg border-2 border-f1-red p-3 text-center bg-black flex-shrink-0"
-            style={{ minHeight: '140px', minWidth: '100px', maxWidth: '110px' }}
+            className="relative rounded-lg border-2 border-f1-red p-2 text-center bg-black flex-shrink-0"
+            style={{ minHeight: '120px', minWidth: '90px', maxWidth: '100px' }}
           >
-            {/* Position Badge */}
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-zinc-300 rounded-full flex items-center justify-center z-10 border-2 border-black">
-              <span className="font-mono font-bold text-sm text-black">2</span>
+            <div className="absolute -top-2 -right-2 w-7 h-7 bg-zinc-300 rounded-full flex items-center justify-center z-10 border-2 border-black">
+              <span className="font-mono font-bold text-xs text-black">2</span>
             </div>
-            <div className="relative inline-block">
-              <UserAvatar
-                imageUrl={second.player.imageUrl}
-                name={second.player.name}
-                className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
-              />
-            </div>
-            <h3 className="text-white font-bold text-xs mb-1 truncate px-1">{second.player.name}</h3>
-            <div className="text-zinc-300 font-mono font-bold text-lg">{second.totalScore}</div>
-            <div className="text-zinc-400 text-xs">PUNTOS</div>
+            <UserAvatar
+              imageUrl={second.player.imageUrl}
+              name={second.player.name}
+              className="w-12 h-12 mx-auto mb-1 ring-2 ring-f1-red"
+            />
+            <h3 className="text-white font-bold text-xs mb-1 truncate">{second.player.name}</h3>
+            <div className="text-zinc-300 font-mono font-bold text-base">{second.totalScore}</div>
           </div>
         )}
 
-        {/* First Place - Center (Larger) */}
+        {/* First Place */}
         {first && (
           <div
-            className="relative rounded-lg border-2 border-f1-red p-4 text-center bg-black flex-shrink-0"
-            style={{ minHeight: '160px', minWidth: '120px', maxWidth: '140px' }}
+            className="relative rounded-lg border-2 border-f1-red p-3 text-center bg-black flex-shrink-0"
+            style={{ minHeight: '140px', minWidth: '100px', maxWidth: '120px' }}
           >
-            {/* Position Badge */}
-            <div className="absolute -top-3 -right-3 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center z-10 border-2 border-black shadow-lg">
-              <span className="font-mono font-bold text-base text-black">1</span>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center z-10 border-2 border-black shadow-lg">
+              <span className="font-mono font-bold text-sm text-black">1</span>
             </div>
-            <div className="relative inline-block">
-              <UserAvatar
-                imageUrl={first.player.imageUrl}
-                name={first.player.name}
-                className="w-20 h-20 mx-auto mb-3 ring-2 ring-f1-red"
-              />
-            </div>
-            <h3 className="text-white font-bold text-sm mb-2 truncate px-1">{first.player.name}</h3>
-            <div className="text-white font-mono font-bold text-xl">{first.totalScore}</div>
-            <div className="text-zinc-400 text-xs">PUNTOS</div>
+            <UserAvatar
+              imageUrl={first.player.imageUrl}
+              name={first.player.name}
+              className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
+            />
+            <h3 className="text-white font-bold text-sm mb-1 truncate">{first.player.name}</h3>
+            <div className="text-white font-mono font-bold text-lg">{first.totalScore}</div>
           </div>
         )}
 
-        {/* Third Place - Right */}
+        {/* Third Place */}
         {third && (
           <div
-            className="relative rounded-lg border-2 border-f1-red p-3 text-center bg-black flex-shrink-0"
-            style={{ minHeight: '140px', minWidth: '100px', maxWidth: '110px' }}
+            className="relative rounded-lg border-2 border-f1-red p-2 text-center bg-black flex-shrink-0"
+            style={{ minHeight: '120px', minWidth: '90px', maxWidth: '100px' }}
           >
-            {/* Position Badge */}
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center z-10 border-2 border-black">
-              <span className="font-mono font-bold text-sm text-black">3</span>
+            <div className="absolute -top-2 -right-2 w-7 h-7 bg-amber-600 rounded-full flex items-center justify-center z-10 border-2 border-black">
+              <span className="font-mono font-bold text-xs text-black">3</span>
             </div>
-            <div className="relative inline-block">
-              <UserAvatar
-                imageUrl={third.player.imageUrl}
-                name={third.player.name}
-                className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
-              />
-            </div>
-            <h3 className="text-white font-bold text-xs mb-1 truncate px-1">{third.player.name}</h3>
-            <div className="text-zinc-300 font-mono font-bold text-lg">{third.totalScore}</div>
-            <div className="text-zinc-400 text-xs">PUNTOS</div>
+            <UserAvatar
+              imageUrl={third.player.imageUrl}
+              name={third.player.name}
+              className="w-12 h-12 mx-auto mb-1 ring-2 ring-f1-red"
+            />
+            <h3 className="text-white font-bold text-xs mb-1 truncate">{third.player.name}</h3>
+            <div className="text-zinc-300 font-mono font-bold text-base">{third.totalScore}</div>
           </div>
         )}
       </div>
@@ -163,6 +153,9 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
   gameHistory,
   activeGame
 }) => {
+  // Active tab state
+  const [activeTab, setActiveTab] = useState<ResultsTab>('tiempos');
+
   // Determine if there's an active game that's actually in progress
   const isActiveGameInProgress = useMemo(() => {
     if (!activeGame?.state) return false;
@@ -170,7 +163,7 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
     return currentCircuitIndex < (settings?.circuits?.length || 0);
   }, [activeGame]);
 
-  // Build list of available games (active first if in progress, then completed)
+  // Build list of available games
   const availableGames = useMemo(() => {
     const games: Array<{
       id: string;
@@ -180,7 +173,6 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
       isActive: boolean;
     }> = [];
 
-    // Add active game only if it's actually in progress
     if (activeGame && isActiveGameInProgress) {
       games.push({
         id: activeGame.id,
@@ -191,7 +183,6 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
       });
     }
 
-    // Add completed games from history
     if (gameHistory && gameHistory.length > 0) {
       gameHistory.forEach((game, index) => {
         if (game.state) {
@@ -210,17 +201,14 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
     return games;
   }, [activeGame, gameHistory, isActiveGameInProgress]);
 
-  // Selected game state - default to active game if in progress, otherwise first completed
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
-  // Set initial selection when data loads
   useEffect(() => {
     if (availableGames.length > 0 && !selectedGameId) {
       setSelectedGameId(availableGames[0].id);
     }
   }, [availableGames, selectedGameId]);
 
-  // Get selected game data
   const selectedGame = useMemo(() => {
     return availableGames.find(g => g.id === selectedGameId) || availableGames[0];
   }, [availableGames, selectedGameId]);
@@ -236,7 +224,7 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
     fetcher,
     {
       revalidateOnFocus: false,
-      refreshInterval: 10000 // Update every 10 seconds
+      refreshInterval: 10000
     }
   );
 
@@ -245,22 +233,21 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
     if (!lapTimesData?.data) return {};
 
     const organized: Record<string, Record<number, LapTimeData[]>> = {};
-    
+
     lapTimesData.data.forEach(lap => {
       const circuitName = lap.circuit?.name || circuits.find(c => c.id === lap.circuitId)?.name || 'Unknown';
-      
+
       if (!organized[circuitName]) {
         organized[circuitName] = {};
       }
-      
+
       if (!organized[circuitName][lap.turnNumber]) {
         organized[circuitName][lap.turnNumber] = [];
       }
-      
+
       organized[circuitName][lap.turnNumber].push(lap);
     });
 
-    // Sort lap times within each turn by lap number
     Object.keys(organized).forEach(circuit => {
       Object.keys(organized[circuit]).forEach(turn => {
         organized[circuit][parseInt(turn)].sort((a, b) => {
@@ -279,98 +266,132 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
     return players?.find(p => p.id === playerId)?.name || 'Unknown Player';
   };
 
-  // Color system consistent with LIVE - session-wide records
+  // Color system for lap times
   const getLapColor = (timeMs: number, circuitId: string, playerId: string) => {
     if (timeMs <= 0) return 'bg-zinc-800';
 
     const circuit = circuits.find(c => c.id === circuitId);
     if (!circuit) return 'bg-zinc-800';
 
-    // Get session-wide bests for this circuit
     const sessionLaps = lapTimesData?.data?.filter(
       lap => lap.circuitId === circuitId && lap.timeMs > 0
     ) || [];
-    
+
     if (sessionLaps.length === 0) return 'bg-zinc-800';
 
-    // Find VR of the session for this circuit
     const sessionVR = Math.min(...sessionLaps.map(lap => lap.timeMs));
-    
-    // Get player's best time in this circuit (session-wide)
     const playerSessionLaps = sessionLaps.filter(lap => lap.playerId === playerId);
-    const playerSessionBest = playerSessionLaps.length > 0 
+    const playerSessionBest = playerSessionLaps.length > 0
       ? Math.min(...playerSessionLaps.map(lap => lap.timeMs))
       : null;
 
-    // 🟣 Morado: ES el récord histórico del circuito
     if (circuit.historicalBestLap && circuit.historicalBestLap > 0 && timeMs === circuit.historicalBestLap) {
       return 'bg-purple-600';
     }
-    
-    // 🟢 Verde: ES el VR de la sesión para este circuito
+
     if (timeMs === sessionVR) {
       return 'bg-green-600';
     }
-    
-    // 🟠 Naranja: ES el mejor tiempo personal del jugador en la sesión (y no es VR)
+
     if (playerSessionBest && timeMs === playerSessionBest && timeMs !== sessionVR) {
       return 'bg-orange-600';
     }
 
-    // ⚪ Gris: Tiempo normal
     return 'bg-zinc-800';
   };
+
+  // Calculate Top data (best times per circuit/turn)
+  const topData = useMemo(() => {
+    if (!lapTimesData?.data) return [];
+
+    const result: Array<{
+      circuitName: string;
+      circuitId: string;
+      turns: Array<{
+        turnNumber: number;
+        bestLap: { playerId: string; time: number } | null;
+        bestAverage: { playerId: string; time: number } | null;
+      }>;
+    }> = [];
+
+    // Group by circuit
+    const byCircuit: Record<string, LapTimeData[]> = {};
+    lapTimesData.data.forEach(lap => {
+      const circuitName = lap.circuit?.name || circuits.find(c => c.id === lap.circuitId)?.name || 'Unknown';
+      if (!byCircuit[circuitName]) {
+        byCircuit[circuitName] = [];
+      }
+      byCircuit[circuitName].push(lap);
+    });
+
+    Object.entries(byCircuit).forEach(([circuitName, laps]) => {
+      const circuitId = laps[0]?.circuitId || '';
+      const turnNumbers = [...new Set(laps.map(l => l.turnNumber))].sort((a, b) => a - b);
+
+      const turns = turnNumbers.map(turnNumber => {
+        const turnLaps = laps.filter(l => l.turnNumber === turnNumber && l.timeMs > 0);
+
+        // Best lap in turn
+        let bestLap: { playerId: string; time: number } | null = null;
+        if (turnLaps.length > 0) {
+          const fastest = turnLaps.reduce((min, lap) => lap.timeMs < min.timeMs ? lap : min);
+          bestLap = { playerId: fastest.playerId, time: fastest.timeMs };
+        }
+
+        // Best average per player in turn
+        const playerTimes: Record<string, number[]> = {};
+        turnLaps.forEach(lap => {
+          if (!playerTimes[lap.playerId]) {
+            playerTimes[lap.playerId] = [];
+          }
+          playerTimes[lap.playerId].push(lap.timeMs);
+        });
+
+        let bestAverage: { playerId: string; time: number } | null = null;
+        let minAvg = Infinity;
+        Object.entries(playerTimes).forEach(([playerId, times]) => {
+          if (times.length > 0) {
+            const avg = times.reduce((a, b) => a + b, 0) / times.length;
+            if (avg < minAvg) {
+              minAvg = avg;
+              bestAverage = { playerId, time: Math.round(avg) };
+            }
+          }
+        });
+
+        return { turnNumber, bestLap, bestAverage };
+      });
+
+      result.push({ circuitName, circuitId, turns });
+    });
+
+    return result;
+  }, [lapTimesData?.data, circuits]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1A1A1A' }}>
         <div className="text-center">
-          <div className="text-6xl mb-4">⏳</div>
-          <h2 className="text-2xl font-bold text-white mb-2">Cargando histórico...</h2>
-          <p className="text-zinc-400">Obteniendo datos de tiempos registrados</p>
+          <div className="text-5xl mb-4">⏳</div>
+          <h2 className="text-xl font-bold text-white mb-2">Cargando...</h2>
         </div>
       </div>
     );
   }
 
-  if (error || !lapTimesData?.success) {
+  if (availableGames.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1A1A1A' }}>
         <div className="text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-white mb-2">Error al cargar datos</h2>
-          <p className="text-zinc-400">No se pudieron obtener los tiempos históricos</p>
+          <div className="text-5xl mb-4">🏁</div>
+          <h2 className="text-xl font-bold text-white mb-2">Sin campeonatos</h2>
+          <p className="text-zinc-400">No hay campeonatos completados para mostrar</p>
         </div>
       </div>
     );
   }
 
   const circuitNames = Object.keys(organizedData);
-
-  if (circuitNames.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1A1A1A' }}>
-        <div className="text-center">
-          <div className="text-6xl mb-4">📊</div>
-          <h2 className="text-2xl font-bold text-white mb-2">Sin datos históricos</h2>
-          <p className="text-zinc-400">No hay tiempos registrados para mostrar</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If no games available
-  if (availableGames.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1A1A1A' }}>
-        <div className="text-center">
-          <div className="text-6xl mb-4">🏁</div>
-          <h2 className="text-2xl font-bold text-white mb-2">Sin campeonatos</h2>
-          <p className="text-zinc-400">No hay campeonatos completados para mostrar</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen pb-32" style={{ backgroundColor: '#1A1A1A' }}>
@@ -379,13 +400,10 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
         {/* Game Selector */}
         {availableGames.length > 0 && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-zinc-400 mb-2">
-              Seleccionar Campeonato
-            </label>
             <select
               value={selectedGameId || ''}
               onChange={(e) => setSelectedGameId(e.target.value)}
-              className="w-full min-h-[48px] bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-base text-white focus:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600/50"
+              className="w-full min-h-[48px] bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-base text-white focus:border-red-600 focus:outline-none"
             >
               {availableGames.map((game) => (
                 <option key={game.id} value={game.id}>
@@ -403,127 +421,153 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
           isActive={selectedGame?.isActive || false}
         />
 
-        {/* Color Legend */}
-        <div className="bg-zinc-900 rounded-lg p-3 mb-4">
-          <h3 className="text-sm font-bold text-zinc-300 mb-2">Leyenda de Colores</h3>
-          <div className="flex flex-wrap gap-3 text-xs">
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 bg-purple-600 rounded"></div>
-              <span className="text-zinc-400">Récord Histórico</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 bg-green-600 rounded"></div>
-              <span className="text-zinc-400">VR Sesión</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 bg-orange-600 rounded"></div>
-              <span className="text-zinc-400">Mejor Personal</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 bg-zinc-800 rounded border border-zinc-700"></div>
-              <span className="text-zinc-400">Normal</span>
-            </div>
-          </div>
+        {/* Tabs Navigation */}
+        <div className="flex border-b border-zinc-700 mb-4">
+          <button
+            onClick={() => setActiveTab('tiempos')}
+            className={`flex-1 py-3 text-center font-bold text-sm transition-colors ${
+              activeTab === 'tiempos'
+                ? 'text-white border-b-2 border-f1-red'
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            TIEMPOS
+          </button>
+          <button
+            onClick={() => setActiveTab('puntos')}
+            className={`flex-1 py-3 text-center font-bold text-sm transition-colors ${
+              activeTab === 'puntos'
+                ? 'text-white border-b-2 border-f1-red'
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            PUNTOS
+          </button>
+          <button
+            onClick={() => setActiveTab('top')}
+            className={`flex-1 py-3 text-center font-bold text-sm transition-colors ${
+              activeTab === 'top'
+                ? 'text-white border-b-2 border-f1-red'
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            TOP
+          </button>
         </div>
 
-        {/* Excel-style Tables */}
-        <div className="space-y-4">
-          {circuitNames.map(circuitName => {
-            const circuitData = organizedData[circuitName];
-            const turns = Object.keys(circuitData).map(Number).sort((a, b) => a - b);
-
-            return (
-              <div key={circuitName} className="bg-zinc-800/50 rounded-lg p-3">
-                <h2 className="text-lg font-bold text-white mb-3 text-center">
-                  {circuitName.toUpperCase()}
-                </h2>
-
-                {/* Excel-style table for each turn */}
-                {turns.map(turnNumber => {
-                  const turnData = circuitData[turnNumber];
-                  const playerGroups: Record<string, LapTimeData[]> = {};
-
-                  // Group laps by player
-                  turnData.forEach(lap => {
-                    if (!playerGroups[lap.playerId]) {
-                      playerGroups[lap.playerId] = [];
-                    }
-                    playerGroups[lap.playerId].push(lap);
-                  });
-
-                  const playerIds = Object.keys(playerGroups);
-                  const maxLaps = playerIds.length > 0
-                    ? Math.max(...Object.values(playerGroups).map(laps => laps.length))
-                    : 0;
-
-                  // Skip empty turns
-                  if (playerIds.length === 0 || maxLaps === 0) {
-                    return (
-                      <div key={turnNumber} className="mb-4">
-                        <h3 className="text-sm font-bold text-zinc-300 mb-2">T{turnNumber}</h3>
-                        <div className="text-center text-zinc-500 text-xs py-2">Sin datos registrados</div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div key={turnNumber} className="mb-4">
-                      <h3 className="text-sm font-bold text-zinc-300 mb-2">T{turnNumber}</h3>
-
-                      {/* Excel-style table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="bg-zinc-700">
-                              <th className="text-left p-1 font-mono text-zinc-300 w-20">JUGADOR</th>
-                              {Array.from({length: maxLaps}, (_, i) => (
-                                <th key={i} className="text-center p-1 font-mono text-zinc-300 w-16">V{i+1}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {playerIds.map(playerId => {
-                              const playerLaps = playerGroups[playerId].sort((a, b) => a.lapNumber - b.lapNumber);
-                              return (
-                                <tr key={playerId} className="border-b border-zinc-600">
-                                  <td className="p-1 font-semibold text-white text-left">
-                                    {getPlayerName(playerId).substring(0, 8)}
-                                  </td>
-                                  {Array.from({length: maxLaps}, (_, i) => {
-                                    const lap = playerLaps[i];
-                                    return (
-                                      <td key={i} className="p-1">
-                                        {lap ? (
-                                          <div 
-                                            className={`rounded px-1 py-0.5 text-center font-mono font-bold text-white text-xs ${getLapColor(lap.timeMs, lap.circuitId, lap.playerId)}`}
-                                          >
-                                            {formatTime(lap.timeMs).replace(/^0:/, '').substring(0, 6)}
-                                          </div>
-                                        ) : (
-                                          <div className="text-center text-zinc-600">-</div>
-                                        )}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* Tab Content */}
+        {activeTab === 'tiempos' && (
+          <div className="space-y-4">
+            {/* Color Legend */}
+            <div className="bg-zinc-900 rounded-lg p-3">
+              <div className="flex flex-wrap gap-3 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 bg-purple-600 rounded"></div>
+                  <span className="text-zinc-400">Récord Histórico</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 bg-green-600 rounded"></div>
+                  <span className="text-zinc-400">VR Sesión</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 bg-orange-600 rounded"></div>
+                  <span className="text-zinc-400">Mejor Personal</span>
+                </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
 
-        {/* Results Cards Section - From RaceProgress */}
-        {selectedGame?.state && (
-          <div className="space-y-6 mt-8">
+            {/* Times Tables */}
+            {circuitNames.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-zinc-400">Sin tiempos registrados</p>
+              </div>
+            ) : (
+              circuitNames.map(circuitName => {
+                const circuitData = organizedData[circuitName];
+                const turns = Object.keys(circuitData).map(Number).sort((a, b) => a - b);
+
+                return (
+                  <div key={circuitName} className="bg-zinc-800/50 rounded-lg p-3">
+                    <h2 className="text-lg font-bold text-white mb-3 text-center">
+                      {circuitName.toUpperCase()}
+                    </h2>
+
+                    {turns.map(turnNumber => {
+                      const turnData = circuitData[turnNumber];
+                      const playerGroups: Record<string, LapTimeData[]> = {};
+
+                      turnData.forEach(lap => {
+                        if (!playerGroups[lap.playerId]) {
+                          playerGroups[lap.playerId] = [];
+                        }
+                        playerGroups[lap.playerId].push(lap);
+                      });
+
+                      const playerIds = Object.keys(playerGroups);
+                      const maxLaps = playerIds.length > 0
+                        ? Math.max(...Object.values(playerGroups).map(laps => laps.length))
+                        : 0;
+
+                      if (playerIds.length === 0 || maxLaps === 0) {
+                        return null;
+                      }
+
+                      return (
+                        <div key={turnNumber} className="mb-4">
+                          <h3 className="text-sm font-bold text-zinc-300 mb-2">T{turnNumber}</h3>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-zinc-700">
+                                  <th className="text-left p-1 font-mono text-zinc-300 w-20">JUGADOR</th>
+                                  {Array.from({length: maxLaps}, (_, i) => (
+                                    <th key={i} className="text-center p-1 font-mono text-zinc-300 w-16">V{i+1}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {playerIds.map(playerId => {
+                                  const playerLaps = playerGroups[playerId].sort((a, b) => a.lapNumber - b.lapNumber);
+                                  return (
+                                    <tr key={playerId} className="border-b border-zinc-600">
+                                      <td className="p-1 font-semibold text-white text-left">
+                                        {getPlayerName(playerId).substring(0, 8)}
+                                      </td>
+                                      {Array.from({length: maxLaps}, (_, i) => {
+                                        const lap = playerLaps[i];
+                                        return (
+                                          <td key={i} className="p-1">
+                                            {lap ? (
+                                              <div
+                                                className={`rounded px-1 py-0.5 text-center font-mono font-bold text-white text-xs ${getLapColor(lap.timeMs, lap.circuitId, lap.playerId)}`}
+                                              >
+                                                {formatTime(lap.timeMs).replace(/^0:/, '').substring(0, 6)}
+                                              </div>
+                                            ) : (
+                                              <div className="text-center text-zinc-600">-</div>
+                                            )}
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {activeTab === 'puntos' && selectedGame?.state && (
+          <div className="space-y-4">
             {(() => {
-              // Get the appropriate game state
               const displayGameState = selectedGame.state;
               if (!displayGameState || !displayGameState.playerStats) return null;
 
@@ -532,54 +576,29 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
 
               return (
                 <>
-                  {/* Card 1: Puntuación Actual (Current Score) */}
-                  <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-md">
-                    <h3 className="text-lg font-bold text-zinc-100 mb-3">Puntuación Actual</h3>
-                    <div className="space-y-2">
-                      {standings.map((standing, index) => (
-                        <div key={standing.player.id} className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <span className={`font-bold text-sm w-6 ${
-                              index === 0 ? 'text-yellow-400' :
-                              index === 1 ? 'text-zinc-300' :
-                              index === 2 ? 'text-amber-600' :
-                              'text-zinc-400'
-                            }`}>
-                              {index + 1}
-                            </span>
-                            <span className="text-zinc-100 font-semibold">{standing.player.name}</span>
-                          </div>
-                          <span className="font-bold text-zinc-100 font-mono">{standing.score} pts</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Card 2: Resultados (Results Table) */}
+                  {/* Standings Table */}
                   <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-                    <div className="p-4 border-b border-zinc-800">
-                      <h3 className="text-xl font-bold text-zinc-100">Resultados</h3>
+                    <div className="px-3 py-2 bg-zinc-800 border-b border-zinc-700">
+                      <h3 className="text-base font-bold text-white">Clasificación Final</h3>
                     </div>
-                    
-                    {/* Desktop Table */}
-                    <div className="hidden md:block overflow-x-auto">
+                    <div className="overflow-x-auto">
                       <table className="w-full text-sm font-mono">
                         <thead className="bg-zinc-800">
-                          <tr className="text-left">
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">POS</th>
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">JUGADOR</th>
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">PTS</th>
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">VR</th>
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">PR</th>
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">1º</th>
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">2º</th>
-                            <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">3º</th>
+                          <tr>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-left">POS</th>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-left">JUGADOR</th>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-center">PTS</th>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-center">VR</th>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-center">PR</th>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-center">1º</th>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-center">2º</th>
+                            <th className="px-2 py-2 text-zinc-400 text-xs text-center">3º</th>
                           </tr>
                         </thead>
                         <tbody>
                           {standings.map((standing, index) => (
-                            <tr key={standing.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors">
-                              <td className="px-3 py-2">
+                            <tr key={standing.player.id} className="border-b border-zinc-800">
+                              <td className="px-2 py-2">
                                 <span className={`font-bold ${
                                   index === 0 ? 'text-yellow-400' :
                                   index === 1 ? 'text-zinc-300' :
@@ -589,196 +608,146 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
                                   {index + 1}
                                 </span>
                               </td>
-                              <td className="px-3 py-2">
-                                <span className="font-semibold text-zinc-100">{standing.player.name}</span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className="font-bold text-zinc-100">{standing.score}</span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className="text-zinc-100 font-bold">{standing.bestLaps}</span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className="text-zinc-100 font-bold">{standing.bestAverages}</span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className="text-yellow-400 font-bold">{standing.firsts}</span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className="text-zinc-300 font-bold">{standing.seconds}</span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className="text-amber-600 font-bold">{standing.thirds}</span>
-                              </td>
+                              <td className="px-2 py-2 text-white font-semibold">{standing.player.name}</td>
+                              <td className="px-2 py-2 text-center text-white font-bold">{standing.score}</td>
+                              <td className="px-2 py-2 text-center text-white">{standing.bestLaps}</td>
+                              <td className="px-2 py-2 text-center text-white">{standing.bestAverages}</td>
+                              <td className="px-2 py-2 text-center text-yellow-400">{standing.firsts}</td>
+                              <td className="px-2 py-2 text-center text-zinc-300">{standing.seconds}</td>
+                              <td className="px-2 py-2 text-center text-amber-600">{standing.thirds}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-
-                    {/* Mobile Table */}
-                    <div className="md:hidden">
-                      {/* Mobile Header */}
-                      <div className="grid grid-cols-9 gap-1 px-3 py-2 bg-zinc-800 text-xs font-mono uppercase tracking-wide border-b border-zinc-800">
-                        <div className="text-zinc-400">POS</div>
-                        <div className="text-zinc-400 col-span-3">JUGADOR</div>
-                        <div className="text-zinc-400 text-center">VR</div>
-                        <div className="text-zinc-400 text-center">PR</div>
-                        <div className="text-zinc-400 text-center">1º</div>
-                        <div className="text-zinc-400 text-center">2º</div>
-                        <div className="text-zinc-400 text-center">3º</div>
-                      </div>
-                      
-                      {/* Mobile Data Rows */}
-                      {standings.map((standing, index) => (
-                        <div key={standing.player.id} className="grid grid-cols-9 gap-1 px-3 py-2 border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors text-sm font-mono">
-                          <div className={`font-bold ${
-                            index === 0 ? 'text-yellow-400' :
-                            index === 1 ? 'text-zinc-300' :
-                            index === 2 ? 'text-amber-600' :
-                            'text-zinc-400'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <div className="text-zinc-100 font-semibold col-span-3 truncate">{standing.player.name}</div>
-                          <div className="text-zinc-100 font-bold text-center">{standing.bestLaps}</div>
-                          <div className="text-zinc-100 font-bold text-center">{standing.bestAverages}</div>
-                          <div className="text-yellow-400 font-bold text-center">{standing.firsts}</div>
-                          <div className="text-zinc-300 font-bold text-center">{standing.seconds}</div>
-                          <div className="text-amber-600 font-bold text-center">{standing.thirds}</div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
 
-                  {/* Card 3: Points Breakdown by Circuit */}
-                  <div className="space-y-6">
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
-                      <h3 className="text-xl font-bold text-zinc-100 mb-2">Puntos por Circuito</h3>
-                      <p className="text-zinc-400 text-sm">Desglose detallado de puntos obtenidos en cada circuito</p>
-                    </div>
-                    
-                    {calculator.getCircuitBreakdown().map((circuit, circuitIndex) => {
-                      if (!circuit) return null;
-                      return (
-                        <div key={circuitIndex} className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-                          <div className="px-4 py-3 border-b border-zinc-700 bg-zinc-800">
-                            <h4 className="text-lg font-bold text-zinc-100 font-mono uppercase tracking-wide">
-                              {circuit.name}
-                            </h4>
-                          </div>
-
-                          {/* Desktop Circuit Table */}
-                          <div className="hidden md:block overflow-x-auto">
-                            <table className="w-full text-sm font-mono">
-                              <thead className="bg-zinc-800">
-                                <tr className="text-left">
-                                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">POS</th>
-                                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide">JUGADOR</th>
-                                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">TOTAL</th>
-                                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">BASE</th>
-                                  <th className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">BONUS</th>
-                                  {Array.from({ length: displayGameState.settings?.turnsPerCircuit || 3 }, (_, i) => (
-                                    <th key={i} className="px-3 py-2 text-zinc-400 font-semibold text-xs uppercase tracking-wide text-center">
-                                      T{i + 1}
-                                    </th>
+                  {/* Points by Circuit */}
+                  {calculator.getCircuitBreakdown().map((circuit, circuitIndex) => {
+                    if (!circuit) return null;
+                    return (
+                      <div key={circuitIndex} className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+                        <div className="px-3 py-2 bg-zinc-800 border-b border-zinc-700">
+                          <h4 className="text-base font-bold text-white">{circuit.name}</h4>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm font-mono">
+                            <thead className="bg-zinc-800/50">
+                              <tr>
+                                <th className="px-2 py-2 text-zinc-400 text-xs text-left">POS</th>
+                                <th className="px-2 py-2 text-zinc-400 text-xs text-left">JUGADOR</th>
+                                <th className="px-2 py-2 text-zinc-400 text-xs text-center">TOTAL</th>
+                                <th className="px-2 py-2 text-zinc-400 text-xs text-center">BASE</th>
+                                <th className="px-2 py-2 text-zinc-400 text-xs text-center">BONUS</th>
+                                {Array.from({ length: displayGameState.settings?.turnsPerCircuit || 3 }, (_, i) => (
+                                  <th key={i} className="px-2 py-2 text-zinc-400 text-xs text-center">T{i + 1}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {circuit.players.map((playerData, index) => (
+                                <tr key={playerData.player.id} className="border-b border-zinc-800">
+                                  <td className="px-2 py-2">
+                                    <span className={`font-bold ${
+                                      index === 0 ? 'text-yellow-400' :
+                                      index === 1 ? 'text-zinc-300' :
+                                      index === 2 ? 'text-amber-600' :
+                                      'text-zinc-400'
+                                    }`}>
+                                      {index + 1}
+                                    </span>
+                                  </td>
+                                  <td className="px-2 py-2 text-white font-semibold">{playerData.player.name}</td>
+                                  <td className="px-2 py-2 text-center text-white font-bold">{playerData.totalPoints}</td>
+                                  <td className="px-2 py-2 text-center text-zinc-300">{playerData.basePoints}</td>
+                                  <td className="px-2 py-2 text-center text-amber-400">{playerData.bonusPoints}</td>
+                                  {playerData.turns.map((turnData, turnIndex) => (
+                                    <td key={turnIndex} className="px-2 py-2 text-center text-zinc-300">
+                                      {turnData.totalPoints}
+                                      {turnData.bonusPoints > 0 && (
+                                        <span className="text-amber-400 text-xs">+{turnData.bonusPoints}</span>
+                                      )}
+                                    </td>
                                   ))}
                                 </tr>
-                              </thead>
-                              <tbody>
-                                {circuit.players.map((playerData, index) => (
-                                  <tr key={playerData.player.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors">
-                                    <td className="px-3 py-2">
-                                      <span className={`font-bold ${
-                                        index === 0 ? 'text-yellow-400' :
-                                        index === 1 ? 'text-zinc-300' :
-                                        index === 2 ? 'text-amber-600' :
-                                        'text-zinc-400'
-                                      }`}>
-                                        {index + 1}
-                                      </span>
-                                    </td>
-                                    <td className="px-3 py-2">
-                                      <span className="font-semibold text-zinc-100">{playerData.player.name}</span>
-                                    </td>
-                                    <td className="px-3 py-2 text-center">
-                                      <span className="font-bold text-zinc-100">{playerData.totalPoints}</span>
-                                    </td>
-                                    <td className="px-3 py-2 text-center">
-                                      <span className="text-zinc-300">{playerData.basePoints}</span>
-                                    </td>
-                                    <td className="px-3 py-2 text-center">
-                                      <span className="text-amber-400">{playerData.bonusPoints}</span>
-                                    </td>
-                                    {playerData.turns.map((turnData, turnIndex) => (
-                                      <td key={turnIndex} className="px-3 py-2 text-center">
-                                        <span 
-                                          className="text-zinc-300 cursor-help text-xs"
-                                          title={`Posición: ${turnData.position}° | Base: ${turnData.basePoints}pts | Bonus: ${turnData.bonusPoints}pts`}
-                                        >
-                                          {turnData.totalPoints}
-                                          {turnData.bonusPoints > 0 && (
-                                            <span className="text-amber-400">+{turnData.bonusPoints}</span>
-                                          )}
-                                        </span>
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          {/* Mobile Circuit Table - Grid System like Results */}
-                          <div className="md:hidden overflow-x-auto">
-                            <div className="min-w-fit">
-                              {/* Mobile Header - Dynamic columns based on turns */}
-                              <div className={`grid gap-1 px-3 py-2 bg-zinc-800 text-xs font-mono uppercase tracking-wide border-b border-zinc-800`}
-                                   style={{ gridTemplateColumns: `40px 100px 50px 50px 60px repeat(${displayGameState.settings?.turnsPerCircuit || 3}, 40px)` }}>
-                                <div className="text-zinc-400">POS</div>
-                                <div className="text-zinc-400">JUGADOR</div>
-                                <div className="text-zinc-400 text-center">TOTAL</div>
-                                <div className="text-zinc-400 text-center">BASE</div>
-                                <div className="text-zinc-400 text-center">BONUS</div>
-                                {Array.from({ length: displayGameState.settings?.turnsPerCircuit || 3 }, (_, i) => (
-                                  <div key={i} className="text-zinc-400 text-center">T{i + 1}</div>
-                                ))}
-                              </div>
-                              
-                              {/* Mobile Data Rows */}
-                              {circuit.players.map((playerData, index) => (
-                                <div key={playerData.player.id} 
-                                     className={`grid gap-1 px-3 py-2 border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors text-sm font-mono`}
-                                     style={{ gridTemplateColumns: `40px 100px 50px 50px 60px repeat(${displayGameState.settings?.turnsPerCircuit || 3}, 40px)` }}>
-                                  <div className={`font-bold ${
-                                    index === 0 ? 'text-yellow-400' :
-                                    index === 1 ? 'text-zinc-300' :
-                                    index === 2 ? 'text-amber-600' :
-                                    'text-zinc-400'
-                                  }`}>
-                                    {index + 1}
-                                  </div>
-                                  <div className="text-zinc-100 font-semibold truncate">{playerData.player.name}</div>
-                                  <div className="text-zinc-100 font-bold text-center">{playerData.totalPoints}</div>
-                                  <div className="text-zinc-300 font-bold text-center">{playerData.basePoints}</div>
-                                  <div className="text-amber-400 font-bold text-center">{playerData.bonusPoints}</div>
-                                  {playerData.turns.map((turnData, turnIndex) => (
-                                    <div key={turnIndex} className="text-center">
-                                      <div className="text-zinc-100 font-bold">{turnData.totalPoints}</div>
-                                      <div className="text-xs text-zinc-500">{turnData.position}°</div>
-                                    </div>
-                                  ))}
-                                </div>
                               ))}
-                            </div>
-                          </div>
+                            </tbody>
+                          </table>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {activeTab === 'top' && (
+          <div className="space-y-4">
+            {topData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-zinc-400">Sin datos de mejores tiempos</p>
+              </div>
+            ) : (
+              topData.map(circuitTop => (
+                <div key={circuitTop.circuitId} className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+                  <div className="px-3 py-2 bg-zinc-800 border-b border-zinc-700">
+                    <h4 className="text-base font-bold text-white">{circuitTop.circuitName}</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-zinc-800/50">
+                        <tr>
+                          <th className="px-3 py-2 text-zinc-400 text-xs text-left">TURNO</th>
+                          <th className="px-3 py-2 text-zinc-400 text-xs text-center">
+                            <span className="text-green-400">VR</span> (Mejor Vuelta)
+                          </th>
+                          <th className="px-3 py-2 text-zinc-400 text-xs text-center">
+                            <span className="text-blue-400">PR</span> (Mejor Promedio)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {circuitTop.turns.map(turn => (
+                          <tr key={turn.turnNumber} className="border-b border-zinc-800">
+                            <td className="px-3 py-3 text-white font-bold">T{turn.turnNumber}</td>
+                            <td className="px-3 py-3 text-center">
+                              {turn.bestLap ? (
+                                <div>
+                                  <span className="text-green-400 font-mono font-bold">
+                                    {formatTime(turn.bestLap.time)}
+                                  </span>
+                                  <span className="text-zinc-400 text-xs ml-2">
+                                    {getPlayerName(turn.bestLap.playerId)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-zinc-600">-</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              {turn.bestAverage ? (
+                                <div>
+                                  <span className="text-blue-400 font-mono font-bold">
+                                    {formatTime(turn.bestAverage.time)}
+                                  </span>
+                                  <span className="text-zinc-400 text-xs ml-2">
+                                    {getPlayerName(turn.bestAverage.playerId)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-zinc-600">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
