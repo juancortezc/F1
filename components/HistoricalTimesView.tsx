@@ -407,7 +407,7 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
             >
               {availableGames.map((game) => (
                 <option key={game.id} value={game.id}>
-                  {game.isActive ? '🔴 ' : '✓ '}{game.label} — {game.date}
+                  {game.isActive ? '🔴 EN CURSO' : `✓ ${game.date} — ${game.label}`}
                 </option>
               ))}
             </select>
