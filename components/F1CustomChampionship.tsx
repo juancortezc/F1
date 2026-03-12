@@ -362,27 +362,47 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-white text-xl font-bold">CIRCUITOS</h2>
-            <button
-              onClick={randomizeCircuits}
-              className="text-white hover:text-zinc-300 transition-colors"
-              title="Randomize circuits"
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={randomizeCircuits}
+                className="text-white hover:text-zinc-300 transition-colors"
+                title="Randomize circuits"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setShowCircuitModal(true)}
+                className="text-white hover:text-zinc-300 transition-colors"
+                title="Add circuit"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </button>
+            </div>
           </div>
           
           <div className="grid grid-cols-3 gap-4">
             {selectedCircuits.map((circuit) => (
               <div
                 key={circuit.id}
-                className="bg-zinc-800 border-2 border-f1-red rounded-lg overflow-hidden"
+                onClick={() => handleCircuitToggle(circuit)}
+                className="bg-zinc-800 border-2 border-f1-red rounded-lg overflow-hidden cursor-pointer hover:bg-zinc-700 transition-colors group relative"
               >
+                {/* Remove indicator on hover */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="bg-red-600 rounded-full p-1">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                </div>
                 <div className="aspect-video bg-zinc-700 relative">
                   {circuit.imageUrl ? (
-                    <img 
-                      src={circuit.imageUrl} 
+                    <img
+                      src={circuit.imageUrl}
                       alt={circuit.name}
                       className="w-full h-full object-cover"
                     />
