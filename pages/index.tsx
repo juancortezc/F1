@@ -815,9 +815,9 @@ function App() {
         // Recalculate player order for next circuit using the same logic
         newPlayerOrder = calculateCircuitStandings(newCircuitResults, gameState.currentCircuitIndex, gameState.settings.players);
     } else {
-        // Not the last player of the turn - recalculate order for immediate reordering
-        newPlayerOrder = calculateCircuitStandings(newCircuitResults, gameState.currentCircuitIndex, gameState.settings.players);
-        nextPlayerIndex = 0; // Start with first player in new order
+        // Not the last player of the turn - just advance to next player
+        // Don't recalculate order mid-turn, keep the current order
+        nextPlayerIndex = gameState.currentPlayerIndex + 1;
     }
     
     // Check if we should move to the next circuit BEFORE resetting nextTurn
