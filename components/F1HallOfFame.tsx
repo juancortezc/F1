@@ -40,12 +40,13 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
   const [showPtsExplanation, setShowPtsExplanation] = useState(false);
 
   const { accumulatedStats } = useMemo(() => {
-    // Filter out guest players from stats (same logic as StatsView)
-    const eligiblePlayers = players.filter(p => !p.isGuest);
-    
-    // Initialize accumulated stats for each eligible player
+    // Include ALL players (including guests) - they will be filtered at the end
+    // based on whether they have any stats (participated in games)
+    const allPlayers = players;
+
+    // Initialize accumulated stats for each player
     const playerAccStats: Record<string, AccumulatedStats> = {};
-    eligiblePlayers.forEach(player => {
+    allPlayers.forEach(player => {
       playerAccStats[player.id] = {
         player,
         championships: 0,
@@ -78,7 +79,10 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
           .sort((a, b) => b.totalScore - a.totalScore);
         
         // Add championship to winner (first in standings)
-        if (standings.length > 0 && playerAccStats[standings[0].playerId]) {
+        // Only count if winner has more than 0 points (skip games with all zeros)
+        if (standings.length > 0 &&
+            standings[0].totalScore > 0 &&
+            playerAccStats[standings[0].playerId]) {
           playerAccStats[standings[0].playerId].championships++;
         }
 
@@ -104,16 +108,19 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                   points > winner.points ? { playerId, points } : winner
                 , { playerId: '', points: 0 });
               
-              if (circuitWinner.playerId && playerAccStats[circuitWinner.playerId]) {
+              // Only count victory if winner has more than 0 points
+              if (circuitWinner.playerId &&
+                  circuitWinner.points > 0 &&
+                  playerAccStats[circuitWinner.playerId]) {
                 playerAccStats[circuitWinner.playerId].circuitVictories++;
-              }
 
-              // Update victory count for favorite circuit calculation
-              const circuitId = game.state.circuits[circuitIndex]?.id;
-              if (circuitId && circuitWinner.playerId && 
-                  victoryCount[circuitWinner.playerId] && 
-                  victoryCount[circuitWinner.playerId][circuitId] !== undefined) {
-                victoryCount[circuitWinner.playerId][circuitId]++;
+                // Update victory count for favorite circuit calculation
+                const circuitId = game.state.circuits[circuitIndex]?.id;
+                if (circuitId &&
+                    victoryCount[circuitWinner.playerId] &&
+                    victoryCount[circuitWinner.playerId][circuitId] !== undefined) {
+                  victoryCount[circuitWinner.playerId][circuitId]++;
+                }
               }
             }
           });
@@ -186,6 +193,15 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
         ...stats,
         rankingScore: stats.championships * 10 + stats.circuitVictories * 3 + stats.fastestLaps * 2 + stats.bestAverages
       }))
+      // Filter: only show players who have participated (have any stats or totalScore)
+      .filter(stats =>
+        stats.rankingScore > 0 ||
+        stats.totalScore > 0 ||
+        stats.championships > 0 ||
+        stats.circuitVictories > 0 ||
+        stats.fastestLaps > 0 ||
+        stats.bestAverages > 0
+      )
       .sort((a, b) => b.rankingScore - a.rankingScore);
 
     return {
