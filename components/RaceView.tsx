@@ -246,6 +246,39 @@ const RaceView: React.FC<RaceViewProps> = ({ gameState, players, gameId, onTurnC
 
   const isCurrentController = currentUser.userId === currentController;
 
+  // Reset lap times when player changes
+  useEffect(() => {
+    // Try to restore lap times from localStorage for new player
+    const storageKey = `lap-times-${gameId}-${currentPlayerId}-${currentCircuit?.id}-${currentTurn}`;
+    const saved = localStorage.getItem(storageKey);
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === settings.lapsPerTurn) {
+          const validationKey = `lap-times-validation-${gameId}`;
+          const validation = localStorage.getItem(validationKey);
+          if (validation === currentPlayerId) {
+            setLapTimes(parsed);
+            setSavedLapTimes({});
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved lap times:', e);
+      }
+    }
+
+    // Clear any stale data and reset for new player
+    cleanupStaleLocalStorage(gameId, currentPlayerId);
+    setLapTimes(Array(settings.lapsPerTurn).fill({ min: '', sec: '', ms: '' }));
+    setSavedLapTimes({});
+    setCurrentAverage(null);
+
+    // Store validation key for current player
+    localStorage.setItem(`lap-times-validation-${gameId}`, currentPlayerId);
+  }, [currentPlayerId, currentCircuit?.id, currentTurn, gameId, settings.lapsPerTurn]);
+
   // Retry mechanism for pending saves
   const retryPendingSaves = useCallback(async () => {
     if (isRetrying) return;
