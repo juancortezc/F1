@@ -61,8 +61,8 @@ function App() {
   const hasAdminPrivileges = (user: UserSession | null): boolean => {
     if (!user) return false;
     if (user.role === 'organizer') return true;
-    // Grant admin privileges to Juan and Berna
-    return user.name === 'Juan' || user.name === 'Berna';
+    // Grant admin privileges to Juan, Berna, and BlackMamba
+    return user.name === 'Juan' || user.name === 'Berna' || user.name === 'BlackMamba';
   };
 
   // Verificar sesión guardada al cargar
