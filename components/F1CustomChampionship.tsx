@@ -34,8 +34,8 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
 
   // Auto-populate with random players and circuits on mount
   useEffect(() => {
-    // Select 3 random non-guest players
-    const eligiblePlayers = players.filter(p => !p.isGuest && p.isActive);
+    // Select 3 random active players (including guests)
+    const eligiblePlayers = players.filter(p => p.isActive);
     const randomPlayers = [...eligiblePlayers].sort(() => Math.random() - 0.5).slice(0, 3);
     setSelectedPlayers(randomPlayers);
 
@@ -70,8 +70,8 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
 
   const randomizePlayers = () => {
     const currentIds = selectedPlayers.map(p => p.id);
-    const availablePlayers = players.filter(p => !p.isGuest && p.isActive && !currentIds.includes(p.id));
-    
+    const availablePlayers = players.filter(p => p.isActive && !currentIds.includes(p.id));
+
     if (availablePlayers.length >= 3) {
       const newRandom = [...availablePlayers].sort(() => Math.random() - 0.5).slice(0, 3);
       setSelectedPlayers(newRandom);
@@ -446,7 +446,7 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
             </div>
             
             <div className="space-y-2">
-              {players.filter(p => p.isActive && !p.isGuest).map((player) => {
+              {players.filter(p => p.isActive).map((player) => {
                 const isSelected = selectedPlayers.find(p => p.id === player.id);
                 return (
                   <button
@@ -458,14 +458,15 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
                     disabled={!!isSelected}
                     className={`
                       w-full flex items-center gap-3 p-3 rounded-lg transition-colors
-                      ${isSelected 
-                        ? 'bg-zinc-800 opacity-50 cursor-not-allowed' 
+                      ${isSelected
+                        ? 'bg-zinc-800 opacity-50 cursor-not-allowed'
                         : 'bg-zinc-800 hover:bg-zinc-700 cursor-pointer'
                       }
                     `}
                   >
                     <UserAvatar imageUrl={player.imageUrl} name={player.name} className="w-10 h-10" />
                     <span className="text-white font-medium">{player.name}</span>
+                    {player.isGuest && <span className="ml-2 text-xs text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded">INVITADO</span>}
                     {isSelected && <span className="ml-auto text-zinc-500 text-sm">Ya seleccionado</span>}
                   </button>
                 );
