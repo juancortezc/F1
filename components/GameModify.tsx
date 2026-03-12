@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState, Player, Circuit } from '../types';
 import { PlusIcon, TrashIcon } from './icons';
 import { useSWRConfig } from 'swr';
@@ -27,6 +27,13 @@ const GameModify: React.FC<GameModifyProps> = ({ gameState, players, circuits, g
     const [confirmationText, setConfirmationText] = useState('');
     
     const { mutate } = useSWRConfig();
+
+    // Refresh players when modal opens to get latest data
+    useEffect(() => {
+        if (showPlayerModal) {
+            mutate('/api/players');
+        }
+    }, [showPlayerModal, mutate]);
 
     // Get current values (gameState + pending changes)
     const currentPlayers = pendingChanges.players || gameState.settings.players.map(p => p.id);
@@ -403,8 +410,18 @@ const GameModify: React.FC<GameModifyProps> = ({ gameState, players, circuits, g
                     maxWidth="md"
                 >
                     <div className="bg-zinc-900 rounded-md">
-                        <div className="px-6 py-4 border-b border-zinc-700">
+                        <div className="px-6 py-4 border-b border-zinc-700 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-zinc-100">Agregar Jugador</h2>
+                            <button
+                                onClick={() => mutate('/api/players')}
+                                className="text-sm text-zinc-400 hover:text-zinc-100 flex items-center gap-1"
+                                title="Refrescar lista"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Refrescar
+                            </button>
                         </div>
                         <div className="p-4 max-h-96 overflow-y-auto">
                             <div className="space-y-2">
@@ -415,14 +432,25 @@ const GameModify: React.FC<GameModifyProps> = ({ gameState, players, circuits, g
                                         className="w-full p-3 flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 rounded transition-colors"
                                     >
                                         <img src={player.imageUrl} alt={player.name} className="w-10 h-10 rounded-full"/>
-                                        <span className="text-zinc-100 font-semibold">{player.name}</span>
+                                        <div className="flex-1 text-left">
+                                            <span className="text-zinc-100 font-semibold">{player.name}</span>
+                                            {player.isGuest && (
+                                                <span className="ml-2 text-xs text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded">INVITADO</span>
+                                            )}
+                                        </div>
                                     </button>
                                 ))}
                             </div>
                             {availablePlayers.length === 0 && (
-                                <p className="text-center text-zinc-400 py-6">
-                                    No hay jugadores disponibles para agregar
-                                </p>
+                                <div className="text-center py-6">
+                                    <p className="text-zinc-400 mb-3">No hay jugadores disponibles para agregar</p>
+                                    <button
+                                        onClick={() => mutate('/api/players')}
+                                        className="text-sm text-f1-red hover:text-red-400"
+                                    >
+                                        Refrescar lista de jugadores
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>
