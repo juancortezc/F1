@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Player, Circuit, GameSettings } from '../types';
 import { CheckCircleIcon, ArrowUpIcon, ArrowDownIcon } from './icons';
 import { useTournament } from '../contexts/TournamentContext';
+import { useSWRConfig } from 'swr';
 
 interface ModernGameSetupProps {
   players: Player[];
@@ -82,14 +83,20 @@ const QUICK_START_PRESETS = {
   }
 };
 
-const ModernGameSetup: React.FC<ModernGameSetupProps> = ({ 
-  players, 
-  circuits, 
-  onSetupComplete, 
-  onCancel 
+const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
+  players,
+  circuits,
+  onSetupComplete,
+  onCancel
 }) => {
   const { activeTournament, isInTournamentMode } = useTournament();
+  const { mutate } = useSWRConfig();
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Refresh players on mount to ensure we have the latest data
+  useEffect(() => {
+    mutate('/api/players');
+  }, [mutate]);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [useQuickStart, setUseQuickStart] = useState(true);
   const [continuingTournament, setContinuingTournament] = useState(false);
@@ -303,8 +310,19 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-f1-large font-bold text-f1-pro-platinum">Jugadores</h3>
-            <div className="text-f1-small text-f1-pro-aluminum">
-              {gameSettings.selectedPlayers.length} seleccionados
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => mutate('/api/players')}
+                className="text-f1-tiny text-f1-pro-aluminum hover:text-f1-pro-platinum flex items-center gap-1"
+                title="Refrescar lista de jugadores"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <div className="text-f1-small text-f1-pro-aluminum">
+                {gameSettings.selectedPlayers.length} de {players.length}
+              </div>
             </div>
           </div>
           
