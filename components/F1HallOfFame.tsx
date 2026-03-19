@@ -18,12 +18,10 @@ interface Settings {
 
 interface AccumulatedStats {
   player: Player;
-  championships: number;
-  circuitVictories: number; // VIC: Circuitos donde quedó 1° en campeonatos
-  fastestLaps: number;     // VR: Récords de vuelta rápida por circuito
-  bestAverages: number;    // PR: Récords de promedio por circuito
-  totalScore: number;
-  favoriteCircuit: string | null;
+  championships: number;    // Campeonatos ganados (1° lugar)
+  fastestLaps: number;      // VR: Récords de vuelta rápida por circuito
+  bestAverages: number;     // PR: Récords de promedio por circuito
+  totalScore: number;       // Puntos acumulados por posiciones en campeonatos
 }
 
 const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
@@ -50,88 +48,38 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
       playerAccStats[player.id] = {
         player,
         championships: 0,
-        circuitVictories: 0,
         fastestLaps: 0,
         bestAverages: 0,
-        totalScore: 0,
-        favoriteCircuit: null
+        totalScore: 0
       };
     });
 
-    // Track favorite circuits
-    const victoryCount: Record<string, Record<string, number>> = {};
-    players.forEach(player => {
-      victoryCount[player.id] = {};
-      circuits.forEach(circuit => {
-        victoryCount[player.id][circuit.id] = 0;
-      });
-    });
-
-    // Process completed games (same logic as StatsView)
+    // Process completed games - NEW SYSTEM: Award points based on championship position
     gameHistory.forEach((game, gameIndex) => {
       if (game.state && game.state.playerStats) {
-        // Find winner (player with highest total score)
+        // Get standings sorted by total score
         const standings = Object.entries(game.state.playerStats)
           .map(([playerId, stats]) => ({
             playerId,
             totalScore: (stats as PlayerStats).totalScore || 0
           }))
-          .sort((a, b) => b.totalScore - a.totalScore);
-        
-        // Add championship to winner (first in standings)
-        // Only count if winner has more than 0 points (skip games with all zeros)
-        if (standings.length > 0 &&
-            standings[0].totalScore > 0 &&
-            playerAccStats[standings[0].playerId]) {
-          playerAccStats[standings[0].playerId].championships++;
-        }
+          .sort((a, b) => b.totalScore - a.totalScore)
+          .filter(s => s.totalScore > 0); // Only count players with points
 
-        // Calculate circuit victories and favorite circuits (same complex logic as StatsView)
-        if (game.state.circuitResults && Array.isArray(game.state.circuitResults)) {
-          game.state.circuitResults.forEach((circuitResult: any, circuitIndex: number) => {
-            if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
-              const circuitPoints: Record<string, number> = {};
-              
-              circuitResult.turns.forEach((turn: any) => {
-                if (Array.isArray(turn)) {
-                  turn.forEach((playerData: any) => {
-                    if (!circuitPoints[playerData.playerId]) {
-                      circuitPoints[playerData.playerId] = 0;
-                    }
-                    circuitPoints[playerData.playerId] += playerData.turnScore || 0;
-                  });
-                }
-              });
-              
-              const circuitWinner = Object.entries(circuitPoints)
-                .reduce((winner, [playerId, points]) => 
-                  points > winner.points ? { playerId, points } : winner
-                , { playerId: '', points: 0 });
-              
-              // Only count victory if winner has more than 0 points
-              if (circuitWinner.playerId &&
-                  circuitWinner.points > 0 &&
-                  playerAccStats[circuitWinner.playerId]) {
-                playerAccStats[circuitWinner.playerId].circuitVictories++;
+        // Award points based on position: 10, 8, 6, 4, 3, 2, 1, 0...
+        const positionPoints = [10, 8, 6, 4, 3, 2, 1];
+        standings.forEach((standing, index) => {
+          if (playerAccStats[standing.playerId]) {
+            const points = positionPoints[index] || 0;
+            playerAccStats[standing.playerId].totalScore += points;
 
-                // Update victory count for favorite circuit calculation
-                const circuitId = game.state.circuits[circuitIndex]?.id;
-                if (circuitId &&
-                    victoryCount[circuitWinner.playerId] &&
-                    victoryCount[circuitWinner.playerId][circuitId] !== undefined) {
-                  victoryCount[circuitWinner.playerId][circuitId]++;
-                }
-              }
+            // Still count championships won for display
+            if (index === 0) {
+              playerAccStats[standing.playerId].championships++;
             }
-          });
-        }
-
-        // Add total scores for ranking
-        Object.entries(game.state.playerStats || {}).forEach(([playerId, stats]) => {
-          if (playerAccStats[playerId]) {
-            playerAccStats[playerId].totalScore += (stats as PlayerStats).totalScore || 0;
           }
         });
+
       }
     });
 
@@ -158,51 +106,11 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
       }
     });
 
-    // Add current game stats ONLY if game is still active (not finished)
-    const isGameFinished = gameState ? gameState.currentCircuitIndex >= gameState.settings.circuits.length : false;
-    
-    if (gameState && !isGameFinished && gameState.playerStats) {
-      Object.entries(gameState.playerStats).forEach(([playerId, stats]) => {
-        if (playerAccStats[playerId]) {
-          playerAccStats[playerId].totalScore += (stats as PlayerStats).totalScore || 0;
-        }
-      });
-    }
-
-    // Calculate favorite circuit for each player
-    Object.entries(victoryCount).forEach(([playerId, playerCircuits]) => {
-      let maxVictories = 0;
-      let favoriteCircuitId: string | null = null;
-      
-      Object.entries(playerCircuits).forEach(([circuitId, count]) => {
-        if (count > maxVictories) {
-          maxVictories = count;
-          favoriteCircuitId = circuitId;
-        }
-      });
-      
-      if (favoriteCircuitId && playerAccStats[playerId]) {
-        const circuit = circuits.find(c => c.id === favoriteCircuitId);
-        playerAccStats[playerId].favoriteCircuit = circuit ? circuit.name : null;
-      }
-    });
-
-    // Calculate ranking (same formula as StatsView)
+    // NEW SYSTEM: Rank by totalScore (championship position points only)
     const rankedStats = Object.values(playerAccStats)
-      .map(stats => ({
-        ...stats,
-        rankingScore: stats.championships * 10 + stats.circuitVictories * 3 + stats.fastestLaps * 2 + stats.bestAverages
-      }))
-      // Filter: only show players who have participated (have any stats or totalScore)
-      .filter(stats =>
-        stats.rankingScore > 0 ||
-        stats.totalScore > 0 ||
-        stats.championships > 0 ||
-        stats.circuitVictories > 0 ||
-        stats.fastestLaps > 0 ||
-        stats.bestAverages > 0
-      )
-      .sort((a, b) => b.rankingScore - a.rankingScore);
+      // Filter: only show players who participated in championships
+      .filter(stats => stats.totalScore > 0)
+      .sort((a, b) => b.totalScore - a.totalScore);
 
     return {
       accumulatedStats: rankedStats
@@ -317,13 +225,13 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
         </div>
 
         {/* Statistics Table */}
-        <div className="rounded-lg border border-zinc-800" style={{ backgroundColor: '#242424' }}>
+        <div className="rounded-lg border border-zinc-800 mb-6" style={{ backgroundColor: '#242424' }}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr style={{ backgroundColor: '#2A2A2A' }}>
                   <th className="px-1 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">POS</th>
-                  <th className="px-2 py-2 text-left text-xs font-mono uppercase tracking-wider text-zinc-400">JUG</th>
+                  <th className="px-2 py-2 text-left text-xs font-mono uppercase tracking-wider text-zinc-400">JUGADOR</th>
                   <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">
                     <button
                       onClick={() => setShowPtsExplanation(true)}
@@ -336,10 +244,6 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                     </button>
                   </th>
                   <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CMP</th>
-                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VIC</th>
-                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">VR</th>
-                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">PR</th>
-                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CRT</th>
                 </tr>
               </thead>
               <tbody>
@@ -347,7 +251,7 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                   <tr key={stats.player.id} className="border-t border-zinc-800">
                     <td className="px-1 py-3 text-center">
                       <span className={`font-mono font-bold text-sm
-                        ${index === 0 ? 'text-yellow-500' : 
+                        ${index === 0 ? 'text-yellow-500' :
                           index === 1 ? 'text-zinc-400' :
                           index === 2 ? 'text-orange-600' :
                           'text-zinc-300'}
@@ -356,13 +260,13 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                       </span>
                     </td>
                     <td className="px-2 py-3">
-                      <div className="text-white font-semibold text-sm">
+                      <div className="text-white font-semibold text-base">
                         {stats.player.name}
                       </div>
                     </td>
                     <td className="px-2 py-3 text-center">
-                      <span className="font-mono font-bold text-yellow-400 text-base">
-                        {stats.rankingScore}
+                      <span className="font-mono font-bold text-yellow-400 text-lg">
+                        {stats.totalScore}
                       </span>
                     </td>
                     <td className="px-2 py-3 text-center">
@@ -370,31 +274,74 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                         {stats.championships}
                       </span>
                     </td>
-                    <td className="px-2 py-3 text-center">
-                      <span className="font-mono font-bold text-white text-base">
-                        {stats.circuitVictories}
-                      </span>
-                    </td>
-                    <td className="px-2 py-3 text-center">
-                      <span className="font-mono font-bold text-white text-base">
-                        {stats.fastestLaps}
-                      </span>
-                    </td>
-                    <td className="px-2 py-3 text-center">
-                      <span className="font-mono font-bold text-white text-base">
-                        {stats.bestAverages}
-                      </span>
-                    </td>
-                    <td className="px-2 py-3 text-center">
-                      <span className="text-zinc-300 font-medium text-sm">
-                        {stats.favoriteCircuit || '-'}
-                      </span>
-                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Record Cards - VR and PR */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Fastest Laps Card */}
+          {(() => {
+            const topVR = accumulatedStats
+              .filter(s => s.fastestLaps > 0)
+              .sort((a, b) => b.fastestLaps - a.fastestLaps)
+              .slice(0, 1)[0];
+
+            return topVR ? (
+              <div className="rounded-lg border border-zinc-800 p-4" style={{ backgroundColor: '#242424' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="text-2xl">⚡</div>
+                  <h3 className="text-lg font-bold text-white">MÁS VUELTAS RÁPIDAS</h3>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      imageUrl={topVR.player.imageUrl}
+                      name={topVR.player.name}
+                      className="w-12 h-12"
+                    />
+                    <span className="text-white font-semibold text-base">{topVR.player.name}</span>
+                  </div>
+                  <span className="font-mono font-bold text-yellow-400 text-2xl">
+                    {topVR.fastestLaps}
+                  </span>
+                </div>
+              </div>
+            ) : null;
+          })()}
+
+          {/* Best Averages Card */}
+          {(() => {
+            const topPR = accumulatedStats
+              .filter(s => s.bestAverages > 0)
+              .sort((a, b) => b.bestAverages - a.bestAverages)
+              .slice(0, 1)[0];
+
+            return topPR ? (
+              <div className="rounded-lg border border-zinc-800 p-4" style={{ backgroundColor: '#242424' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="text-2xl">🎯</div>
+                  <h3 className="text-lg font-bold text-white">MÁS MEJORES PROMEDIOS</h3>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      imageUrl={topPR.player.imageUrl}
+                      name={topPR.player.name}
+                      className="w-12 h-12"
+                    />
+                    <span className="text-white font-semibold text-base">{topPR.player.name}</span>
+                  </div>
+                  <span className="font-mono font-bold text-yellow-400 text-2xl">
+                    {topPR.bestAverages}
+                  </span>
+                </div>
+              </div>
+            ) : null;
+          })()}
         </div>
       </div>
 
@@ -415,37 +362,62 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             </div>
 
             <p className="text-zinc-400 mb-4">
-              Los puntos del Hall of Fame se calculan con la siguiente fórmula:
+              Los puntos del Hall of Fame se otorgan según la posición final en cada campeonato:
             </p>
 
             <div className="bg-zinc-800 rounded-lg p-4 mb-4">
-              <p className="text-white font-mono text-center text-lg">
-                PTS = (CMP × 10) + (VIC × 3) + (VR × 2) + (PR × 1)
-              </p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-zinc-300">
+                  <span className="flex items-center gap-2">
+                    <span className="text-yellow-500 font-bold">1°</span>
+                    <span>Campeón</span>
+                  </span>
+                  <span className="font-mono text-yellow-400 font-bold">10 pts</span>
+                </div>
+                <div className="flex justify-between text-zinc-300">
+                  <span className="flex items-center gap-2">
+                    <span className="text-zinc-400 font-bold">2°</span>
+                    <span>Subcampeón</span>
+                  </span>
+                  <span className="font-mono text-yellow-400 font-bold">8 pts</span>
+                </div>
+                <div className="flex justify-between text-zinc-300">
+                  <span className="flex items-center gap-2">
+                    <span className="text-orange-600 font-bold">3°</span>
+                    <span>Tercer lugar</span>
+                  </span>
+                  <span className="font-mono text-yellow-400 font-bold">6 pts</span>
+                </div>
+                <div className="flex justify-between text-zinc-300">
+                  <span>4° lugar</span>
+                  <span className="font-mono text-yellow-400">4 pts</span>
+                </div>
+                <div className="flex justify-between text-zinc-300">
+                  <span>5° lugar</span>
+                  <span className="font-mono text-yellow-400">3 pts</span>
+                </div>
+                <div className="flex justify-between text-zinc-300">
+                  <span>6° lugar</span>
+                  <span className="font-mono text-yellow-400">2 pts</span>
+                </div>
+                <div className="flex justify-between text-zinc-300">
+                  <span>7° lugar</span>
+                  <span className="font-mono text-yellow-400">1 pt</span>
+                </div>
+                <div className="flex justify-between text-zinc-300">
+                  <span>8° en adelante</span>
+                  <span className="font-mono text-zinc-500">0 pts</span>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-zinc-300">
-                <span><strong>CMP</strong> - Campeonatos ganados</span>
-                <span className="font-mono text-yellow-400">×10 pts</span>
-              </div>
-              <div className="flex justify-between text-zinc-300">
-                <span><strong>VIC</strong> - Victorias en circuitos</span>
-                <span className="font-mono text-yellow-400">×3 pts</span>
-              </div>
-              <div className="flex justify-between text-zinc-300">
-                <span><strong>VR</strong> - Vueltas Rápidas</span>
-                <span className="font-mono text-yellow-400">×2 pts</span>
-              </div>
-              <div className="flex justify-between text-zinc-300">
-                <span><strong>PR</strong> - Mejores Promedios</span>
-                <span className="font-mono text-yellow-400">×1 pt</span>
-              </div>
-            </div>
+            <p className="text-zinc-400 text-sm mb-4">
+              Los puntos se acumulan a lo largo de todos los campeonatos completados.
+            </p>
 
             <button
               onClick={() => setShowPtsExplanation(false)}
-              className="w-full mt-6 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              className="w-full mt-2 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
             >
               ENTENDIDO
             </button>
