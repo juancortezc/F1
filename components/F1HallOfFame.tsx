@@ -19,9 +19,14 @@ interface Settings {
 interface AccumulatedStats {
   player: Player;
   championships: number;    // Campeonatos ganados (1° lugar)
+  secondPlaces: number;     // Subcampeonatos (2° lugar)
+  thirdPlaces: number;      // Terceros lugares (3° lugar)
   fastestLaps: number;      // VR: Récords de vuelta rápida por circuito
   bestAverages: number;     // PR: Récords de promedio por circuito
   totalScore: number;       // Puntos acumulados por posiciones en campeonatos
+  vrCircuits: string[];     // Circuitos donde logró VR
+  prCircuits: string[];     // Circuitos donde logró PR
+  circuitWins: Record<string, number>; // Victorias por circuito
 }
 
 const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
@@ -34,8 +39,11 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
   const { data: settings } = useSWR<Settings>('/api/settings', fetcher);
   const cutoffDate = settings?.historicalCutoffDate ? new Date(settings.historicalCutoffDate) : null;
 
-  // State for showing PTS explanation modal
+  // State for modals
   const [showPtsExplanation, setShowPtsExplanation] = useState(false);
+  const [showVRModal, setShowVRModal] = useState(false);
+  const [showPRModal, setShowPRModal] = useState(false);
+  const [showCircuitDominationModal, setShowCircuitDominationModal] = useState(false);
 
   const { accumulatedStats } = useMemo(() => {
     // Include ALL players (including guests) - they will be filtered at the end
@@ -48,9 +56,14 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
       playerAccStats[player.id] = {
         player,
         championships: 0,
+        secondPlaces: 0,
+        thirdPlaces: 0,
         fastestLaps: 0,
         bestAverages: 0,
-        totalScore: 0
+        totalScore: 0,
+        vrCircuits: [],
+        prCircuits: [],
+        circuitWins: {}
       };
     });
 
@@ -73,12 +86,49 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             const points = positionPoints[index] || 0;
             playerAccStats[standing.playerId].totalScore += points;
 
-            // Still count championships won for display
+            // Count podium positions
             if (index === 0) {
               playerAccStats[standing.playerId].championships++;
+            } else if (index === 1) {
+              playerAccStats[standing.playerId].secondPlaces++;
+            } else if (index === 2) {
+              playerAccStats[standing.playerId].thirdPlaces++;
             }
           }
         });
+
+        // Count circuit wins for each player in this championship
+        if (game.state.circuitResults && Array.isArray(game.state.circuitResults)) {
+          game.state.circuitResults.forEach((circuitResult: any, circuitIndex: number) => {
+            if (circuitResult.turns && Array.isArray(circuitResult.turns)) {
+              const circuitPoints: Record<string, number> = {};
+
+              circuitResult.turns.forEach((turn: any) => {
+                if (Array.isArray(turn)) {
+                  turn.forEach((playerData: any) => {
+                    if (!circuitPoints[playerData.playerId]) {
+                      circuitPoints[playerData.playerId] = 0;
+                    }
+                    circuitPoints[playerData.playerId] += playerData.turnScore || 0;
+                  });
+                }
+              });
+
+              const circuitWinner = Object.entries(circuitPoints)
+                .reduce((winner, [playerId, points]) =>
+                  points > winner.points ? { playerId, points } : winner
+                , { playerId: '', points: 0 });
+
+              if (circuitWinner.playerId && circuitWinner.points > 0 && playerAccStats[circuitWinner.playerId]) {
+                const circuitName = game.state.circuits[circuitIndex]?.name || `Circuit ${circuitIndex + 1}`;
+                if (!playerAccStats[circuitWinner.playerId].circuitWins[circuitName]) {
+                  playerAccStats[circuitWinner.playerId].circuitWins[circuitName] = 0;
+                }
+                playerAccStats[circuitWinner.playerId].circuitWins[circuitName]++;
+              }
+            }
+          });
+        }
 
       }
     });
@@ -92,15 +142,24 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
           bestAveragePlayerId?: string;
         }>;
 
-        Object.values(sessionBestTimes).forEach((circuitBest) => {
+        Object.entries(sessionBestTimes).forEach(([circuitId, circuitBest]) => {
+          // Find circuit name
+          const circuitName = game.state.circuits?.find((c: any) => c.id === circuitId)?.name || circuitId;
+
           // VR: Count fastest lap records from this game's session
           if (circuitBest.bestLapPlayerId && playerAccStats[circuitBest.bestLapPlayerId]) {
             playerAccStats[circuitBest.bestLapPlayerId].fastestLaps++;
+            if (!playerAccStats[circuitBest.bestLapPlayerId].vrCircuits.includes(circuitName)) {
+              playerAccStats[circuitBest.bestLapPlayerId].vrCircuits.push(circuitName);
+            }
           }
 
           // PR: Count best average records from this game's session
           if (circuitBest.bestAveragePlayerId && playerAccStats[circuitBest.bestAveragePlayerId]) {
             playerAccStats[circuitBest.bestAveragePlayerId].bestAverages++;
+            if (!playerAccStats[circuitBest.bestAveragePlayerId].prCircuits.includes(circuitName)) {
+              playerAccStats[circuitBest.bestAveragePlayerId].prCircuits.push(circuitName);
+            }
           }
         });
       }
@@ -243,7 +302,9 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                       </svg>
                     </button>
                   </th>
-                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CMP</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">1°</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">2°</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">3°</th>
                 </tr>
               </thead>
               <tbody>
@@ -270,8 +331,18 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                       </span>
                     </td>
                     <td className="px-2 py-3 text-center">
-                      <span className="font-mono font-bold text-white text-base">
+                      <span className="font-mono font-bold text-yellow-500 text-base">
                         {stats.championships}
+                      </span>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-zinc-400 text-base">
+                        {stats.secondPlaces}
+                      </span>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-orange-600 text-base">
+                        {stats.thirdPlaces}
                       </span>
                     </td>
                   </tr>
@@ -281,8 +352,8 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
           </div>
         </div>
 
-        {/* Record Cards - VR and PR */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Record Cards - VR, PR and Circuit Domination */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Fastest Laps Card */}
           {(() => {
             const topVR = accumulatedStats
@@ -291,7 +362,11 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
               .slice(0, 1)[0];
 
             return topVR ? (
-              <div className="rounded-lg border border-zinc-800 p-4" style={{ backgroundColor: '#242424' }}>
+              <button
+                onClick={() => setShowVRModal(true)}
+                className="rounded-lg border border-zinc-800 p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
+                style={{ backgroundColor: '#242424' }}
+              >
                 <div className="flex items-center gap-2 mb-3">
                   <div className="text-2xl">⚡</div>
                   <h3 className="text-lg font-bold text-white">MÁS VUELTAS RÁPIDAS</h3>
@@ -309,7 +384,8 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                     {topVR.fastestLaps}
                   </span>
                 </div>
-              </div>
+                <div className="mt-2 text-xs text-zinc-400 text-center">Click para ver detalle</div>
+              </button>
             ) : null;
           })()}
 
@@ -321,7 +397,11 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
               .slice(0, 1)[0];
 
             return topPR ? (
-              <div className="rounded-lg border border-zinc-800 p-4" style={{ backgroundColor: '#242424' }}>
+              <button
+                onClick={() => setShowPRModal(true)}
+                className="rounded-lg border border-zinc-800 p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
+                style={{ backgroundColor: '#242424' }}
+              >
                 <div className="flex items-center gap-2 mb-3">
                   <div className="text-2xl">🎯</div>
                   <h3 className="text-lg font-bold text-white">MÁS MEJORES PROMEDIOS</h3>
@@ -339,9 +419,31 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                     {topPR.bestAverages}
                   </span>
                 </div>
-              </div>
+                <div className="mt-2 text-xs text-zinc-400 text-center">Click para ver detalle</div>
+              </button>
             ) : null;
           })()}
+
+          {/* Circuit Domination Card */}
+          <button
+            onClick={() => setShowCircuitDominationModal(true)}
+            className="rounded-lg border border-zinc-800 p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
+            style={{ backgroundColor: '#242424' }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="text-2xl">🏆</div>
+              <h3 className="text-lg font-bold text-white">DOMINACIÓN POR CIRCUITO</h3>
+            </div>
+            <div className="text-zinc-300 text-sm">
+              {(() => {
+                const playersWithWins = accumulatedStats.filter(s =>
+                  Object.keys(s.circuitWins).length > 0
+                );
+                return `${playersWithWins.length} jugadores con victorias`;
+              })()}
+            </div>
+            <div className="mt-2 text-xs text-zinc-400 text-center">Click para ver detalle</div>
+          </button>
         </div>
       </div>
 
@@ -420,6 +522,204 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
               className="w-full mt-2 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
             >
               ENTENDIDO
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* VR Modal */}
+      {showVRModal && (() => {
+        const vrStats = accumulatedStats
+          .filter(s => s.fastestLaps > 0)
+          .sort((a, b) => b.fastestLaps - a.fastestLaps);
+
+        return (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 rounded-lg p-6 max-w-2xl w-full border border-zinc-700 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl">⚡</div>
+                  <h3 className="text-xl font-bold text-white">Vueltas Rápidas por Circuito</h3>
+                </div>
+                <button
+                  onClick={() => setShowVRModal(false)}
+                  className="text-zinc-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {vrStats.map((stats, index) => (
+                  <div key={stats.player.id} className="bg-zinc-800 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          imageUrl={stats.player.imageUrl}
+                          name={stats.player.name}
+                          className="w-10 h-10"
+                        />
+                        <div>
+                          <div className="text-white font-semibold">{stats.player.name}</div>
+                          <div className="text-zinc-400 text-sm">{stats.fastestLaps} vueltas rápidas</div>
+                        </div>
+                      </div>
+                      <span className={`font-mono font-bold text-xl
+                        ${index === 0 ? 'text-yellow-400' : 'text-zinc-400'}
+                      `}>
+                        {stats.fastestLaps}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {stats.vrCircuits.map((circuit) => (
+                        <span
+                          key={circuit}
+                          className="px-2 py-1 bg-zinc-700 rounded text-zinc-300 text-xs"
+                        >
+                          {circuit}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setShowVRModal(false)}
+                className="w-full mt-4 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              >
+                CERRAR
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* PR Modal */}
+      {showPRModal && (() => {
+        const prStats = accumulatedStats
+          .filter(s => s.bestAverages > 0)
+          .sort((a, b) => b.bestAverages - a.bestAverages);
+
+        return (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 rounded-lg p-6 max-w-2xl w-full border border-zinc-700 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl">🎯</div>
+                  <h3 className="text-xl font-bold text-white">Mejores Promedios por Circuito</h3>
+                </div>
+                <button
+                  onClick={() => setShowPRModal(false)}
+                  className="text-zinc-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {prStats.map((stats, index) => (
+                  <div key={stats.player.id} className="bg-zinc-800 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          imageUrl={stats.player.imageUrl}
+                          name={stats.player.name}
+                          className="w-10 h-10"
+                        />
+                        <div>
+                          <div className="text-white font-semibold">{stats.player.name}</div>
+                          <div className="text-zinc-400 text-sm">{stats.bestAverages} mejores promedios</div>
+                        </div>
+                      </div>
+                      <span className={`font-mono font-bold text-xl
+                        ${index === 0 ? 'text-yellow-400' : 'text-zinc-400'}
+                      `}>
+                        {stats.bestAverages}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {stats.prCircuits.map((circuit) => (
+                        <span
+                          key={circuit}
+                          className="px-2 py-1 bg-zinc-700 rounded text-zinc-300 text-xs"
+                        >
+                          {circuit}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setShowPRModal(false)}
+                className="w-full mt-4 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              >
+                CERRAR
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Circuit Domination Modal */}
+      {showCircuitDominationModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-lg p-6 max-w-2xl w-full border border-zinc-700 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="text-2xl">🏆</div>
+                <h3 className="text-xl font-bold text-white">Dominación por Circuito</h3>
+              </div>
+              <button
+                onClick={() => setShowCircuitDominationModal(false)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {accumulatedStats
+                .filter(s => Object.keys(s.circuitWins).length > 0)
+                .map((stats) => (
+                  <div key={stats.player.id} className="bg-zinc-800 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <UserAvatar
+                        imageUrl={stats.player.imageUrl}
+                        name={stats.player.name}
+                        className="w-10 h-10"
+                      />
+                      <div className="text-white font-semibold">{stats.player.name}</div>
+                    </div>
+                    <div className="space-y-2">
+                      {Object.entries(stats.circuitWins)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([circuit, wins]) => (
+                          <div key={circuit} className="flex items-center justify-between">
+                            <span className="text-zinc-300 text-sm">{circuit}</span>
+                            <span className="font-mono font-bold text-yellow-400">
+                              {wins} {wins === 1 ? 'victoria' : 'victorias'}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <button
+              onClick={() => setShowCircuitDominationModal(false)}
+              className="w-full mt-4 bg-zinc-700 hover:bg-zinc-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            >
+              CERRAR
             </button>
           </div>
         </div>
