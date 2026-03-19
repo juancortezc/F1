@@ -165,11 +165,26 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
       }
     });
 
-    // NEW SYSTEM: Rank by totalScore (championship position points only)
+    // NEW SYSTEM: Rank by totalScore with tiebreakers
     const rankedStats = Object.values(playerAccStats)
       // Filter: only show players who participated in championships
       .filter(stats => stats.totalScore > 0)
-      .sort((a, b) => b.totalScore - a.totalScore);
+      .sort((a, b) => {
+        // Primary: Total points
+        if (b.totalScore !== a.totalScore) {
+          return b.totalScore - a.totalScore;
+        }
+        // Tiebreaker 1: Most championships (1st places)
+        if (b.championships !== a.championships) {
+          return b.championships - a.championships;
+        }
+        // Tiebreaker 2: Most second places
+        if (b.secondPlaces !== a.secondPlaces) {
+          return b.secondPlaces - a.secondPlaces;
+        }
+        // Tiebreaker 3: Most third places
+        return b.thirdPlaces - a.thirdPlaces;
+      });
 
     return {
       accumulatedStats: rankedStats
@@ -359,33 +374,40 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             const topVR = accumulatedStats
               .filter(s => s.fastestLaps > 0)
               .sort((a, b) => b.fastestLaps - a.fastestLaps)
-              .slice(0, 1)[0];
+              .slice(0, 3);
 
-            return topVR ? (
-              <button
-                onClick={() => setShowVRModal(true)}
-                className="rounded-lg border border-zinc-800 p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
+            return topVR.length > 0 ? (
+              <div
+                className="rounded-lg border border-zinc-800 p-4"
                 style={{ backgroundColor: '#242424' }}
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="text-2xl">⚡</div>
-                  <h3 className="text-lg font-bold text-white">MÁS VUELTAS RÁPIDAS</h3>
+                  <h3 className="text-lg font-bold text-white">VUELTAS RÁPIDAS</h3>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <UserAvatar
-                      imageUrl={topVR.player.imageUrl}
-                      name={topVR.player.name}
-                      className="w-12 h-12"
-                    />
-                    <span className="text-white font-semibold text-base">{topVR.player.name}</span>
-                  </div>
-                  <span className="font-mono font-bold text-yellow-400 text-2xl">
-                    {topVR.fastestLaps}
-                  </span>
+                <div className="space-y-2">
+                  {topVR.map((stats, index) => (
+                    <button
+                      key={stats.player.id}
+                      onClick={() => setShowVRModal(true)}
+                      className="w-full flex items-center justify-between hover:bg-zinc-800 p-2 rounded transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`font-mono font-bold text-sm
+                          ${index === 0 ? 'text-yellow-500' :
+                            index === 1 ? 'text-zinc-400' :
+                            'text-orange-600'}
+                        `}>
+                          {index + 1}°
+                        </span>
+                        <span className="text-white font-semibold text-sm">{stats.player.name}</span>
+                      </div>
+                      <span className="font-mono font-bold text-yellow-400 text-lg">
+                        {stats.fastestLaps}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-                <div className="mt-2 text-xs text-zinc-400 text-center">Click para ver detalle</div>
-              </button>
+              </div>
             ) : null;
           })()}
 
@@ -394,56 +416,100 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             const topPR = accumulatedStats
               .filter(s => s.bestAverages > 0)
               .sort((a, b) => b.bestAverages - a.bestAverages)
-              .slice(0, 1)[0];
+              .slice(0, 3);
 
-            return topPR ? (
-              <button
-                onClick={() => setShowPRModal(true)}
-                className="rounded-lg border border-zinc-800 p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
-                style={{ backgroundColor: '#242424' }}
-              >
+            return topPR.length > 0 ? (
+              <div className="rounded-lg border border-zinc-800 p-4" style={{ backgroundColor: '#242424' }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="text-2xl">🎯</div>
-                  <h3 className="text-lg font-bold text-white">MÁS MEJORES PROMEDIOS</h3>
+                  <h3 className="text-lg font-bold text-white">PROMEDIOS</h3>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <UserAvatar
-                      imageUrl={topPR.player.imageUrl}
-                      name={topPR.player.name}
-                      className="w-12 h-12"
-                    />
-                    <span className="text-white font-semibold text-base">{topPR.player.name}</span>
-                  </div>
-                  <span className="font-mono font-bold text-yellow-400 text-2xl">
-                    {topPR.bestAverages}
-                  </span>
+                <div className="space-y-2">
+                  {topPR.map((stats, index) => (
+                    <button
+                      key={stats.player.id}
+                      onClick={() => setShowPRModal(true)}
+                      className="w-full flex items-center justify-between hover:bg-zinc-800 p-2 rounded transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`font-mono font-bold text-sm ${
+                          index === 0 ? 'text-yellow-500' :
+                          index === 1 ? 'text-zinc-400' :
+                          'text-orange-600'
+                        }`}>
+                          {index + 1}°
+                        </span>
+                        <span className="text-white font-semibold text-sm">{stats.player.name}</span>
+                      </div>
+                      <span className="font-mono font-bold text-yellow-400 text-lg">
+                        {stats.bestAverages}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-                <div className="mt-2 text-xs text-zinc-400 text-center">Click para ver detalle</div>
-              </button>
+              </div>
             ) : null;
           })()}
 
           {/* Circuit Domination Card */}
-          <button
-            onClick={() => setShowCircuitDominationModal(true)}
-            className="rounded-lg border border-zinc-800 p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
-            style={{ backgroundColor: '#242424' }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <div className="text-2xl">🏆</div>
-              <h3 className="text-lg font-bold text-white">DOMINACIÓN POR CIRCUITO</h3>
-            </div>
-            <div className="text-zinc-300 text-sm">
-              {(() => {
-                const playersWithWins = accumulatedStats.filter(s =>
-                  Object.keys(s.circuitWins).length > 0
-                );
-                return `${playersWithWins.length} jugadores con victorias`;
-              })()}
-            </div>
-            <div className="mt-2 text-xs text-zinc-400 text-center">Click para ver detalle</div>
-          </button>
+          {(() => {
+            // Get top 3 players by total circuit wins
+            const topCircuitPlayers = accumulatedStats
+              .filter(s => Object.keys(s.circuitWins).length > 0)
+              .map(stats => {
+                const totalWins = Object.values(stats.circuitWins).reduce((sum, wins) => sum + wins, 0);
+                // Get most won circuit - if tie, take the last one (most recent)
+                const mostWonCircuit = Object.entries(stats.circuitWins)
+                  .sort(([, a], [, b]) => {
+                    if (b !== a) return b - a;
+                    // If tie, the last one in the array is the most recent
+                    return 1;
+                  })[0];
+
+                return {
+                  ...stats,
+                  totalWins,
+                  topCircuit: mostWonCircuit ? mostWonCircuit[0] : '',
+                  topCircuitWins: mostWonCircuit ? mostWonCircuit[1] : 0
+                };
+              })
+              .sort((a, b) => b.totalWins - a.totalWins)
+              .slice(0, 3);
+
+            return topCircuitPlayers.length > 0 ? (
+              <button
+                onClick={() => setShowCircuitDominationModal(true)}
+                className="rounded-lg border border-zinc-800 p-4 hover:border-yellow-400 transition-colors cursor-pointer text-left"
+                style={{ backgroundColor: '#242424' }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="text-2xl">🏆</div>
+                  <h3 className="text-lg font-bold text-white">TOP CIRCUITOS</h3>
+                </div>
+                <div className="space-y-2">
+                  {topCircuitPlayers.map((stats, index) => (
+                    <div key={stats.player.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-mono font-bold text-sm ${
+                          index === 0 ? 'text-yellow-500' :
+                          index === 1 ? 'text-zinc-400' :
+                          'text-orange-600'
+                        }`}>
+                          {index + 1}°
+                        </span>
+                        <div>
+                          <div className="text-white font-semibold text-sm">{stats.player.name}</div>
+                          <div className="text-zinc-400 text-xs">{stats.topCircuit}</div>
+                        </div>
+                      </div>
+                      <span className="font-mono font-bold text-yellow-400 text-sm">
+                        {stats.totalWins}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </button>
+            ) : null;
+          })()}
         </div>
       </div>
 
@@ -674,7 +740,7 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="text-2xl">🏆</div>
-                <h3 className="text-xl font-bold text-white">Dominación por Circuito</h3>
+                <h3 className="text-xl font-bold text-white">Top Circuitos</h3>
               </div>
               <button
                 onClick={() => setShowCircuitDominationModal(false)}
