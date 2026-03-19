@@ -643,16 +643,24 @@ function App() {
     let newPlayerOrder = gameState.playerOrder;
     let finalPlayerStats = gameState.playerStats;
     
-    // Helper function to calculate circuit standings for turn order
-    const calculateCircuitStandings = (circuitResults: any[], currentCircuitIndex: number, players: any[]) => {
+    // Helper function to calculate standings for turn order
+    const calculateCircuitStandings = (circuitResults: any[], currentCircuitIndex: number, players: any[], useOverallStandings: boolean = false) => {
+        if (useOverallStandings) {
+            // Use total accumulated points (for first turn of new circuit)
+            return Object.entries(finalPlayerStats)
+                .sort((a, b) => (b[1] as any).totalScore - (a[1] as any).totalScore)
+                .map(([playerId]) => playerId);
+        }
+
+        // Use current circuit points (for subsequent turns in same circuit)
         const currentCircuitResults = circuitResults[currentCircuitIndex];
         const circuitStandings = new Map<string, number>();
-        
+
         // Initialize all players with 0 points for this circuit
         players.forEach((player: any) => {
             circuitStandings.set(player.id, 0);
         });
-        
+
         // Sum up points from all turns completed in current circuit
         if (currentCircuitResults && currentCircuitResults.turns.length > 0) {
             currentCircuitResults.turns.forEach((turn: any) => {
@@ -662,7 +670,7 @@ function App() {
                 });
             });
         }
-        
+
         // Sort players by current circuit points (for turn order)
         return Array.from(circuitStandings.entries())
             .sort((a, b) => b[1] - a[1]) // Sort by circuit points descending
@@ -771,9 +779,9 @@ function App() {
         finalPlayerStats = newPlayerStats;
         nextPlayerIndex = 0;
         nextTurn = gameState.currentTurn + 1;
-        
-        // Calculate new player order based on current circuit standings
-        newPlayerOrder = calculateCircuitStandings(newCircuitResults, gameState.currentCircuitIndex, gameState.settings.players);
+
+        // Calculate new player order based on current circuit standings (not overall)
+        newPlayerOrder = calculateCircuitStandings(newCircuitResults, gameState.currentCircuitIndex, gameState.settings.players, false);
         
         // Check if we need to move to the next circuit
         if (nextTurn > gameState.settings.turnsPerCircuit) {
@@ -812,8 +820,14 @@ function App() {
             // Note: currentCircuitIndex will be incremented after this block
         }
 
-        // Recalculate player order for next circuit using the same logic
-        newPlayerOrder = calculateCircuitStandings(newCircuitResults, gameState.currentCircuitIndex, gameState.settings.players);
+        // Recalculate player order based on whether we're moving to a new circuit
+        const isMovingToNewCircuit = nextTurn === 1;
+        newPlayerOrder = calculateCircuitStandings(
+            newCircuitResults,
+            gameState.currentCircuitIndex,
+            gameState.settings.players,
+            isMovingToNewCircuit // Use overall standings when moving to new circuit
+        );
     } else {
         // Not the last player of the turn - just advance to next player
         // Don't recalculate order mid-turn, keep the current order
