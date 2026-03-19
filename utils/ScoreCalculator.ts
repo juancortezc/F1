@@ -35,7 +35,7 @@ export class ScoreCalculator {
    */
   private getPositionPoints(rank: number, totalPlayers: number): number {
     if (rank === 0) return 3; // 1st place
-    if (rank === 1 && totalPlayers >= 2) return 2; // 2nd place  
+    if (rank === 1 && totalPlayers >= 2) return 2; // 2nd place
     if (rank === 2 && totalPlayers >= 3) return 1; // 3rd place
     return 0;
   }

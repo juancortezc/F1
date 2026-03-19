@@ -78,10 +78,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const pointsForFirst = gameState.settings.pointsForFirst || 3;
         const pointsForSecond = gameState.settings.pointsForSecond || 2;
         const pointsForThird = gameState.settings.pointsForThird || 1;
-        
+
         // Only award positions that exist (can't have 3rd place with only 2 players)
         if (rank === 0) return pointsForFirst;
-        if (rank === 1 && totalPlayers >= 2) return pointsForSecond; 
+        if (rank === 1 && totalPlayers >= 2) return pointsForSecond;
         if (rank === 2 && totalPlayers >= 3) return pointsForThird;
         return 0;
       };
