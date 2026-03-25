@@ -32,12 +32,15 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
   const [showCircuitModal, setShowCircuitModal] = useState(false);
   const [selectedPlayerToRemove, setSelectedPlayerToRemove] = useState<Player | null>(null);
 
-  // Auto-populate with random players and circuits on mount
+  // Auto-populate with main players (Berna, BlackMamba, Borgia) and random circuits on mount
   useEffect(() => {
-    // Select 3 random active players (including guests)
-    const eligiblePlayers = players.filter(p => p.isActive);
-    const randomPlayers = [...eligiblePlayers].sort(() => Math.random() - 0.5).slice(0, 3);
-    setSelectedPlayers(randomPlayers);
+    // Select the 3 main players: Berna, BlackMamba, Borgia (in random order)
+    const mainPlayerNames = ['Berna', 'BlackMamba', 'Borgia'];
+    const mainPlayers = players.filter(p =>
+      mainPlayerNames.includes(p.name) && p.isActive
+    );
+    const randomizedPlayers = [...mainPlayers].sort(() => Math.random() - 0.5);
+    setSelectedPlayers(randomizedPlayers);
 
     // Select 3 random circuits
     const randomCircuits = [...circuits].sort(() => Math.random() - 0.5).slice(0, 3);
