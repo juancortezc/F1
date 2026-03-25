@@ -72,16 +72,8 @@ const F1CustomChampionship: React.FC<F1CustomChampionshipProps> = ({
   };
 
   const randomizePlayers = () => {
-    const currentIds = selectedPlayers.map(p => p.id);
-    const availablePlayers = players.filter(p => p.isActive && !currentIds.includes(p.id));
-
-    if (availablePlayers.length >= 3) {
-      const newRandom = [...availablePlayers].sort(() => Math.random() - 0.5).slice(0, 3);
-      setSelectedPlayers(newRandom);
-    } else {
-      // Shuffle existing selection
-      setSelectedPlayers(prev => [...prev].sort(() => Math.random() - 0.5));
-    }
+    // Only shuffle the order of currently selected players
+    setSelectedPlayers(prev => [...prev].sort(() => Math.random() - 0.5));
   };
 
   const randomizeCircuits = () => {
