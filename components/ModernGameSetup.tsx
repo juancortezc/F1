@@ -93,14 +93,10 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
   const { mutate } = useSWRConfig();
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Refresh players on mount to ensure we have the latest data
-  useEffect(() => {
-    mutate('/api/players');
-  }, [mutate]);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [useQuickStart, setUseQuickStart] = useState(true);
   const [continuingTournament, setContinuingTournament] = useState(false);
-  
+
   // Simplified settings
   const [gameSettings, setGameSettings] = useState({
     selectedPlayers: [] as Player[],
@@ -112,6 +108,27 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
     pointsForBestAverage: 1,
     useBest4Of5: true
   });
+
+  // Refresh players on mount to ensure we have the latest data
+  useEffect(() => {
+    mutate('/api/players');
+  }, [mutate]);
+
+  // Pre-select main players (Berna, BlackMamba, Borgia) by default
+  useEffect(() => {
+    if (players && players.length > 0 && gameSettings.selectedPlayers.length === 0) {
+      const mainPlayerNames = ['Berna', 'BlackMamba', 'Borgia'];
+      const mainPlayers = players.filter(p =>
+        mainPlayerNames.includes(p.name) && p.isActive
+      );
+      if (mainPlayers.length > 0) {
+        setGameSettings(prev => ({
+          ...prev,
+          selectedPlayers: mainPlayers
+        }));
+      }
+    }
+  }, [players, gameSettings.selectedPlayers.length]);
 
   // Validation
   const canProceedStep1 = selectedPreset || !useQuickStart;
@@ -326,43 +343,87 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
             </div>
           </div>
           
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {players.map(player => (
-              <button
-                key={player.id}
-                onClick={() => {
-                  const isSelected = gameSettings.selectedPlayers.find(p => p.id === player.id);
-                  setGameSettings(prev => ({
-                    ...prev,
-                    selectedPlayers: isSelected
-                      ? prev.selectedPlayers.filter(p => p.id !== player.id)
-                      : [...prev.selectedPlayers, player]
-                  }));
-                }}
-                className={`w-full p-4 rounded-f1-lg border-2 transition-all text-left flex items-center space-x-4 ${
-                  gameSettings.selectedPlayers.find(p => p.id === player.id)
-                    ? 'border-f1-pro-gold bg-f1-pro-gold/10'
-                    : 'border-f1-pro-steel bg-f1-pro-chrome hover:border-f1-pro-aluminum'
-                }`}
-              >
-                <img 
-                  src={player.imageUrl} 
-                  alt={player.name}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="flex-1">
-                  <div className="text-f1-medium font-bold text-f1-pro-platinum">
-                    {player.name}
+          <div className="space-y-4 max-h-72 overflow-y-auto">
+            {/* Main Players Section */}
+            <div className="space-y-2">
+              <div className="text-f1-tiny text-f1-pro-aluminum uppercase tracking-wider">Pilotos Principales</div>
+              {players.filter(p => ['Berna', 'BlackMamba', 'Borgia'].includes(p.name) && p.isActive).map(player => (
+                <button
+                  key={player.id}
+                  onClick={() => {
+                    const isSelected = gameSettings.selectedPlayers.find(p => p.id === player.id);
+                    setGameSettings(prev => ({
+                      ...prev,
+                      selectedPlayers: isSelected
+                        ? prev.selectedPlayers.filter(p => p.id !== player.id)
+                        : [...prev.selectedPlayers, player]
+                    }));
+                  }}
+                  className={`w-full p-4 rounded-f1-lg border-2 transition-all text-left flex items-center space-x-4 ${
+                    gameSettings.selectedPlayers.find(p => p.id === player.id)
+                      ? 'border-f1-pro-gold bg-f1-pro-gold/10'
+                      : 'border-f1-pro-steel bg-f1-pro-chrome hover:border-f1-pro-aluminum'
+                  }`}
+                >
+                  <img
+                    src={player.imageUrl}
+                    alt={player.name}
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div className="flex-1">
+                    <div className="text-f1-medium font-bold text-f1-pro-platinum">
+                      {player.name}
+                    </div>
                   </div>
-                  {player.isGuest && (
-                    <div className="text-f1-tiny text-f1-pro-aluminum">Jugador Invitado</div>
+                  {gameSettings.selectedPlayers.find(p => p.id === player.id) && (
+                    <CheckCircleIcon className="w-6 h-6 text-f1-pro-gold" />
                   )}
-                </div>
-                {gameSettings.selectedPlayers.find(p => p.id === player.id) && (
-                  <CheckCircleIcon className="w-6 h-6 text-f1-pro-gold" />
-                )}
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
+
+            {/* Other Players / Guests Section */}
+            {players.filter(p => !['Berna', 'BlackMamba', 'Borgia'].includes(p.name) && p.isActive).length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-f1-pro-steel">
+                <div className="text-f1-tiny text-f1-pro-aluminum uppercase tracking-wider">Otros Pilotos / Invitados</div>
+                {players.filter(p => !['Berna', 'BlackMamba', 'Borgia'].includes(p.name) && p.isActive).map(player => (
+                  <button
+                    key={player.id}
+                    onClick={() => {
+                      const isSelected = gameSettings.selectedPlayers.find(p => p.id === player.id);
+                      setGameSettings(prev => ({
+                        ...prev,
+                        selectedPlayers: isSelected
+                          ? prev.selectedPlayers.filter(p => p.id !== player.id)
+                          : [...prev.selectedPlayers, player]
+                      }));
+                    }}
+                    className={`w-full p-3 rounded-f1-lg border-2 transition-all text-left flex items-center space-x-4 ${
+                      gameSettings.selectedPlayers.find(p => p.id === player.id)
+                        ? 'border-f1-pro-gold bg-f1-pro-gold/10'
+                        : 'border-f1-pro-steel bg-f1-pro-chrome hover:border-f1-pro-aluminum'
+                    }`}
+                  >
+                    <img
+                      src={player.imageUrl}
+                      alt={player.name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <div className="flex-1">
+                      <div className="text-f1-small font-bold text-f1-pro-platinum">
+                        {player.name}
+                      </div>
+                      {player.isGuest && (
+                        <div className="text-f1-micro text-f1-pro-aluminum">Invitado</div>
+                      )}
+                    </div>
+                    {gameSettings.selectedPlayers.find(p => p.id === player.id) && (
+                      <CheckCircleIcon className="w-5 h-5 text-f1-pro-gold" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

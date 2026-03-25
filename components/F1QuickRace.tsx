@@ -19,11 +19,14 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
   const [selectedCircuits, setSelectedCircuits] = useState<Circuit[]>([]);
   const [showCircuitModal, setShowCircuitModal] = useState<Circuit | null>(null);
 
-  // Auto-configure on mount: random order players (no guests) + 3 random circuits
+  // Auto-configure on mount: fixed players (Berna, BlackMamba, Borgia) + 3 random circuits
   useEffect(() => {
-    // Select only non-guest players in random order
-    const eligiblePlayers = players.filter(p => !p.isGuest && p.isActive);
-    const randomizedPlayers = [...eligiblePlayers].sort(() => Math.random() - 0.5);
+    // Select only the 3 main players: Berna, BlackMamba, Borgia (fixed, in random order)
+    const mainPlayerNames = ['Berna', 'BlackMamba', 'Borgia'];
+    const mainPlayers = players.filter(p =>
+      mainPlayerNames.includes(p.name) && p.isActive
+    );
+    const randomizedPlayers = [...mainPlayers].sort(() => Math.random() - 0.5);
     setSelectedPlayers(randomizedPlayers);
 
     // Select 3 random circuits
@@ -31,24 +34,7 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
     setSelectedCircuits(randomCircuits);
   }, [players, circuits]);
 
-  const handlePlayerToggle = (player: Player) => {
-    setSelectedPlayers(prev => 
-      prev.find(p => p.id === player.id)
-        ? prev.filter(p => p.id !== player.id)
-        : [...prev, player]
-    );
-  };
-
-  const handleAddPlayer = () => {
-    // Show available players (including guests) not in selection
-    const availablePlayers = players.filter(p => 
-      p.isActive && !selectedPlayers.find(sp => sp.id === p.id)
-    );
-    // For now, add first available player - later we'll show a modal
-    if (availablePlayers.length > 0) {
-      setSelectedPlayers(prev => [...prev, availablePlayers[0]]);
-    }
-  };
+  // Quick Race uses fixed players - no toggle or add functionality
 
   const handleRandomizeCircuits = () => {
     const randomCircuits = [...circuits].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -91,45 +77,33 @@ const F1QuickRace: React.FC<F1QuickRaceProps> = ({
           </button>
         </div>
 
-        {/* Starting Grid Section */}
+        {/* Starting Grid Section - Fixed Players */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white text-base font-bold uppercase tracking-wider">STARTING GRID</h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  // Shuffle existing players
-                  setSelectedPlayers(prev => [...prev].sort(() => Math.random() - 0.5));
-                }}
-                className="text-white hover:text-zinc-300 transition-colors"
-                title="Randomize players"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-              <button
-                onClick={handleAddPlayer}
-                className="text-white hover:text-zinc-300 transition-colors"
-                title="Add player"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                // Shuffle existing players
+                setSelectedPlayers(prev => [...prev].sort(() => Math.random() - 0.5));
+              }}
+              className="text-white hover:text-zinc-300 transition-colors"
+              title="Randomize order"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-4">
-            {selectedPlayers.slice(0, 3).map((player, index) => (
+            {selectedPlayers.slice(0, 3).map((player) => (
               <div
                 key={player.id}
-                onClick={() => handlePlayerToggle(player)}
-                className="bg-zinc-800 border-2 border-f1-red rounded-lg p-4 text-center cursor-pointer hover:bg-zinc-700 transition-colors"
+                className="bg-zinc-800 border-2 border-f1-red rounded-lg p-4 text-center"
               >
-                <UserAvatar 
-                  imageUrl={player.imageUrl} 
-                  name={player.name} 
+                <UserAvatar
+                  imageUrl={player.imageUrl}
+                  name={player.name}
                   className="w-20 h-20 mx-auto mb-3"
                 />
                 <h3 className="text-white font-bold">{player.name}</h3>

@@ -30,7 +30,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
           <img
             src="https://www.formula1.com/etc/designs/fom-website/images/f1_logo.svg"
             alt="F1"
-            className="h-16 mx-auto mb-8 opacity-90"
+            className="h-12 w-auto mx-auto mb-8 opacity-90"
           />
 
           <h1 className="text-4xl md:text-5xl font-bold text-white tracking-wide mb-2">
