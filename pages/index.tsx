@@ -733,49 +733,9 @@ function App() {
             newPlayerStats[result.playerId].totalScore += totalTurnPoints;
         });
 
-        // Award bonus points for best lap and best average if configured for 'turn' or 'both'
-        const { pointsForBestLap, pointsForBestAverage, awardBestTimeFor } = gameState.settings;
-        if (awardBestTimeFor === 'turn' || awardBestTimeFor === 'both') {
-            // Best lap bonus
-            if (pointsForBestLap > 0) {
-                const playerBests = turnResults.map(tr => {
-                    const validLaps = tr.lapTimes.filter(time => time < 120000);
-                    return {
-                        playerId: tr.playerId,
-                        bestLap: validLaps.length > 0 ? Math.min(...validLaps) : 120000
-                    };
-                });
-                const bestLapPlayer = playerBests.reduce((best, current) => 
-                    current.bestLap < best.bestLap ? current : best
-                );
-                
-                // Only award bonus if the best lap is not a penalty time
-                if (bestLapPlayer.bestLap < 120000) {
-                    newPlayerStats[bestLapPlayer.playerId].totalScore += pointsForBestLap;
-                    newPlayerStats[bestLapPlayer.playerId].bestLaps += 1;
-                    
-                    // Add bonus to turn score display
-                    const bestLapResult = turnResults.find(r => r.playerId === bestLapPlayer.playerId);
-                    if (bestLapResult) {
-                        bestLapResult.turnScore += pointsForBestLap;
-                    }
-                }
-            }
+        // NOTE: VR/PR bonuses are now awarded at the END of the circuit (not per turn)
+        // This allows the VR to change hands if someone beats the best lap in a later turn
 
-            // Best average bonus
-            if (pointsForBestAverage > 0) {
-                const bestAveragePlayer = turnResults.reduce((best, current) => 
-                    (current.averageTime ?? Infinity) < (best.averageTime ?? Infinity) ? current : best
-                );
-                
-                if (bestAveragePlayer.averageTime !== undefined && bestAveragePlayer.averageTime < 120000) {
-                    newPlayerStats[bestAveragePlayer.playerId].totalScore += pointsForBestAverage;
-                    newPlayerStats[bestAveragePlayer.playerId].bestAverages += 1;
-                    bestAveragePlayer.turnScore += pointsForBestAverage;
-                }
-            }
-        }
-        
         finalPlayerStats = newPlayerStats;
         nextPlayerIndex = 0;
         nextTurn = gameState.currentTurn + 1;
@@ -792,18 +752,18 @@ function App() {
                 gameState.settings.players.forEach(player => {
                     circuitStandings.set(player.id, 0);
                 });
-                
+
                 newCircuitResults[gameState.currentCircuitIndex].turns.forEach(turn => {
                     turn.forEach(result => {
                         const currentPoints = circuitStandings.get(result.playerId) || 0;
                         circuitStandings.set(result.playerId, currentPoints + result.turnScore);
                     });
                 });
-                
+
                 // Sort players by circuit points and award bonus points
                 const sortedPlayers = Array.from(circuitStandings.entries())
                     .sort((a, b) => b[1] - a[1]);
-                
+
                 sortedPlayers.forEach(([playerId], index) => {
                     const pointsForCircuit = gameState.settings.pointsForCircuit || [];
                     if (index < pointsForCircuit.length) {
@@ -814,7 +774,28 @@ function App() {
                     }
                 });
             }
-            
+
+            // === AWARD VR/PR BONUS AT END OF CIRCUIT ===
+            // VR (Vuelta Rápida) and PR (Mejor Promedio) bonuses are awarded to the player
+            // who holds the best time across ALL turns in this circuit
+            const { pointsForBestLap, pointsForBestAverage } = gameState.settings;
+            const currentCircuitId = gameState.circuits[gameState.currentCircuitIndex].id;
+            const circuitBests = newSessionBestTimes[currentCircuitId];
+
+            // Award VR bonus (best lap across all turns in this circuit)
+            if (pointsForBestLap > 0 && circuitBests?.bestLapPlayerId) {
+                finalPlayerStats[circuitBests.bestLapPlayerId].totalScore += pointsForBestLap;
+                finalPlayerStats[circuitBests.bestLapPlayerId].bestLaps += 1;
+                console.log(`🏎️ VR Bonus (+${pointsForBestLap}) awarded to ${circuitBests.bestLapPlayerId} for circuit ${currentCircuitId}`);
+            }
+
+            // Award PR bonus (best average across all turns in this circuit)
+            if (pointsForBestAverage > 0 && circuitBests?.bestAveragePlayerId) {
+                finalPlayerStats[circuitBests.bestAveragePlayerId].totalScore += pointsForBestAverage;
+                finalPlayerStats[circuitBests.bestAveragePlayerId].bestAverages += 1;
+                console.log(`🎯 PR Bonus (+${pointsForBestAverage}) awarded to ${circuitBests.bestAveragePlayerId} for circuit ${currentCircuitId}`);
+            }
+
             // Move to next circuit
             nextTurn = 1;
             // Note: currentCircuitIndex will be incremented after this block
