@@ -240,9 +240,9 @@ const GameSetup: React.FC<GameSetupProps> = ({ players: allPlayers, circuits: al
                 <h3 className="text-xl font-bold text-zinc-100 mb-4">{activeTournament.name}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-zinc-800 p-3 rounded-md">
-                    <div className="text-xs font-mono uppercase tracking-wide text-zinc-400 mb-1">Progreso</div>
+                    <div className="text-xs font-mono uppercase tracking-wide text-zinc-400 mb-1">Circuitos</div>
                   <div className="font-mono text-lg font-bold text-zinc-100">
-                    {((activeTournament.championships?.filter((c: any) => c.status === 'COMPLETED').length) || 0)}/{activeTournament.maxChampionships}
+                    {activeTournament.playedCircuitIds?.length || 0}
                   </div>
                 </div>
                 <div className="bg-zinc-800 p-3 rounded-md">

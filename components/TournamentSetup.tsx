@@ -11,12 +11,19 @@ interface TournamentSetupProps {
 const TournamentSetup: React.FC<TournamentSetupProps> = ({ players, onTournamentCreated, onCancel }) => {
   const [tournamentName, setTournamentName] = useState('');
   const [description, setDescription] = useState('');
-  const [maxChampionships, setMaxChampionships] = useState(3);
   const [pointsForFirst, setPointsForFirst] = useState(3);
   const [pointsForSecond, setPointsForSecond] = useState(2);
   const [pointsForThird, setPointsForThird] = useState(1);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [totalCircuits, setTotalCircuits] = useState(0);
+
+  // Fetch total circuits count
+  React.useEffect(() => {
+    fetch('/api/circuits')
+      .then(r => r.json())
+      .then(data => setTotalCircuits(Array.isArray(data) ? data.length : 0));
+  }, []);
 
   const handleParticipantToggle = (playerId: string) => {
     setSelectedParticipants(prev => 
@@ -46,7 +53,6 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ players, onTournament
         body: JSON.stringify({
           name: tournamentName,
           description: description || undefined,
-          maxChampionships,
           pointsForFirst,
           pointsForSecond,
           pointsForThird,
@@ -108,19 +114,20 @@ const TournamentSetup: React.FC<TournamentSetupProps> = ({ players, onTournament
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Número de Campeonatos
-                </label>
-                <input
-                  type="number"
-                  min="2"
-                  max="10"
-                  value={maxChampionships}
-                  onChange={(e) => setMaxChampionships(parseInt(e.target.value))}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-zinc-100 focus:border-f1-red focus:ring-1 focus:ring-f1-red"
-                />
+            {/* Info about tournament completion */}
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-md p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-zinc-300 text-sm">
+                    El torneo terminará cuando se hayan corrido <strong className="text-white">{totalCircuits} circuitos</strong> (todos los disponibles).
+                  </p>
+                  <p className="text-zinc-500 text-xs mt-1">
+                    Los jugadores seleccionados serán fijos durante todo el torneo.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

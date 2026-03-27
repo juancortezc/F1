@@ -18,8 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tournament = await prisma.tournament.findUnique({
       where: { id },
       include: {
-        championships: {
-          where: { status: 'COMPLETED' },
+        games: {
+          where: { status: 'COMPLETED', gameMode: 'tournament' },
           orderBy: { position: 'asc' }
         },
         participants: {
@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Combine participant data with player info
     const standings = tournament.participants.map((participant: any, index: number) => {
       const player = players.find((p: any) => p.id === participant.playerId);
-      
+
       return {
         position: index + 1,
         player: {
@@ -61,23 +61,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         championshipsWon: participant.championshipsWon,
         championshipsSecond: participant.championshipsSecond,
         championshipsThird: participant.championshipsThird,
-        championshipsTotal: participant.championshipsTotal,
+        championshipsPlayed: participant.championshipsPlayed,
         // Calculate championship participation percentage
-        participationRate: tournament.championships.length > 0 
-          ? Math.round((participant.championshipsTotal / tournament.championships.length) * 100)
+        participationRate: tournament.games.length > 0
+          ? Math.round((participant.championshipsPlayed / tournament.games.length) * 100)
           : 0
       };
     });
 
     // Tournament summary stats
     const summary = {
-      totalChampionships: tournament.championships.length,
-      completedChampionships: tournament.championships.filter((c: any) => c.status === 'COMPLETED').length,
+      totalGames: tournament.games.length,
+      completedGames: tournament.games.filter((g: any) => g.status === 'COMPLETED').length,
       totalParticipants: tournament.participants.length,
-      averagePointsPerChampionship: tournament.championships.length > 0
+      circuitsPlayed: tournament.playedCircuitIds?.length || 0,
+      averagePointsPerGame: tournament.games.length > 0
         ? Math.round(
             tournament.participants.reduce((sum: number, p: any) => sum + p.totalPoints, 0) /
-            tournament.championships.length
+            tournament.games.length
           ) / tournament.participants.length || 0
         : 0
     };
@@ -89,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: tournament.name,
         description: tournament.description,
         status: tournament.status,
-        maxChampionships: tournament.maxChampionships,
+        playedCircuitIds: tournament.playedCircuitIds || [],
         pointsForFirst: tournament.pointsForFirst,
         pointsForSecond: tournament.pointsForSecond,
         pointsForThird: tournament.pointsForThird,
@@ -98,14 +99,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       standings,
       summary,
-      championships: tournament.championships.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        position: c.position,
-        status: c.status,
-        createdAt: c.createdAt,
-        updatedAt: c.updatedAt
-      }))
+      games: tournament.games?.map((g: any) => ({
+        id: g.id,
+        status: g.status,
+        position: g.position,
+        gameMode: g.gameMode,
+        createdAt: g.createdAt
+      })) || []
     });
 
   } catch (error: any) {

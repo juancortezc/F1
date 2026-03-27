@@ -5,6 +5,25 @@ import UserAvatar from './UserAvatar';
 import { fetcher } from '../lib/fetcher';
 import { formatShortDateEC } from '../utils/dateUtils';
 
+interface Tournament {
+  id: string;
+  name: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  playedCircuitIds: string[];
+  startDate: string;
+  endDate?: string;
+  participants: {
+    id: string;
+    playerId: string;
+    totalPoints: number;
+    championshipsWon: number;
+    championshipsSecond: number;
+    championshipsThird: number;
+    championshipsPlayed: number;
+    player?: Player;
+  }[];
+}
+
 interface F1HallOfFameProps {
   gameState: GameState;
   players: Player[];
@@ -39,11 +58,19 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
   const { data: settings } = useSWR<Settings>('/api/settings', fetcher);
   const cutoffDate = settings?.historicalCutoffDate ? new Date(settings.historicalCutoffDate) : null;
 
+  // Fetch tournaments
+  const { data: tournamentsResponse } = useSWR<{success: boolean, tournaments: Tournament[]}>('/api/tournaments', fetcher);
+  const tournaments = tournamentsResponse?.tournaments;
+
+  // State for tabs
+  const [activeTab, setActiveTab] = useState<'general' | 'torneos'>('general');
+
   // State for modals
   const [showPtsExplanation, setShowPtsExplanation] = useState(false);
   const [showVRModal, setShowVRModal] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
   const [showCircuitDominationModal, setShowCircuitDominationModal] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
 
   const { accumulatedStats } = useMemo(() => {
     // Include ALL players (including guests) - they will be filtered at the end
@@ -213,14 +240,20 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
     );
   }
 
+  // Filter tournaments with participants
+  const tournamentsWithData = tournaments?.filter(t =>
+    t.participants && t.participants.length > 0 &&
+    (t.status === 'COMPLETED' || t.status === 'ACTIVE')
+  ) || [];
+
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: '#1A1A1A' }}>
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 pt-6">
         {/* Hall of Fame Title */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">HALL OF FAME</h1>
-          {cutoffDate && (
+          {cutoffDate && activeTab === 'general' && (
             <div className="inline-flex items-center gap-2 bg-purple-900/30 border border-purple-600/50 rounded-md px-3 py-1.5 mt-2">
               <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -231,6 +264,132 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             </div>
           )}
         </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 justify-center">
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`px-6 py-2 rounded-lg font-semibold text-sm transition-colors ${
+              activeTab === 'general'
+                ? 'bg-red-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            GENERAL
+          </button>
+          <button
+            onClick={() => setActiveTab('torneos')}
+            className={`px-6 py-2 rounded-lg font-semibold text-sm transition-colors ${
+              activeTab === 'torneos'
+                ? 'bg-red-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            TORNEOS {tournamentsWithData.length > 0 && `(${tournamentsWithData.length})`}
+          </button>
+        </div>
+
+        {/* TORNEOS Tab Content */}
+        {activeTab === 'torneos' && (
+          <div className="space-y-4">
+            {tournamentsWithData.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-5xl mb-4">🏆</div>
+                <h2 className="text-xl font-bold text-white mb-2">No hay torneos registrados</h2>
+                <p className="text-zinc-400">Los torneos aparecerán aquí cuando se creen y tengan participantes</p>
+              </div>
+            ) : (
+              tournamentsWithData.map(tournament => {
+                const sortedParticipants = [...tournament.participants]
+                  .sort((a, b) => b.totalPoints - a.totalPoints);
+                const topThree = sortedParticipants.slice(0, 3);
+
+                return (
+                  <div
+                    key={tournament.id}
+                    className="rounded-lg border border-zinc-800 overflow-hidden"
+                    style={{ backgroundColor: '#242424' }}
+                  >
+                    {/* Tournament Header */}
+                    <div className={`p-4 ${
+                      tournament.status === 'ACTIVE'
+                        ? 'bg-gradient-to-r from-red-900/40 to-red-800/20 border-b border-red-800/50'
+                        : 'bg-zinc-800/50 border-b border-zinc-700'
+                    }`}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-bold text-white">{tournament.name}</h3>
+                          <p className="text-zinc-400 text-sm">
+                            {tournament.playedCircuitIds.length} circuitos jugados
+                            {tournament.endDate && ` - Finalizado ${formatShortDateEC(tournament.endDate)}`}
+                          </p>
+                        </div>
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                          tournament.status === 'ACTIVE'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-zinc-700 text-zinc-300'
+                        }`}>
+                          {tournament.status === 'ACTIVE' ? 'EN CURSO' : 'COMPLETADO'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Podium / Top 3 */}
+                    <div className="p-4">
+                      <div className="flex justify-center items-end gap-3 mb-4">
+                        {topThree[1] && (
+                          <div className="text-center">
+                            <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-zinc-700 flex items-center justify-center text-lg font-bold text-zinc-300">
+                              2
+                            </div>
+                            <div className="text-zinc-300 text-xs font-semibold truncate max-w-[70px]">
+                              {topThree[1].player?.name || 'Jugador'}
+                            </div>
+                            <div className="text-zinc-500 text-xs">{topThree[1].totalPoints} pts</div>
+                          </div>
+                        )}
+                        {topThree[0] && (
+                          <div className="text-center">
+                            <div className="w-14 h-14 mx-auto mb-1 rounded-full bg-yellow-500/80 flex items-center justify-center text-xl font-bold text-black">
+                              1
+                            </div>
+                            <div className="text-white text-sm font-bold truncate max-w-[80px]">
+                              {topThree[0].player?.name || 'Jugador'}
+                            </div>
+                            <div className="text-yellow-400 text-sm font-bold">{topThree[0].totalPoints} pts</div>
+                          </div>
+                        )}
+                        {topThree[2] && (
+                          <div className="text-center">
+                            <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-orange-700/70 flex items-center justify-center text-lg font-bold text-white">
+                              3
+                            </div>
+                            <div className="text-zinc-300 text-xs font-semibold truncate max-w-[70px]">
+                              {topThree[2].player?.name || 'Jugador'}
+                            </div>
+                            <div className="text-zinc-500 text-xs">{topThree[2].totalPoints} pts</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Full standings button */}
+                      <button
+                        onClick={() => setSelectedTournament(tournament)}
+                        className="w-full text-center text-zinc-400 hover:text-white text-sm py-2 transition-colors"
+                      >
+                        Ver clasificación completa →
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* GENERAL Tab Content */}
+        {activeTab === 'general' && (
+          <>
 
         {/* Podium Cards */}
         <div className="flex justify-center items-end gap-4 mb-8">
@@ -511,7 +670,103 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             ) : null;
           })()}
         </div>
+        </>
+        )}
       </div>
+
+      {/* Tournament Details Modal */}
+      {selectedTournament && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-lg max-w-lg w-full border border-zinc-700 max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-white">{selectedTournament.name}</h3>
+                <p className="text-zinc-400 text-sm">
+                  {selectedTournament.playedCircuitIds.length} circuitos •
+                  {selectedTournament.status === 'ACTIVE' ? ' En curso' : ' Completado'}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedTournament(null)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-zinc-800">
+                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">POS</th>
+                    <th className="px-2 py-2 text-left text-xs font-mono uppercase text-zinc-400">JUGADOR</th>
+                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">PTS</th>
+                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">1°</th>
+                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">2°</th>
+                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">3°</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...selectedTournament.participants]
+                    .sort((a, b) => b.totalPoints - a.totalPoints)
+                    .map((participant, index) => (
+                      <tr key={participant.id} className="border-t border-zinc-800">
+                        <td className="px-2 py-3 text-center">
+                          <span className={`font-mono font-bold ${
+                            index === 0 ? 'text-yellow-500' :
+                            index === 1 ? 'text-zinc-400' :
+                            index === 2 ? 'text-orange-600' : 'text-zinc-500'
+                          }`}>
+                            {index + 1}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3">
+                          <span className="text-white font-semibold">
+                            {participant.player?.name || 'Jugador'}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="font-mono font-bold text-yellow-400 text-lg">
+                            {participant.totalPoints}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="font-mono font-bold text-yellow-500">
+                            {participant.championshipsWon}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="font-mono font-bold text-zinc-400">
+                            {participant.championshipsSecond}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className="font-mono font-bold text-orange-600">
+                            {participant.championshipsThird}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-zinc-800">
+              <button
+                onClick={() => setSelectedTournament(null)}
+                className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                CERRAR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PTS Explanation Modal */}
       {showPtsExplanation && (

@@ -108,11 +108,100 @@ async function checkAndUpdateRecords(gameState: GameState) {
     }
 }
 
+// Helper function to update tournament when a championship game is completed
+async function updateTournamentOnGameComplete(gameId: string, gameState: GameState) {
+    // Get the game to check if it's part of a tournament
+    const game = await prisma.game.findUnique({
+        where: { id: gameId },
+        select: { tournamentId: true, gameMode: true }
+    });
+
+    if (!game?.tournamentId || game.gameMode !== 'tournament') {
+        return; // Not a tournament game
+    }
+
+    // Get the tournament
+    const tournament = await prisma.tournament.findUnique({
+        where: { id: game.tournamentId },
+        include: { participants: true }
+    });
+
+    if (!tournament || tournament.status !== 'ACTIVE') {
+        return;
+    }
+
+    // Get circuit IDs from this game
+    const circuitIds = gameState.circuits.map(c => c.id);
+
+    // Update playedCircuitIds
+    const updatedPlayedCircuitIds = [...new Set([...tournament.playedCircuitIds, ...circuitIds])];
+
+    // Calculate final standings from gameState
+    const playerStats = gameState.playerStats || {};
+    const standings = Object.entries(playerStats)
+        .map(([playerId, stats]: [string, any]) => ({
+            playerId,
+            totalScore: stats.totalScore || 0
+        }))
+        .sort((a, b) => b.totalScore - a.totalScore);
+
+    // Update tournament participants with points
+    for (let i = 0; i < standings.length; i++) {
+        const { playerId } = standings[i];
+        const participant = tournament.participants.find(p => p.playerId === playerId);
+
+        if (participant) {
+            let pointsToAdd = 0;
+            let wonIncrement = 0;
+            let secondIncrement = 0;
+            let thirdIncrement = 0;
+
+            if (i === 0) {
+                pointsToAdd = tournament.pointsForFirst;
+                wonIncrement = 1;
+            } else if (i === 1) {
+                pointsToAdd = tournament.pointsForSecond;
+                secondIncrement = 1;
+            } else if (i === 2) {
+                pointsToAdd = tournament.pointsForThird;
+                thirdIncrement = 1;
+            }
+
+            await prisma.tournamentParticipant.update({
+                where: { id: participant.id },
+                data: {
+                    totalPoints: { increment: pointsToAdd },
+                    championshipsPlayed: { increment: 1 },
+                    championshipsWon: { increment: wonIncrement },
+                    championshipsSecond: { increment: secondIncrement },
+                    championshipsThird: { increment: thirdIncrement },
+                }
+            });
+        }
+    }
+
+    // Check if tournament is complete (all circuits played)
+    const totalCircuits = await prisma.circuit.count();
+    const isComplete = updatedPlayedCircuitIds.length >= totalCircuits;
+
+    // Update tournament
+    await prisma.tournament.update({
+        where: { id: tournament.id },
+        data: {
+            playedCircuitIds: updatedPlayedCircuitIds,
+            status: isComplete ? 'COMPLETED' : 'ACTIVE',
+            endDate: isComplete ? new Date() : undefined,
+        }
+    });
+
+    console.log(`[update.ts] Tournament ${tournament.id} updated: ${updatedPlayedCircuitIds.length}/${totalCircuits} circuits played`);
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'PUT') {
         try {
             const { id, state, status } = req.body as {id: string, state?: GameState, status?: 'ACTIVE' | 'COMPLETED'};
-            
+
             const validationError = validateRequired(req.body, ['id']);
             if (validationError) {
                 return sendError(res, 400, validationError);
@@ -126,6 +215,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             // If we have a new game state, check for historical records
             if (state) {
                 await checkAndUpdateRecords(state);
+            }
+
+            // If completing the game and it's a tournament game, update tournament
+            if (status === 'COMPLETED' && state) {
+                await updateTournamentOnGameComplete(id, state);
             }
 
             const game = await prisma.game.update({

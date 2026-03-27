@@ -865,9 +865,9 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                         <div className="font-mono font-bold text-zinc-100">
-                                                            {tournament.championships?.filter((c: any) => c.status === 'COMPLETED').length || 0}/{tournament.maxChampionships}
+                                                            {tournament.playedCircuitIds?.length || 0}
                                                         </div>
-                                                        <div className="text-xs text-zinc-400">campeonatos</div>
+                                                        <div className="text-xs text-zinc-400">circuitos</div>
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                         <div className="font-mono font-bold text-zinc-100">
@@ -927,7 +927,7 @@ const AdminView: React.FC<AdminViewProps> = ({ players, circuits, onBack, curren
                                                     )}
                                                     <div className="flex gap-4 text-sm">
                                                         <span className="text-zinc-300 font-mono">
-                                                            {tournament.championships?.filter((c: any) => c.status === 'COMPLETED').length || 0}/{tournament.maxChampionships}
+                                                            {tournament.playedCircuitIds?.length || 0} circuitos
                                                         </span>
                                                         <span className="text-zinc-300 font-mono">
                                                             {tournament.participants?.length || 0} pilotos

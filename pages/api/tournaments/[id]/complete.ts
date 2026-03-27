@@ -90,16 +90,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       success: true,
-      message: `Torneo completado exitosamente. ${tournament.championships.length} campeonatos disputados.`,
+      message: `Torneo completado exitosamente. ${tournament.playedCircuitIds?.length || 0} circuitos jugados.`,
       tournament: completedTournament,
       winner: winner ? {
         id: winner.playerId,
         totalPoints: winner.totalPoints,
         championshipsWon: winner.championshipsWon,
-        championshipsTotal: winner.championshipsTotal
+        championshipsPlayed: winner.championshipsPlayed
       } : null,
-      championshipsCompleted: tournament.championships.length,
-      totalChampionships: tournament.maxChampionships
+      circuitsPlayed: tournament.playedCircuitIds?.length || 0
     });
 
   } catch (error: any) {

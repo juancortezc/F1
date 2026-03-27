@@ -20,6 +20,7 @@ interface F1AdminLayoutProps {
   onNavigateToTab?: (tab: 'tiempos-historicos' | 'live' | 'hall-of-fame' | 'tiempos') => void;
   onStartQuickRace?: (selectedPlayers: Player[], selectedCircuits: Circuit[]) => void;
   onStartCustomRace?: (settings: any) => void;
+  onNavigateToTournament?: () => void;
 }
 
 type AdminSection = 'menu' | 'admin' | 'peligro' | 'quick' | 'custom';
@@ -35,7 +36,8 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
   onCancelGame,
   onNavigateToTab,
   onStartQuickRace,
-  onStartCustomRace
+  onStartCustomRace,
+  onNavigateToTournament
 }) => {
   const [currentSection, setCurrentSection] = useState<AdminSection>('menu');
   const [activeAdminTab, setActiveAdminTab] = useState<'players' | 'circuits'>('players');
@@ -54,6 +56,11 @@ const F1AdminLayout: React.FC<F1AdminLayoutProps> = ({
         break;
       case 'custom':
         setCurrentSection('custom');
+        break;
+      case 'torneo':
+        if (onNavigateToTournament) {
+          onNavigateToTournament();
+        }
         break;
       default:
         console.log('Navigate to:', destination);

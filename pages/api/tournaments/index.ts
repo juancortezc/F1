@@ -33,9 +33,12 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
       },
       participants: {
         include: {
-          tournament: false // Avoid circular reference
+          player: true // Include player data for display
         },
         orderBy: { totalPoints: 'desc' }
+      },
+      games: {
+        select: { id: true, status: true, position: true }
       },
       _count: {
         select: {
@@ -63,7 +66,6 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   const {
     name,
     description,
-    maxChampionships = 5,
     pointsForFirst = 3,
     pointsForSecond = 2,
     pointsForThird = 1,
@@ -90,14 +92,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   }
 
   // Create tournament with participants
+  // NOTE: Tournament now ends when all circuits are played (tracked via playedCircuitIds)
   const tournament = await prisma.tournament.create({
     data: {
       name: name.trim(),
       description: description?.trim(),
-      maxChampionships,
       pointsForFirst,
       pointsForSecond,
       pointsForThird,
+      playedCircuitIds: [],
       participants: {
         create: participantIds.map((playerId: string) => ({
           playerId,
@@ -106,8 +109,12 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       }
     },
     include: {
-      championships: true,
-      participants: true
+      games: true,
+      participants: {
+        include: {
+          player: true
+        }
+      }
     }
   });
 

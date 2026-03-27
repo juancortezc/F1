@@ -127,16 +127,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await Promise.all(updatePromises);
 
-    // Check if tournament should be completed
-    const completedChampionshipsCount = await prisma.championship.count({
-      where: {
-        tournamentId: tournament.id,
-        status: 'COMPLETED'
-      }
-    });
+    // Check if tournament should be completed (all circuits played)
+    // NOTE: This API is DEPRECATED - tournament completion is now handled by /api/game/update
+    const totalCircuits = await prisma.circuit.count();
+    const playedCircuitsCount = tournament.playedCircuitIds?.length || 0;
+    const isTournamentComplete = playedCircuitsCount >= totalCircuits;
 
     let updatedTournament = tournament;
-    if (completedChampionshipsCount >= tournament.maxChampionships) {
+    if (isTournamentComplete && tournament.status === 'ACTIVE') {
       updatedTournament = await prisma.tournament.update({
         where: { id: tournament.id },
         data: {
@@ -164,7 +162,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       championship: updatedChampionship,
       tournament: {
         ...updatedTournament,
-        isCompleted: completedChampionshipsCount >= tournament.maxChampionships
+        isCompleted: isTournamentComplete
       },
       standings: updatedParticipants,
       pointsAwarded: positions.map((p: any) => ({

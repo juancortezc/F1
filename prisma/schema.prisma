@@ -17,6 +17,9 @@ model Player {
   pin       String   @default("0000")
   isGuest   Boolean  @default(false)
 
+  // Relación con torneos
+  tournamentParticipations TournamentParticipant[]
+
   @@map("players")
 }
 
@@ -43,6 +46,13 @@ model Game {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Campos para torneos
+  gameMode     String      @default("custom") // quick, custom, tournament
+  tournamentId String?
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id])
+  position     Int?        // Posición del campeonato en el torneo (1, 2, 3...)
+
+  @@index([tournamentId])
   @@map("games")
 }
 
@@ -96,8 +106,7 @@ model Tournament {
   id               String                  @id @default(cuid())
   name             String
   description      String?
-  status           String                  @default("ACTIVE")
-  maxChampionships Int                     @default(5)
+  status           String                  @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
   pointsForFirst   Int                     @default(3)
   pointsForSecond  Int                     @default(2)
   pointsForThird   Int                     @default(1)
@@ -105,12 +114,20 @@ model Tournament {
   endDate          DateTime?
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
-  championships    Championship[]
+
+  // Tracking de circuitos ya jugados en este torneo
+  playedCircuitIds String[]                @default([])
+
+  // Relaciones
+  games            Game[]
   participants     TournamentParticipant[]
+  championships    Championship[]          // DEPRECATED - mantener por compatibilidad
 
   @@map("tournaments")
 }
 
+// DEPRECATED: Usar Game con tournamentId en su lugar
+// Se mantiene por compatibilidad con datos existentes
 model Championship {
   id           String     @id @default(cuid())
   tournamentId String
@@ -133,11 +150,15 @@ model TournamentParticipant {
   championshipsWon    Int        @default(0)
   championshipsSecond Int        @default(0)
   championshipsThird  Int        @default(0)
-  championshipsTotal  Int        @default(0)
+  championshipsPlayed Int        @default(0)
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
+
+  // Relaciones
   tournament          Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  player              Player     @relation(fields: [playerId], references: [id])
 
   @@unique([tournamentId, playerId])
+  @@index([playerId])
   @@map("tournament_participants")
 }

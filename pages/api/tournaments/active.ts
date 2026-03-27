@@ -12,15 +12,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const activeTournament = await prisma.tournament.findFirst({
       where: { status: 'ACTIVE' },
       include: {
-        championships: {
+        games: {
+          where: { gameMode: 'tournament' },
           orderBy: { position: 'asc' }
         },
         participants: {
-          orderBy: { totalPoints: 'desc' }
+          orderBy: { totalPoints: 'desc' },
+          include: {
+            player: true
+          }
         },
         _count: {
           select: {
-            championships: true,
+            games: true,
             participants: true
           }
         }
@@ -34,17 +38,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Calculate tournament progress
-    const completedChampionships = activeTournament.championships.filter(
-      (c: any) => c.status === 'COMPLETED'
-    ).length;
+    // Get total circuits for progress calculation
+    const totalCircuits = await prisma.circuit.count();
+    const playedCircuitsCount = activeTournament.playedCircuitIds?.length || 0;
 
+    // Calculate tournament progress based on circuits played
     const tournamentData = {
       ...activeTournament,
       progress: {
-        completed: completedChampionships,
-        total: activeTournament.maxChampionships,
-        percentage: Math.round((completedChampionships / activeTournament.maxChampionships) * 100)
+        circuitsPlayed: playedCircuitsCount,
+        totalCircuits: totalCircuits,
+        percentage: Math.round((playedCircuitsCount / totalCircuits) * 100)
       }
     };
 
@@ -55,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error: any) {
     console.error('Active tournament API error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? error?.message : undefined
     });

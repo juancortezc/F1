@@ -97,7 +97,7 @@ const AdminHub: React.FC<AdminHubProps> = ({
                         </div>
                         <h3 className="text-lg font-bold text-zinc-100 mb-1">{activeTournament.name}</h3>
                         <p className="text-sm text-zinc-400 mb-3">
-                            Campeonato {((activeTournament.championships?.filter((c: any) => c.status === 'COMPLETED').length) || 0) + 1} de {activeTournament.maxChampionships}
+                            Circuitos jugados: {activeTournament.playedCircuitIds?.length || 0}
                         </p>
                         {onTournamentManagement && (
                             <button

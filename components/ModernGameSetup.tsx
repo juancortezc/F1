@@ -219,8 +219,8 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
                 setContinuingTournament(true);
                 setSelectedPreset('torneo');
                 // Select next 3 unplayed circuits
-                const playedCircuitIds = activeTournament.playedCircuits || [];
-                const unplayedCircuits = circuits.filter(c => !playedCircuitIds.includes(c.id));
+                const playedCircuitIdsArr = activeTournament.playedCircuitIds || [];
+                const unplayedCircuits = circuits.filter(c => !playedCircuitIdsArr.includes(c.id));
                 const nextCircuits = unplayedCircuits.slice(0, 3).sort(() => Math.random() - 0.5);
                 
                 setGameSettings(prev => ({
@@ -242,7 +242,7 @@ const ModernGameSetup: React.FC<ModernGameSetupProps> = ({
             </button>
           </div>
           <div className="text-f1-small text-f1-pro-aluminum">
-            Circuitos jugados: {activeTournament.playedCircuits?.length || 0} / {circuits.length}
+            Circuitos jugados: {activeTournament.playedCircuitIds?.length || 0} / {circuits.length}
           </div>
         </div>
       )}

@@ -107,7 +107,7 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
             <h3 className="font-bold text-zinc-100 mb-2">{tournament.name}</h3>
             <div className="text-sm text-zinc-400 space-y-1">
               <div>Estado: <span className="text-green-400">ACTIVO</span></div>
-              <div>Progreso: {completedChampionships}/{tournament.maxChampionships} campeonatos</div>
+              <div>Circuitos jugados: {tournament.playedCircuitIds?.length || 0}</div>
               <div>Puntos: {tournament.pointsForFirst}-{tournament.pointsForSecond}-{tournament.pointsForThird}</div>
             </div>
           </div>
@@ -175,9 +175,9 @@ const TournamentManagement: React.FC<TournamentManagementProps> = ({
               ⚠️ {isCancel ? 'Cancelación' : 'Finalización'} Irreversible
             </p>
             <p className="text-red-200 text-sm">
-              {isCancel 
+              {isCancel
                 ? 'Esta acción cancelará el torneo permanentemente. Todos los datos se conservarán pero no se podrán agregar más campeonatos.'
-                : `Esta acción completará el torneo con ${completedChampionships} campeonatos disputados de ${tournament.maxChampionships} programados.`
+                : `Esta acción completará el torneo con ${tournament.playedCircuitIds?.length || 0} circuitos jugados.`
               }
             </p>
           </div>

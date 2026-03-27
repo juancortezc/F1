@@ -8,7 +8,12 @@ import { withSecurity } from '../../../lib/security';
 async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === 'POST') {
         try {
-            const { state } = req.body as { state: GameState };
+            const { state, gameMode, tournamentId, position } = req.body as {
+                state: GameState;
+                gameMode?: 'quick' | 'custom' | 'tournament';
+                tournamentId?: string;
+                position?: number;
+            };
 
             // Validate required fields
             const validationError = validateRequired(req.body, ['state']);
@@ -21,6 +26,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 return sendError(res, 400, 'Invalid game state structure');
             }
 
+            // Si es un juego de torneo, validar que el torneo existe y está activo
+            if (gameMode === 'tournament' && tournamentId) {
+                const tournament = await prisma.tournament.findUnique({
+                    where: { id: tournamentId }
+                });
+
+                if (!tournament) {
+                    return sendError(res, 404, 'Tournament not found');
+                }
+
+                if (tournament.status !== 'ACTIVE') {
+                    return sendError(res, 400, 'Tournament is not active');
+                }
+
+                // Validar que los circuitos seleccionados no han sido jugados
+                const selectedCircuitIds = state.circuits.map(c => c.id);
+                const alreadyPlayed = selectedCircuitIds.filter(id =>
+                    tournament.playedCircuitIds.includes(id)
+                );
+
+                if (alreadyPlayed.length > 0) {
+                    return sendError(res, 400, 'Some circuits have already been played in this tournament');
+                }
+            }
+
             // Ensure any other active games are marked as completed first
             await prisma.game.updateMany({
                 where: { status: 'ACTIVE' },
@@ -31,6 +61,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 data: {
                     state: state as any,
                     status: 'ACTIVE',
+                    gameMode: gameMode || 'custom',
+                    tournamentId: tournamentId || null,
+                    position: position || null,
                 },
             });
             res.status(201).json(newGame);

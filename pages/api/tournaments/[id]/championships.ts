@@ -69,15 +69,15 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, tournamentI
     });
   }
 
-  // Check if tournament has reached max championships
-  const currentChampionshipsCount = await prisma.championship.count({
-    where: { tournamentId }
-  });
+  // Check if tournament has completed all circuits (tournament is done)
+  // NOTE: This API is DEPRECATED - use /api/game/create with tournamentId instead
+  const totalCircuits = await prisma.circuit.count();
+  const playedCircuitsCount = tournament.playedCircuitIds?.length || 0;
 
-  if (currentChampionshipsCount >= tournament.maxChampionships) {
+  if (playedCircuitsCount >= totalCircuits) {
     return res.status(400).json({
       success: false,
-      error: 'Tournament has reached maximum number of championships'
+      error: 'Tournament has completed all circuits'
     });
   }
 

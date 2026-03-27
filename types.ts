@@ -130,7 +130,6 @@ export interface Tournament {
   name: string;
   description?: string;
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-  maxChampionships: number;
   pointsForFirst: number;
   pointsForSecond: number;
   pointsForThird: number;
@@ -138,11 +137,14 @@ export interface Tournament {
   endDate?: string;
   createdAt: string;
   updatedAt: string;
-  championships: Championship[];
+  playedCircuitIds: string[]; // Track which circuits have been played in tournament
+  games?: any[]; // Games associated with this tournament
   participants: TournamentParticipant[];
-  playedCircuits?: string[]; // Track which circuits have been played in tournament
+  // DEPRECATED: Keep for backward compatibility
+  championships?: Championship[];
 }
 
+// DEPRECATED: Use Game with tournamentId instead
 export interface Championship {
   id: string;
   tournamentId: string;
@@ -162,9 +164,10 @@ export interface TournamentParticipant {
   championshipsWon: number;
   championshipsSecond: number;
   championshipsThird: number;
-  championshipsTotal: number;
+  championshipsPlayed: number;
   createdAt: string;
   updatedAt: string;
+  player?: Player; // Optional player details
 }
 
 export interface TournamentStanding {

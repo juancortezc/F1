@@ -25,8 +25,10 @@ import { useTournament } from '../contexts/TournamentContext';
 import TournamentSetup from '../components/TournamentSetup';
 import TournamentStandings from '../components/TournamentStandings';
 import TournamentManagement from '../components/TournamentManagement';
+import TournamentHub from '../components/TournamentHub';
+import TournamentChampionship from '../components/TournamentChampionship';
 
-type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'modify' | 'tournament-setup' | 'tournament-standings' | 'tournament-management';
+type GamePhase = 'landing' | 'login' | 'hub' | 'setup' | 'admin' | 'race' | 'results' | 'loading' | 'modify' | 'tournament-setup' | 'tournament-standings' | 'tournament-management' | 'tournament-hub' | 'tournament-championship';
 
 // API data fetching hook
 function useApiData() {
@@ -487,14 +489,17 @@ function App() {
   const handleTournamentSetup = () => setGamePhase('tournament-setup');
   const handleTournamentStandings = () => setGamePhase('tournament-standings');
   const handleTournamentManagement = () => setGamePhase('tournament-management');
-  
+  const handleTournamentHub = () => setGamePhase('tournament-hub');
+  const handleTournamentChampionship = () => setGamePhase('tournament-championship');
+
   const handleTournamentCreated = () => {
     addToast({
       type: 'success',
       title: '¡Torneo creado!',
       message: 'El torneo se ha creado exitosamente'
     });
-    setGamePhase('hub');
+    // Go to tournament hub after creating
+    setGamePhase('tournament-hub');
   };
 
   const handleTournamentUpdated = async () => {
@@ -1087,59 +1092,18 @@ function App() {
             body: JSON.stringify({ id: latestGame.id, state: finalGameState, status: 'COMPLETED' })
         });
 
-        // If this game is part of a tournament, award tournament points
+        // If this game is part of a tournament, show notification
+        // NOTE: Tournament points are automatically handled by /api/game/update via updateTournamentOnGameComplete
         const gameState = latestGame.state as any;
-        if (gameState.tournamentId && gameState.championshipId) {
+        if (gameState.tournamentId) {
           addToast({
-            type: 'info',
-            title: 'Procesando puntos de torneo...',
-            message: 'Calculando resultados del campeonato'
+            type: 'success',
+            title: 'Puntos de torneo otorgados',
+            message: `Campeonato completado - Los puntos se han sumado al torneo`
           });
 
-          // Calculate final results for tournament points
-          const playerStats = finalGameState.playerStats;
-          const finalResults = Object.entries(playerStats)
-            .sort((a, b) => (b[1] as PlayerStats).totalScore - (a[1] as PlayerStats).totalScore)
-            .map(([playerId, stats], index) => ({
-              playerId,
-              position: index + 1,
-              totalScore: (stats as PlayerStats).totalScore
-            }));
-
-          // Complete the championship and award points
-          const championshipResponse = await fetch(`/api/championships/${gameState.championshipId}/complete`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              gameState: finalGameState,
-              finalResults
-            })
-          });
-
-          if (championshipResponse.ok) {
-            const tournamentData = await championshipResponse.json();
-            
-            addToast({
-              type: 'success',
-              title: 'Puntos de torneo otorgados',
-              message: `Campeonato completado en ${gameState.tournamentName || 'Torneo'}`
-            });
-
-            // Check if tournament is completed
-            if (tournamentData.tournament?.isCompleted) {
-              addToast({
-                type: 'success',
-                title: '🏆 ¡Torneo completado!',
-                message: `El ${gameState.tournamentName || 'Torneo'} ha finalizado`
-              });
-            }
-          } else {
-            addToast({
-              type: 'warning',
-              title: 'Error en puntos de torneo',
-              message: 'El juego se completó pero hubo un problema con los puntos del torneo'
-            });
-          }
+          // Refresh tournament data
+          await refreshTournament();
         }
 
         mutate('/api/game/active');
@@ -1225,6 +1189,7 @@ function App() {
               }}
               onStartQuickRace={handleStartQuickRace}
               onStartCustomRace={handleSetupComplete}
+              onNavigateToTournament={handleTournamentHub}
             />
           );
         }
@@ -1367,13 +1332,128 @@ function App() {
         );
       case 'tournament-management':
         return activeTournament ? (
-          <TournamentManagement 
+          <TournamentManagement
             tournament={activeTournament}
             onTournamentUpdated={handleTournamentUpdated}
             onClose={handleBackFromTournament}
           />
         ) : (
           <div className="text-center p-8">No active tournament found</div>
+        );
+      case 'tournament-hub':
+        return (
+          <TournamentHub
+            onCreateTournament={handleTournamentSetup}
+            onContinueTournament={() => handleTournamentChampionship()}
+            onViewStandings={() => handleTournamentStandings()}
+            onBack={() => setGamePhase('hub')}
+          />
+        );
+      case 'tournament-championship':
+        if (activeTournament && players) {
+          return (
+            <TournamentChampionship
+              tournament={activeTournament}
+              players={players}
+              onStartRace={async (settings, tournamentId, position) => {
+                // Create game state for tournament championship
+                const playerStats: Record<string, PlayerStats> = {};
+                settings.players.forEach(p => {
+                  playerStats[p.id] = { totalScore: 0, bestLaps: 0, bestAverages: 0 };
+                });
+
+                const participantUsers = settings.players.map(player => ({
+                  userId: player.id,
+                  name: player.name,
+                  role: 'controller' as const
+                }));
+
+                const initialController = settings.players[0].id;
+
+                const newGameState: GameState = {
+                  settings,
+                  circuits: settings.circuits,
+                  playerOrder: settings.players.map(p => p.id),
+                  currentCircuitIndex: 0,
+                  currentTurn: 1,
+                  currentPlayerIndex: 0,
+                  circuitResults: settings.circuits.map(circuit => ({ circuitId: circuit.id, turns: [] })),
+                  playerStats,
+                  sessionBestLap: null,
+                  sessionBestAverage: null,
+                  sessionBestTimes: settings.circuits.reduce((acc, circuit) => {
+                    acc[circuit.id] = {
+                      bestLap: null,
+                      bestLapPlayerId: null,
+                      bestAverage: null,
+                      bestAveragePlayerId: null
+                    };
+                    return acc;
+                  }, {} as Record<string, { bestLap: number | null; bestLapPlayerId: string | null; bestAverage: number | null; bestAveragePlayerId: string | null; }>),
+                  lapTimesLog: [],
+                  currentController: initialController,
+                  participantUsers,
+                };
+
+                try {
+                  addToast({
+                    type: 'info',
+                    title: 'Creando campeonato...',
+                    message: `Campeonato #${position} del torneo`
+                  });
+
+                  // Create game with tournament info
+                  const response = await fetch('/api/game/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      state: newGameState,
+                      gameMode: 'tournament',
+                      tournamentId,
+                      position
+                    }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Failed to create tournament game');
+                  }
+
+                  await mutate('/api/game/active');
+                  await refreshTournament();
+
+                  addToast({
+                    type: 'success',
+                    title: '🏆 ¡Campeonato iniciado!',
+                    message: `Campeonato #${position} - Los puntos cuentan para el torneo`
+                  });
+
+                  setGamePhase('race');
+                  setActiveTab('live');
+                } catch (error) {
+                  console.error('Failed to create tournament game:', error);
+                  addToast({
+                    type: 'error',
+                    title: 'Error',
+                    message: 'No se pudo crear el campeonato del torneo'
+                  });
+                }
+              }}
+              onCancel={() => setGamePhase('tournament-hub')}
+            />
+          );
+        }
+        return (
+          <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-zinc-400">No hay torneo activo</p>
+              <button
+                onClick={() => setGamePhase('tournament-hub')}
+                className="mt-4 px-4 py-2 bg-zinc-700 text-white rounded hover:bg-zinc-600"
+              >
+                Volver
+              </button>
+            </div>
+          </div>
         );
       default:
         return <div>Something went wrong</div>;
