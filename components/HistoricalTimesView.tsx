@@ -571,7 +571,9 @@ const HistoricalTimesView: React.FC<HistoricalTimesViewProps> = ({
               const displayGameState = selectedGame.state;
               if (!displayGameState || !displayGameState.playerStats) return null;
 
-              const calculator = new ScoreCalculator(displayGameState, players);
+              // Use players from the game state to ensure correct ID matching for bonus calculation
+              const gamePlayers = displayGameState.settings?.players || players;
+              const calculator = new ScoreCalculator(displayGameState, gamePlayers);
               const standings = calculator.getPlayerStandings();
 
               return (

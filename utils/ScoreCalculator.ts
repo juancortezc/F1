@@ -93,9 +93,20 @@ export class ScoreCalculator {
    * Calculate detailed breakdown by circuit
    */
   public getCircuitBreakdown(): CircuitBreakdown[] {
+    const { pointsForBestLap, pointsForBestAverage } = this.gameState.settings;
+    const sessionBestTimes = this.gameState.sessionBestTimes || {};
+
     return this.gameState.settings.circuits.map((circuit, circuitIndex) => {
       const circuitResult = this.gameState.circuitResults[circuitIndex];
       if (!circuitResult) return null;
+
+      // Check if circuit is complete (all turns finished)
+      const isCircuitComplete = circuitResult.turns.length >= this.gameState.settings.turnsPerCircuit;
+
+      // Get VR/PR holders for this circuit
+      const circuitBests = sessionBestTimes[circuit.id];
+      const vrHolderId = isCircuitComplete ? circuitBests?.bestLapPlayerId : null;
+      const prHolderId = isCircuitComplete ? circuitBests?.bestAveragePlayerId : null;
 
       // Get unique players who actually participated in this circuit
       const participatingPlayerIds = new Set<string>();
@@ -121,26 +132,32 @@ export class ScoreCalculator {
             const positions = this.getTurnPositions(turn);
             const playerPosition = positions.find(p => p.playerId === playerId);
             const position = playerPosition ? playerPosition.position : turn.length + 1;
-            
+
             // Calculate base points (position-based only)
             const basePoints = this.getPositionPoints(position - 1, turn.length); // Convert to 0-based for calculation
-            
-            // Bonus points = total turn score - base points
-            const totalTurnScore = playerTurn.turnScore || 0;
-            const bonusPoints = Math.max(0, totalTurnScore - basePoints);
+
+            // Turn-level bonus is always 0 since VR/PR is awarded at circuit end
+            const bonusPoints = 0;
 
             circuitBasePoints += basePoints;
-            circuitBonusPoints += bonusPoints;
-            
+
             turnDetails.push({
               playerId,
               position,
               basePoints,
               bonusPoints,
               totalPoints: basePoints + bonusPoints,
-              turnScore: totalTurnScore
+              turnScore: playerTurn.turnScore || 0
             });
           });
+
+          // Add VR/PR bonus at circuit level (not turn level)
+          if (vrHolderId === playerId && pointsForBestLap > 0) {
+            circuitBonusPoints += pointsForBestLap;
+          }
+          if (prHolderId === playerId && pointsForBestAverage > 0) {
+            circuitBonusPoints += pointsForBestAverage;
+          }
 
           return {
             player,
