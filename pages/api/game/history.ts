@@ -42,7 +42,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         sessionBestTimes: gameState.sessionBestTimes, // Needed for VR/PR counting
                         settings: gameState.settings ? {
                             players: gameState.settings.players,
-                            circuits: gameState.settings.circuits
+                            circuits: gameState.settings.circuits,
+                            turnsPerCircuit: gameState.settings.turnsPerCircuit,
+                            pointsForBestLap: gameState.settings.pointsForBestLap,
+                            pointsForBestAverage: gameState.settings.pointsForBestAverage
                         } : undefined
                         // Remove heavy fields: lapTimesLog, etc.
                     } : null

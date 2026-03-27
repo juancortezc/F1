@@ -152,12 +152,8 @@ export class ScoreCalculator {
           });
 
           // Add VR/PR bonus at circuit level (not turn level)
-          // DEBUG: Log comparison values
-          console.log('[ScoreCalc] Player:', player.name, 'id:', playerId, 'vrHolderId:', vrHolderId, 'match:', vrHolderId === playerId);
-
           if (vrHolderId === playerId && pointsForBestLap > 0) {
             circuitBonusPoints += pointsForBestLap;
-            console.log('[ScoreCalc] VR BONUS ADDED:', pointsForBestLap, 'to', player.name);
           }
           if (prHolderId === playerId && pointsForBestAverage > 0) {
             circuitBonusPoints += pointsForBestAverage;
