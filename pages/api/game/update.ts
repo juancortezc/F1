@@ -7,8 +7,15 @@ import { withSecurity } from '../../../lib/security';
 
 // Helper function to check and update historical records
 async function checkAndUpdateRecords(gameState: GameState) {
+    // Validate required fields exist
     if (!gameState.lapTimesLog || gameState.lapTimesLog.length === 0) {
-        return; // No lap times to check
+        console.log('[update.ts] No lapTimesLog found - skipping record check');
+        return;
+    }
+
+    if (!gameState.circuitResults || !gameState.circuits) {
+        console.warn('[update.ts] Missing circuitResults or circuits - cannot check records');
+        return;
     }
 
     // Get all circuits to check for records
