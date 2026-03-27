@@ -566,16 +566,15 @@ function App() {
         }
     });
 
-    // Filter out penalty times (120 seconds = 120000ms)
-    const validLapTimes = lapTimes.filter(time => time < 120000);
-    
-    const timesToAverage = (gameState.settings.lapsPerTurn === 5 && gameState.settings.useBest4Of5Laps && validLapTimes.length >= 4)
-        ? [...validLapTimes].sort((a,b) => a - b).slice(0, 4)
-        : validLapTimes;
-    
-    const averageTime = timesToAverage.length > 0 
+    // Include ALL lap times in average calculation (including 2:00.000 penalty times)
+    // This penalizes players who don't complete laps properly
+    const timesToAverage = (gameState.settings.lapsPerTurn === 5 && gameState.settings.useBest4Of5Laps && lapTimes.length >= 4)
+        ? [...lapTimes].sort((a,b) => a - b).slice(0, 4)
+        : lapTimes;
+
+    const averageTime = timesToAverage.length > 0
         ? Math.round(timesToAverage.reduce((a, b) => a + b, 0) / timesToAverage.length)
-        : 120000; // If no valid times, use penalty time as average
+        : 120000; // If no lap times at all, use penalty time as average
     
     let newSessionBestAverage = gameState.sessionBestAverage;
     if (newSessionBestAverage === null || averageTime < newSessionBestAverage) {
