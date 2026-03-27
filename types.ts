@@ -181,7 +181,7 @@ export interface TournamentStanding {
   championshipsWon: number;
   championshipsSecond: number;
   championshipsThird: number;
-  championshipsTotal: number;
+  championshipsPlayed: number;
   participationRate: number;
 }
 

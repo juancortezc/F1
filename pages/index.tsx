@@ -1316,8 +1316,17 @@ function App() {
           </div>
         );
       case 'tournament-setup':
-        return <TournamentSetup 
-          players={players!} 
+        if (!players || players.length === 0) {
+          return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-zinc-400">Cargando jugadores...</p>
+              </div>
+            </div>
+          );
+        }
+        return <TournamentSetup
+          players={players}
           onTournamentCreated={handleTournamentCreated}
           onCancel={handleBackFromTournament}
         />;

@@ -32,9 +32,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!activeTournament) {
-      return res.status(404).json({
-        success: false,
-        error: 'No active tournament found'
+      // Return 200 with null tournament instead of 404
+      // This allows the frontend to handle "no active tournament" gracefully
+      return res.status(200).json({
+        success: true,
+        tournament: null
       });
     }
 

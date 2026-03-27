@@ -51,7 +51,7 @@ const TournamentHub: React.FC<TournamentHubProps> = ({
     fetcher
   );
 
-  const { data: allTournaments, isLoading: loadingAll } = useSWR<Tournament[]>(
+  const { data: allTournamentsData, isLoading: loadingAll } = useSWR<{ success: boolean; tournaments: Tournament[] }>(
     '/api/tournaments',
     fetcher
   );
@@ -64,8 +64,9 @@ const TournamentHub: React.FC<TournamentHubProps> = ({
       .then(data => setTotalCircuits(Array.isArray(data) ? data.length : 0));
   }, []);
 
-  const completedTournaments = allTournaments?.filter(t => t.status === 'COMPLETED') || [];
-  const cancelledTournaments = allTournaments?.filter(t => t.status === 'CANCELLED') || [];
+  const allTournaments = allTournamentsData?.tournaments || [];
+  const completedTournaments = allTournaments.filter(t => t.status === 'COMPLETED');
+  const cancelledTournaments = allTournaments.filter(t => t.status === 'CANCELLED');
 
   const isLoading = loadingActive || loadingAll;
 

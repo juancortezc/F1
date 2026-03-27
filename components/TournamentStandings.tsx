@@ -1,20 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useSWR from 'swr';
-import { Tournament, TournamentStanding } from '../types';
+import { TournamentStanding } from '../types';
 import NavigationBar from './NavigationBar';
 import LoadingSpinner from './LoadingSpinner';
+import TournamentResults from './TournamentResults';
 
 interface TournamentStandingsProps {
   tournamentId: string;
   onBack: () => void;
 }
 
+interface GameSummary {
+  id: string;
+  status: string;
+  position: number;
+  gameMode: string;
+  createdAt: string;
+}
+
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId, onBack }) => {
+  const [showResults, setShowResults] = useState(false);
+
   const { data, error, isLoading } = useSWR(`/api/tournaments/${tournamentId}/standings`, fetcher, {
     refreshInterval: 5000 // Refresh every 5 seconds
   });
+
+  // Show detailed results view
+  if (showResults) {
+    return (
+      <TournamentResults
+        tournamentId={tournamentId}
+        onBack={() => setShowResults(false)}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -43,7 +64,11 @@ const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId,
   const tournament = data.tournament;
   const standings: TournamentStanding[] = data.standings;
   const summary = data.summary;
-  const championships = data.championships;
+  const games: GameSummary[] = data.games || [];
+
+  // Calculate total circuits from API or use playedCircuitIds length
+  const circuitsPlayed = tournament.playedCircuitIds?.length || summary.circuitsPlayed || 0;
+  const completedGames = summary.completedGames || games.filter((g: GameSummary) => g.status === 'COMPLETED').length;
 
   const getPositionColor = (position: number) => {
     switch (position) {
@@ -92,23 +117,18 @@ const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId,
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-zinc-100">
-                {summary.completedChampionships}/{tournament.maxChampionships}
+                {circuitsPlayed}
               </div>
-              <div className="text-zinc-400 text-sm">Campeonatos</div>
+              <div className="text-zinc-400 text-sm">Circuitos jugados</div>
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="bg-zinc-800 rounded-full h-2">
-              <div 
-                className="bg-f1-red h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(summary.completedChampionships / tournament.maxChampionships) * 100}%` }}
-              />
-            </div>
-            <div className="text-center mt-2 text-sm text-zinc-400">
-              {Math.round((summary.completedChampionships / tournament.maxChampionships) * 100)}% completado
-            </div>
+          {/* Progress info */}
+          <div className="mt-4 flex items-center justify-between text-sm text-zinc-400">
+            <span>{completedGames} campeonato{completedGames !== 1 ? 's' : ''} completado{completedGames !== 1 ? 's' : ''}</span>
+            {tournament.startDate && (
+              <span>Inicio: {new Date(tournament.startDate).toLocaleDateString('es-ES')}</span>
+            )}
           </div>
         </div>
 
@@ -164,7 +184,7 @@ const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId,
                       {standing.championshipsThird}
                     </td>
                     <td className="px-3 py-2 text-center font-mono text-zinc-300">
-                      {standing.championshipsTotal}
+                      {standing.championshipsPlayed}
                     </td>
                     <td className="px-3 py-2 text-center font-mono text-zinc-400">
                       {standing.participationRate}%
@@ -176,34 +196,50 @@ const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId,
           </div>
         </div>
 
-        {/* Championships History */}
-        {championships.length > 0 && (
+        {/* Games History */}
+        {games.length > 0 && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-md">
-            <div className="bg-zinc-800 px-4 py-3 border-b border-zinc-700">
+            <div className="bg-zinc-800 px-4 py-3 border-b border-zinc-700 flex items-center justify-between">
               <h2 className="text-lg font-bold text-zinc-100">Historial de Campeonatos</h2>
+              <button
+                onClick={() => setShowResults(true)}
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded transition-colors"
+              >
+                Ver Detalles
+              </button>
             </div>
-            
+
             <div className="p-4">
               <div className="space-y-3">
-                {championships.map((championship: any) => (
+                {games.map((game: GameSummary, index: number) => (
                   <div
-                    key={championship.id}
-                    className="flex items-center justify-between p-3 bg-zinc-800 rounded-md"
+                    key={game.id}
+                    className="flex items-center justify-between p-3 bg-zinc-800 rounded-md cursor-pointer hover:bg-zinc-700 transition-colors"
+                    onClick={() => setShowResults(true)}
                   >
                     <div>
-                      <div className="font-semibold text-zinc-100">{championship.name}</div>
+                      <div className="font-semibold text-zinc-100">
+                        Campeonato {game.position || index + 1}
+                      </div>
                       <div className="text-sm text-zinc-400">
-                        Campeonato {championship.position}
+                        {new Date(game.createdAt).toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-3">
                       <div className={`px-2 py-1 rounded text-xs font-medium ${
-                        championship.status === 'COMPLETED' 
-                          ? 'bg-green-900 text-green-300' 
+                        game.status === 'COMPLETED'
+                          ? 'bg-green-900 text-green-300'
                           : 'bg-yellow-900 text-yellow-300'
                       }`}>
-                        {championship.status === 'COMPLETED' ? 'Completado' : 'En Progreso'}
+                        {game.status === 'COMPLETED' ? 'Completado' : 'En Progreso'}
                       </div>
+                      <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </div>
                 ))}
@@ -221,19 +257,34 @@ const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId,
               <div className="text-sm text-zinc-400">Participantes</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-zinc-100">{summary.completedChampionships}</div>
-              <div className="text-sm text-zinc-400">Completados</div>
+              <div className="text-2xl font-bold text-zinc-100">{completedGames}</div>
+              <div className="text-sm text-zinc-400">Campeonatos</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-zinc-100">{tournament.maxChampionships - summary.completedChampionships}</div>
-              <div className="text-sm text-zinc-400">Restantes</div>
+              <div className="text-2xl font-bold text-zinc-100">{circuitsPlayed}</div>
+              <div className="text-sm text-zinc-400">Circuitos</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-zinc-100">{summary.averagePointsPerChampionship.toFixed(1)}</div>
+              <div className="text-2xl font-bold text-zinc-100">
+                {summary.averagePointsPerGame?.toFixed(1) || '0.0'}
+              </div>
               <div className="text-sm text-zinc-400">Pts Promedio</div>
             </div>
           </div>
         </div>
+
+        {/* View Results Button - Mobile Prominent */}
+        {games.length > 0 && (
+          <button
+            onClick={() => setShowResults(true)}
+            className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold text-lg rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            VER RESULTADOS DETALLADOS
+          </button>
+        )}
       </div>
     </div>
   );
