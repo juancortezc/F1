@@ -4,6 +4,7 @@ import { TournamentStanding } from '../types';
 import NavigationBar from './NavigationBar';
 import LoadingSpinner from './LoadingSpinner';
 import TournamentResults from './TournamentResults';
+import UserAvatar from './UserAvatar';
 
 interface TournamentStandingsProps {
   tournamentId: string;
@@ -70,23 +71,9 @@ const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId,
   const circuitsPlayed = tournament.playedCircuitIds?.length || summary.circuitsPlayed || 0;
   const completedGames = summary.completedGames || games.filter((g: GameSummary) => g.status === 'COMPLETED').length;
 
-  const getPositionColor = (position: number) => {
-    switch (position) {
-      case 1: return 'text-amber-400'; // Gold
-      case 2: return 'text-zinc-300';  // Silver
-      case 3: return 'text-amber-500'; // Bronze
-      default: return 'text-zinc-100';
-    }
-  };
-
-  const getPositionBadge = (position: number) => {
-    switch (position) {
-      case 1: return '🥇';
-      case 2: return '🥈';
-      case 3: return '🥉';
-      default: return position.toString();
-    }
-  };
+  const first = standings[0];
+  const second = standings[1];
+  const third = standings[2];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -132,62 +119,141 @@ const TournamentStandings: React.FC<TournamentStandingsProps> = ({ tournamentId,
           </div>
         </div>
 
-        {/* Standings Table */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-          <div className="bg-zinc-800 px-4 py-3 border-b border-zinc-700">
-            <h2 className="text-lg font-bold text-zinc-100">Clasificación General</h2>
-          </div>
+        {/* Podium Cards */}
+        {standings.length > 0 && (
+          <div className="flex justify-center items-end gap-4 mb-2">
+            {/* Second Place - Left */}
+            {second && (
+              <div
+                className="relative rounded-lg border border-zinc-700 p-4 text-center"
+                style={{ backgroundColor: '#242424', minHeight: '160px', width: '110px' }}
+              >
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-zinc-400 rounded-full flex items-center justify-center z-10 border-2 border-zinc-800">
+                  <span className="font-mono font-bold text-sm text-black">2</span>
+                </div>
+                <div className="relative inline-block">
+                  <UserAvatar
+                    imageUrl={second.player.imageUrl}
+                    name={second.player.name}
+                    className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
+                  />
+                </div>
+                <h3 className="text-white font-semibold text-sm truncate">{second.player.name}</h3>
+                <div className="mt-1 font-mono font-bold text-yellow-400 text-lg">{second.totalPoints}</div>
+                <div className="text-xs text-zinc-500">pts</div>
+              </div>
+            )}
 
+            {/* First Place - Center (Larger) */}
+            {first && (
+              <div
+                className="relative rounded-lg border border-zinc-600 p-6 text-center"
+                style={{ backgroundColor: '#242424', minHeight: '185px', width: '130px' }}
+              >
+                <div className="absolute -top-3 -right-3 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center z-10 border-2 border-zinc-800 shadow-lg">
+                  <span className="font-mono font-bold text-base text-black">1</span>
+                </div>
+                <div className="relative inline-block">
+                  <UserAvatar
+                    imageUrl={first.player.imageUrl}
+                    name={first.player.name}
+                    className="w-20 h-20 mx-auto mb-3 ring-2 ring-f1-red"
+                  />
+                </div>
+                <h3 className="text-white font-bold text-base truncate">{first.player.name}</h3>
+                <div className="mt-1 font-mono font-bold text-yellow-400 text-xl">{first.totalPoints}</div>
+                <div className="text-xs text-zinc-500">pts</div>
+              </div>
+            )}
+
+            {/* Third Place - Right */}
+            {third && (
+              <div
+                className="relative rounded-lg border border-zinc-700 p-4 text-center"
+                style={{ backgroundColor: '#242424', minHeight: '160px', width: '110px' }}
+              >
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center z-10 border-2 border-zinc-800">
+                  <span className="font-mono font-bold text-sm text-white">3</span>
+                </div>
+                <div className="relative inline-block">
+                  <UserAvatar
+                    imageUrl={third.player.imageUrl}
+                    name={third.player.name}
+                    className="w-16 h-16 mx-auto mb-2 ring-2 ring-f1-red"
+                  />
+                </div>
+                <h3 className="text-white font-semibold text-sm truncate">{third.player.name}</h3>
+                <div className="mt-1 font-mono font-bold text-yellow-400 text-lg">{third.totalPoints}</div>
+                <div className="text-xs text-zinc-500">pts</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Statistics Table */}
+        <div className="rounded-lg border border-zinc-800" style={{ backgroundColor: '#242424' }}>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-zinc-800">
-                <tr className="text-xs font-mono uppercase tracking-wide text-zinc-400">
-                  <th className="px-3 py-2 text-center">POS</th>
-                  <th className="px-3 py-2 text-left">PILOTO</th>
-                  <th className="px-3 py-2 text-center">PTS</th>
-                  <th className="px-3 py-2 text-center">🥇</th>
-                  <th className="px-3 py-2 text-center">🥈</th>
-                  <th className="px-3 py-2 text-center">🥉</th>
-                  <th className="px-3 py-2 text-center">CAR</th>
-                  <th className="px-3 py-2 text-center">PART</th>
+              <thead>
+                <tr style={{ backgroundColor: '#2A2A2A' }}>
+                  <th className="px-1 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">POS</th>
+                  <th className="px-2 py-2 text-left text-xs font-mono uppercase tracking-wider text-zinc-400">JUGADOR</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">PTS</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">1°</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">2°</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">3°</th>
+                  <th className="px-2 py-2 text-center text-xs font-mono uppercase tracking-wider text-zinc-400">CAR</th>
                 </tr>
               </thead>
               <tbody>
-                {standings.map((standing) => (
-                  <tr
-                    key={standing.player.id}
-                    className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors"
-                  >
-                    <td className={`px-3 py-2 text-center font-mono font-bold ${getPositionColor(standing.position)}`}>
-                      {getPositionBadge(standing.position)}
+                {standings.map((standing, index) => (
+                  <tr key={standing.player.id} className="border-t border-zinc-800">
+                    <td className="px-1 py-3 text-center">
+                      <span className={`font-mono font-bold text-sm
+                        ${index === 0 ? 'text-yellow-500' :
+                          index === 1 ? 'text-zinc-400' :
+                          index === 2 ? 'text-orange-600' :
+                          'text-zinc-300'}
+                      `}>
+                        {index + 1}
+                      </span>
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-3">
                       <div className="flex items-center gap-2">
-                        <img
-                          src={standing.player.imageUrl}
-                          alt={standing.player.name}
-                          className="w-8 h-8 rounded-full object-cover"
+                        <UserAvatar
+                          imageUrl={standing.player.imageUrl}
+                          name={standing.player.name}
+                          className="w-8 h-8"
                         />
-                        <span className="font-semibold text-zinc-100">{standing.player.name}</span>
+                        <span className="text-white font-semibold text-base">
+                          {standing.player.name}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-center font-mono font-bold text-zinc-100">
-                      {standing.totalPoints}
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-yellow-400 text-lg">
+                        {standing.totalPoints}
+                      </span>
                     </td>
-                    <td className="px-3 py-2 text-center font-mono text-zinc-300">
-                      {standing.championshipsWon}
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-yellow-500 text-base">
+                        {standing.championshipsWon}
+                      </span>
                     </td>
-                    <td className="px-3 py-2 text-center font-mono text-zinc-300">
-                      {standing.championshipsSecond}
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-zinc-400 text-base">
+                        {standing.championshipsSecond}
+                      </span>
                     </td>
-                    <td className="px-3 py-2 text-center font-mono text-zinc-300">
-                      {standing.championshipsThird}
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono font-bold text-orange-600 text-base">
+                        {standing.championshipsThird}
+                      </span>
                     </td>
-                    <td className="px-3 py-2 text-center font-mono text-zinc-300">
-                      {standing.championshipsPlayed}
-                    </td>
-                    <td className="px-3 py-2 text-center font-mono text-zinc-400">
-                      {standing.participationRate}%
+                    <td className="px-2 py-3 text-center">
+                      <span className="font-mono text-zinc-300 text-base">
+                        {standing.championshipsPlayed}
+                      </span>
                     </td>
                   </tr>
                 ))}
