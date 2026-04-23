@@ -100,8 +100,8 @@ const TournamentChampionship: React.FC<TournamentChampionshipProps> = ({
       turnsPerCircuit,
       scoringMethod,
       scoringMultiplier: null,
-      pointsForBestLap: scoringMethod === 'lap' || scoringMethod === 'both' ? pointsForBestLap : 0,
-      pointsForBestAverage: scoringMethod === 'average' || scoringMethod === 'both' ? pointsForBestAverage : 0,
+      pointsForBestLap,
+      pointsForBestAverage,
       awardBestTimeFor: 'circuit',
       useBest4Of5Laps: lapsPerTurn === 5,
     };
