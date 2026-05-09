@@ -22,6 +22,13 @@ interface Tournament {
     championshipsPlayed: number;
     player?: Player;
   }[];
+  games?: {
+    id: string;
+    status: string;
+    position: number;
+    gameMode: string;
+    state: any;
+  }[];
 }
 
 interface F1HallOfFameProps {
@@ -313,6 +320,186 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                   ? leader.totalPoints - topThree[1].totalPoints
                   : 0;
 
+                // === KPI CALCULATIONS ===
+                // Use tournament's own games (includes ACTIVE games for live KPIs)
+                const tournamentGames = ((tournament as any).games || [])
+                  .filter((g: any) => g.gameMode === 'tournament' && g.state);
+
+                // Helper: format ms to mm:ss.xxx
+                const formatTime = (ms: number | null | undefined): string => {
+                  if (!ms || ms <= 0) return '—';
+                  const m = Math.floor(ms / 60000);
+                  const s = Math.floor((ms % 60000) / 1000);
+                  const x = ms % 1000;
+                  return `${m}:${s.toString().padStart(2, '0')}.${x.toString().padStart(3, '0')}`;
+                };
+
+                // Helper: get participant by playerId
+                const getParticipant = (playerId: string) =>
+                  tournament.participants.find(p => p.playerId === playerId);
+                const getPlayerName = (playerId: string) =>
+                  getParticipant(playerId)?.player?.name || 'Jugador';
+
+                // KPI 1: Player with most VR (best laps) across tournament
+                const vrCounts: Record<string, number> = {};
+                tournamentGames.forEach((game: any) => {
+                  const stats = game.state?.playerStats || {};
+                  Object.entries(stats).forEach(([pid, s]: [string, any]) => {
+                    vrCounts[pid] = (vrCounts[pid] || 0) + (s.bestLaps || 0);
+                  });
+                });
+                const vrLeader = Object.entries(vrCounts)
+                  .filter(([pid]) => getParticipant(pid))
+                  .sort((a, b) => b[1] - a[1])[0];
+
+                // KPI 1b: Player with most PR (best averages)
+                const prCounts: Record<string, number> = {};
+                tournamentGames.forEach((game: any) => {
+                  const stats = game.state?.playerStats || {};
+                  Object.entries(stats).forEach(([pid, s]: [string, any]) => {
+                    prCounts[pid] = (prCounts[pid] || 0) + (s.bestAverages || 0);
+                  });
+                });
+                const prLeader = Object.entries(prCounts)
+                  .filter(([pid]) => getParticipant(pid))
+                  .sort((a, b) => b[1] - a[1])[0];
+
+                // KPI 2: Largest time gap in a single circuit
+                let biggestGap: { circuitName: string; gap: number; leaderName: string; lastName: string; leaderTime: number; lastTime: number } | null = null;
+                tournamentGames.forEach((game: any) => {
+                  const circuits = game.state?.settings?.circuits || [];
+                  const circuitResults = game.state?.circuitResults || [];
+                  circuits.forEach((circuit: any) => {
+                    const results = circuitResults.find((r: any) => r.circuitId === circuit.id);
+                    if (!results) return;
+                    // Aggregate avg per player across all turns of that circuit
+                    const playerAvgs: Record<string, { sum: number; count: number }> = {};
+                    results.turns.forEach((turn: any[]) => {
+                      turn.forEach((tr: any) => {
+                        if (tr.averageTime && tr.averageTime > 0) {
+                          if (!playerAvgs[tr.playerId]) playerAvgs[tr.playerId] = { sum: 0, count: 0 };
+                          playerAvgs[tr.playerId].sum += tr.averageTime;
+                          playerAvgs[tr.playerId].count += 1;
+                        }
+                      });
+                    });
+                    const avgs = Object.entries(playerAvgs)
+                      .filter(([, v]) => v.count > 0)
+                      .map(([pid, v]) => ({ playerId: pid, avg: v.sum / v.count }));
+                    if (avgs.length < 2) return;
+                    avgs.sort((a, b) => a.avg - b.avg);
+                    const best = avgs[0];
+                    const worst = avgs[avgs.length - 1];
+                    const gap = worst.avg - best.avg;
+                    if (!biggestGap || gap > biggestGap.gap) {
+                      biggestGap = {
+                        circuitName: circuit.name,
+                        gap,
+                        leaderName: getPlayerName(best.playerId),
+                        lastName: getPlayerName(worst.playerId),
+                        leaderTime: best.avg,
+                        lastTime: worst.avg
+                      };
+                    }
+                  });
+                });
+
+                // KPI 3: Best circuit per player (where they scored most points)
+                const playerCircuitScores: Record<string, Record<string, { name: string; score: number }>> = {};
+                tournamentGames.forEach((game: any) => {
+                  const circuits = game.state?.settings?.circuits || [];
+                  const circuitResults = game.state?.circuitResults || [];
+                  circuits.forEach((circuit: any) => {
+                    const results = circuitResults.find((r: any) => r.circuitId === circuit.id);
+                    if (!results) return;
+                    results.turns.forEach((turn: any[]) => {
+                      turn.forEach((tr: any) => {
+                        if (!playerCircuitScores[tr.playerId]) playerCircuitScores[tr.playerId] = {};
+                        if (!playerCircuitScores[tr.playerId][circuit.id]) {
+                          playerCircuitScores[tr.playerId][circuit.id] = { name: circuit.name, score: 0 };
+                        }
+                        playerCircuitScores[tr.playerId][circuit.id].score += (tr.turnScore || 0);
+                      });
+                    });
+                  });
+                });
+                const bestCircuitPerPlayer = sortedParticipants
+                  .map(p => {
+                    const scores = playerCircuitScores[p.playerId] || {};
+                    const best = Object.values(scores).sort((a, b) => b.score - a.score)[0];
+                    return best && best.score > 0 ? { player: p, circuitName: best.name, points: best.score } : null;
+                  })
+                  .filter((x): x is NonNullable<typeof x> => x !== null);
+
+                // KPI 4: Remaining circuits with their VR/PR holders
+                const playedSet = new Set(tournament.playedCircuitIds);
+                const remainingCircuits = (circuits || [])
+                  .filter(c => !playedSet.has(c.id))
+                  .map(c => {
+                    const vrHolder = c.bestLapHolderId
+                      ? players.find(p => p.id === c.bestLapHolderId)?.name
+                      : null;
+                    const prHolder = c.bestAverageHolderId
+                      ? players.find(p => p.id === c.bestAverageHolderId)?.name
+                      : null;
+                    return {
+                      id: c.id,
+                      name: c.name,
+                      vrHolder,
+                      prHolder,
+                      bestLap: c.historicalBestLap,
+                      bestAvg: c.historicalBestAverage
+                    };
+                  });
+
+                // KPI 5: Fastest single lap recorded in tournament
+                let fastestLap: { circuitName: string; time: number; playerName: string } | null = null;
+                let bestAverageRecord: { circuitName: string; time: number; playerName: string } | null = null;
+                tournamentGames.forEach((game: any) => {
+                  const sbt = game.state?.sessionBestTimes || {};
+                  const circuits = game.state?.settings?.circuits || [];
+                  Object.entries(sbt).forEach(([cid, bests]: [string, any]) => {
+                    const circuit = circuits.find((c: any) => c.id === cid);
+                    if (bests?.bestLap && bests?.bestLapPlayerId) {
+                      if (!fastestLap || bests.bestLap < fastestLap.time) {
+                        fastestLap = {
+                          circuitName: circuit?.name || cid,
+                          time: bests.bestLap,
+                          playerName: getPlayerName(bests.bestLapPlayerId)
+                        };
+                      }
+                    }
+                    if (bests?.bestAverage && bests?.bestAveragePlayerId) {
+                      if (!bestAverageRecord || bests.bestAverage < bestAverageRecord.time) {
+                        bestAverageRecord = {
+                          circuitName: circuit?.name || cid,
+                          time: bests.bestAverage,
+                          playerName: getPlayerName(bests.bestAveragePlayerId)
+                        };
+                      }
+                    }
+                  });
+                });
+
+                // KPI 6: Closest championship (smallest gap between 1st and 2nd in a single game)
+                let closestChampionship: { gap: number; winnerName: string; secondName: string } | null = null;
+                tournamentGames.forEach((game: any) => {
+                  const stats = game.state?.playerStats || {};
+                  const sorted = Object.entries(stats)
+                    .map(([pid, s]: [string, any]) => ({ pid, score: s.totalScore || 0 }))
+                    .sort((a, b) => b.score - a.score);
+                  if (sorted.length >= 2 && sorted[0].score > 0) {
+                    const gap = sorted[0].score - sorted[1].score;
+                    if (!closestChampionship || gap < closestChampionship.gap) {
+                      closestChampionship = {
+                        gap,
+                        winnerName: getPlayerName(sorted[0].pid),
+                        secondName: getPlayerName(sorted[1].pid)
+                      };
+                    }
+                  }
+                });
+
                 return (
                   <div
                     key={tournament.id}
@@ -562,6 +749,221 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                         </table>
                       </div>
                     </div>
+
+                    {/* === KPI Section === */}
+                    {tournamentGames.length > 0 && (
+                      <div className="border-t border-zinc-800 p-4 space-y-4 bg-gradient-to-b from-zinc-950/40 to-transparent">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-mono uppercase tracking-widest text-red-500 font-bold">
+                            ESTADÍSTICAS DEL TORNEO
+                          </h4>
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-600">
+                            {tournamentGames.length} campeonato{tournamentGames.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+
+                        {/* Top KPI Cards Row */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {/* Fastest Lap of Tournament */}
+                          {fastestLap && (
+                            <div className="rounded-lg border border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-zinc-900 p-3">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-yellow-500 font-bold mb-1">
+                                ⚡ VUELTA MÁS RÁPIDA
+                              </div>
+                              <div className="font-mono font-black text-white text-base">
+                                {formatTime((fastestLap as any).time)}
+                              </div>
+                              <div className="text-zinc-300 text-xs font-semibold mt-0.5">
+                                {(fastestLap as any).playerName}
+                              </div>
+                              <div className="text-zinc-500 text-[10px] mt-0.5">
+                                {(fastestLap as any).circuitName}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Best Average of Tournament */}
+                          {bestAverageRecord && (
+                            <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-zinc-900 p-3">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold mb-1">
+                                🎯 MEJOR PROMEDIO
+                              </div>
+                              <div className="font-mono font-black text-white text-base">
+                                {formatTime((bestAverageRecord as any).time)}
+                              </div>
+                              <div className="text-zinc-300 text-xs font-semibold mt-0.5">
+                                {(bestAverageRecord as any).playerName}
+                              </div>
+                              <div className="text-zinc-500 text-[10px] mt-0.5">
+                                {(bestAverageRecord as any).circuitName}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* VR / PR Leaders */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {vrLeader && vrLeader[1] > 0 && (
+                            <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-bold mb-1">
+                                REY DE LA VR
+                              </div>
+                              <div className="text-white text-sm font-bold truncate">
+                                {getPlayerName(vrLeader[0])}
+                              </div>
+                              <div className="flex items-baseline gap-1 mt-0.5">
+                                <span className="font-mono font-black text-yellow-400 text-2xl leading-none">
+                                  {vrLeader[1]}
+                                </span>
+                                <span className="text-zinc-500 text-[10px] uppercase tracking-wider">
+                                  vueltas rápidas
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {prLeader && prLeader[1] > 0 && (
+                            <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-bold mb-1">
+                                REY DEL PR
+                              </div>
+                              <div className="text-white text-sm font-bold truncate">
+                                {getPlayerName(prLeader[0])}
+                              </div>
+                              <div className="flex items-baseline gap-1 mt-0.5">
+                                <span className="font-mono font-black text-cyan-400 text-2xl leading-none">
+                                  {prLeader[1]}
+                                </span>
+                                <span className="text-zinc-500 text-[10px] uppercase tracking-wider">
+                                  mejores promedios
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Biggest Gap & Closest Championship */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {biggestGap && (
+                            <div className="rounded-lg border border-red-500/30 bg-gradient-to-br from-red-500/10 to-zinc-900 p-3">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-red-400 font-bold mb-1">
+                                MAYOR DIFERENCIA
+                              </div>
+                              <div className="font-mono font-black text-red-400 text-xl leading-none">
+                                +{((biggestGap as any).gap / 1000).toFixed(2)}s
+                              </div>
+                              <div className="text-zinc-300 text-xs mt-1">
+                                <span className="text-yellow-400 font-bold">{(biggestGap as any).leaderName}</span>
+                                <span className="text-zinc-600"> vs </span>
+                                <span className="text-zinc-400">{(biggestGap as any).lastName}</span>
+                              </div>
+                              <div className="text-zinc-500 text-[10px] mt-0.5">
+                                {(biggestGap as any).circuitName}
+                              </div>
+                            </div>
+                          )}
+
+                          {closestChampionship && (closestChampionship as any).gap >= 0 && (
+                            <div className="rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-zinc-900 p-3">
+                              <div className="text-[10px] font-mono uppercase tracking-wider text-green-400 font-bold mb-1">
+                                CAMPEONATO MÁS REÑIDO
+                              </div>
+                              <div className="font-mono font-black text-green-400 text-xl leading-none">
+                                {(closestChampionship as any).gap === 0 ? 'EMPATE' : `${(closestChampionship as any).gap} pts`}
+                              </div>
+                              <div className="text-zinc-300 text-xs mt-1">
+                                <span className="text-yellow-400 font-bold">{(closestChampionship as any).winnerName}</span>
+                                <span className="text-zinc-600"> sobre </span>
+                                <span className="text-zinc-400">{(closestChampionship as any).secondName}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Best Circuit per Player */}
+                        {bestCircuitPerPlayer.length > 0 && (
+                          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+                            <div className="px-3 py-2 bg-zinc-900/60 border-b border-zinc-800">
+                              <h5 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
+                                CIRCUITO FAVORITO POR PILOTO
+                              </h5>
+                            </div>
+                            <div className="divide-y divide-zinc-800/50">
+                              {bestCircuitPerPlayer.map((entry, idx) => (
+                                <div key={entry.player.id} className="flex items-center justify-between px-3 py-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="font-mono font-bold text-zinc-500 text-xs w-4 flex-shrink-0">
+                                      {idx + 1}
+                                    </span>
+                                    <UserAvatar
+                                      imageUrl={entry.player.player?.imageUrl || ''}
+                                      name={entry.player.player?.name || 'Jugador'}
+                                      className="w-6 h-6 flex-shrink-0"
+                                    />
+                                    <span className="text-white font-semibold text-xs truncate">
+                                      {entry.player.player?.name}
+                                    </span>
+                                  </div>
+                                  <div className="text-right flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-zinc-300 text-xs">{entry.circuitName}</span>
+                                    <span className="font-mono font-bold text-yellow-400 text-sm w-8 text-right">
+                                      {entry.points}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Remaining Circuits */}
+                        {tournament.status === 'ACTIVE' && remainingCircuits.length > 0 && (
+                          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+                            <div className="px-3 py-2 bg-zinc-900/60 border-b border-zinc-800 flex items-center justify-between">
+                              <h5 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
+                                CIRCUITOS PENDIENTES
+                              </h5>
+                              <span className="text-[10px] font-mono text-red-400 font-bold">
+                                {remainingCircuits.length}
+                              </span>
+                            </div>
+                            <div className="divide-y divide-zinc-800/50 max-h-64 overflow-y-auto">
+                              {remainingCircuits.map(circuit => (
+                                <div key={circuit.id} className="px-3 py-2">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-white font-semibold text-xs">{circuit.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3 text-[10px]">
+                                    {circuit.vrHolder ? (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-yellow-500 font-bold">VR:</span>
+                                        <span className="text-zinc-300">{circuit.vrHolder}</span>
+                                        {circuit.bestLap && (
+                                          <span className="font-mono text-zinc-500">{formatTime(circuit.bestLap)}</span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-zinc-600">VR: —</span>
+                                    )}
+                                    {circuit.prHolder ? (
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-cyan-500 font-bold">PR:</span>
+                                        <span className="text-zinc-300">{circuit.prHolder}</span>
+                                        {circuit.bestAvg && (
+                                          <span className="font-mono text-zinc-500">{formatTime(circuit.bestAvg)}</span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-zinc-600">PR: —</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })

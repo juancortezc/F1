@@ -32,6 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 return {
                     id: game.id,
                     status: game.status,
+                    gameMode: (game as any).gameMode,
+                    tournamentId: (game as any).tournamentId,
                     createdAt: game.createdAt,
                     updatedAt: game.updatedAt,
                     state: gameState ? {

@@ -38,7 +38,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
         orderBy: { totalPoints: 'desc' }
       },
       games: {
-        select: { id: true, status: true, position: true }
+        select: { id: true, status: true, position: true, state: true, gameMode: true }
       },
       _count: {
         select: {
@@ -50,14 +50,35 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
     orderBy: { createdAt: 'desc' }
   });
 
-  console.log(`[Tournaments API] Returning ${tournaments.length} tournaments`);
-  tournaments.forEach(t => {
-    console.log(`- ${t.name}: status=${t.status}`);
-  });
-  
+  // Optimize: trim heavy fields from game state to reduce payload size
+  const optimizedTournaments = tournaments.map(t => ({
+    ...t,
+    games: t.games.map((g: any) => {
+      const s = g.state as any;
+      return {
+        id: g.id,
+        status: g.status,
+        position: g.position,
+        gameMode: g.gameMode,
+        state: s ? {
+          playerStats: s.playerStats,
+          circuitResults: s.circuitResults,
+          sessionBestTimes: s.sessionBestTimes,
+          settings: s.settings ? {
+            circuits: s.settings.circuits,
+            players: s.settings.players,
+            turnsPerCircuit: s.settings.turnsPerCircuit,
+            pointsForBestLap: s.settings.pointsForBestLap,
+            pointsForBestAverage: s.settings.pointsForBestAverage
+          } : undefined
+        } : null
+      };
+    })
+  }));
+
   return res.status(200).json({
     success: true,
-    tournaments
+    tournaments: optimizedTournaments
   });
 }
 
