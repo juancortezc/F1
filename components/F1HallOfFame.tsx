@@ -70,7 +70,7 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
   const tournaments = tournamentsResponse?.tournaments;
 
   // State for tabs
-  const [activeTab, setActiveTab] = useState<'general' | 'torneos'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'torneos'>('torneos');
 
   // State for modals
   const [showPtsExplanation, setShowPtsExplanation] = useState(false);
@@ -274,16 +274,6 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
         {/* Tabs */}
         <div className="flex gap-2 mb-6 justify-center">
           <button
-            onClick={() => setActiveTab('general')}
-            className={`px-6 py-2 rounded-lg font-semibold text-sm transition-colors ${
-              activeTab === 'general'
-                ? 'bg-red-600 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:text-white'
-            }`}
-          >
-            GENERAL
-          </button>
-          <button
             onClick={() => setActiveTab('torneos')}
             className={`px-6 py-2 rounded-lg font-semibold text-sm transition-colors ${
               activeTab === 'torneos'
@@ -292,6 +282,16 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
             }`}
           >
             TORNEOS {tournamentsWithData.length > 0 && `(${tournamentsWithData.length})`}
+          </button>
+          <button
+            onClick={() => setActiveTab('general')}
+            className={`px-6 py-2 rounded-lg font-semibold text-sm transition-colors ${
+              activeTab === 'general'
+                ? 'bg-red-600 text-white'
+                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+            }`}
+          >
+            ACUMULADO
           </button>
         </div>
 
