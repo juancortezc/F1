@@ -70,7 +70,6 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
   const [showVRModal, setShowVRModal] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
   const [showCircuitDominationModal, setShowCircuitDominationModal] = useState(false);
-  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
 
   const { accumulatedStats } = useMemo(() => {
     // Include ALL players (including guests) - they will be filtered at the end
@@ -303,82 +302,265 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                 const sortedParticipants = [...tournament.participants]
                   .sort((a, b) => b.totalPoints - a.totalPoints);
                 const topThree = sortedParticipants.slice(0, 3);
+                const leader = sortedParticipants[0];
+                const totalChampionships = tournament.participants.reduce(
+                  (sum, p) => sum + (p.championshipsPlayed || 0), 0
+                ) / Math.max(tournament.participants.length, 1);
+                const completedChampionships = Math.round(totalChampionships);
+
+                // Calculate gap to leader for second place
+                const gapToLeader = topThree[1] && leader
+                  ? leader.totalPoints - topThree[1].totalPoints
+                  : 0;
 
                 return (
                   <div
                     key={tournament.id}
-                    className="rounded-lg border border-zinc-800 overflow-hidden"
-                    style={{ backgroundColor: '#242424' }}
+                    className="rounded-xl border border-zinc-800 overflow-hidden"
+                    style={{ backgroundColor: '#1A1A1A' }}
                   >
                     {/* Tournament Header */}
-                    <div className={`p-4 ${
+                    <div className={`relative px-5 py-4 ${
                       tournament.status === 'ACTIVE'
-                        ? 'bg-gradient-to-r from-red-900/40 to-red-800/20 border-b border-red-800/50'
-                        : 'bg-zinc-800/50 border-b border-zinc-700'
+                        ? 'bg-gradient-to-r from-red-900/50 via-red-800/20 to-zinc-900 border-b border-red-800/50'
+                        : 'bg-gradient-to-r from-zinc-800 to-zinc-900 border-b border-zinc-700'
                     }`}>
+                      {tournament.status === 'ACTIVE' && (
+                        <div className="absolute top-0 left-0 w-1 h-full bg-red-600" />
+                      )}
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-lg font-bold text-white">{tournament.name}</h3>
-                          <p className="text-zinc-400 text-sm">
-                            {tournament.playedCircuitIds.length} circuitos jugados
-                            {tournament.endDate && ` - Finalizado ${formatShortDateEC(tournament.endDate)}`}
-                          </p>
+                          <h3 className="text-xl font-bold text-white tracking-tight">{tournament.name}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-zinc-400 text-xs font-mono uppercase tracking-wider">
+                              {tournament.playedCircuitIds.length} CIRCUITOS
+                            </span>
+                            {tournament.endDate && (
+                              <>
+                                <span className="text-zinc-600">•</span>
+                                <span className="text-zinc-400 text-xs">{formatShortDateEC(tournament.endDate)}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 ${
                           tournament.status === 'ACTIVE'
                             ? 'bg-red-600 text-white'
                             : 'bg-zinc-700 text-zinc-300'
                         }`}>
+                          {tournament.status === 'ACTIVE' && (
+                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                          )}
                           {tournament.status === 'ACTIVE' ? 'EN CURSO' : 'COMPLETADO'}
                         </span>
                       </div>
                     </div>
 
-                    {/* Podium / Top 3 */}
-                    <div className="p-4">
-                      <div className="flex justify-center items-end gap-3 mb-4">
+                    {/* F1 Modern Podium */}
+                    <div className="px-4 pt-8 pb-4 bg-gradient-to-b from-zinc-900/30 to-transparent">
+                      <div className="flex justify-center items-end gap-2 sm:gap-4 mb-2">
+                        {/* 2nd Place */}
                         {topThree[1] && (
-                          <div className="text-center">
-                            <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-zinc-700 flex items-center justify-center text-lg font-bold text-zinc-300">
-                              2
+                          <div className="flex flex-col items-center flex-1 max-w-[120px]">
+                            <div className="relative mb-2">
+                              <UserAvatar
+                                imageUrl={topThree[1].player?.imageUrl || ''}
+                                name={topThree[1].player?.name || 'Jugador'}
+                                className="w-16 h-16 sm:w-18 sm:h-18 ring-2 ring-zinc-400 shadow-lg"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-zinc-300 rounded-full flex items-center justify-center text-black font-bold text-sm border-2 border-zinc-900">
+                                2
+                              </div>
                             </div>
-                            <div className="text-zinc-300 text-xs font-semibold truncate max-w-[70px]">
+                            <div className="text-white text-sm font-bold truncate w-full text-center">
                               {topThree[1].player?.name || 'Jugador'}
                             </div>
-                            <div className="text-zinc-500 text-xs">{topThree[1].totalPoints} pts</div>
+                            <div className="font-mono font-black text-zinc-300 text-xl mt-1 leading-none">
+                              {topThree[1].totalPoints}
+                            </div>
+                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">PTS</div>
+                            {/* Podium platform */}
+                            <div className="w-full mt-2 h-12 rounded-t-md bg-gradient-to-b from-zinc-500 to-zinc-700 flex items-center justify-center shadow-inner">
+                              <span className="text-zinc-900 font-black text-2xl">2</span>
+                            </div>
                           </div>
                         )}
+
+                        {/* 1st Place - Center & Larger */}
                         {topThree[0] && (
-                          <div className="text-center">
-                            <div className="w-14 h-14 mx-auto mb-1 rounded-full bg-yellow-500/80 flex items-center justify-center text-xl font-bold text-black">
-                              1
+                          <div className="flex flex-col items-center flex-1 max-w-[140px]">
+                            {/* Crown / Star */}
+                            <div className="text-yellow-400 text-2xl mb-1 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">
+                              ★
                             </div>
-                            <div className="text-white text-sm font-bold truncate max-w-[80px]">
+                            <div className="relative mb-2">
+                              <UserAvatar
+                                imageUrl={topThree[0].player?.imageUrl || ''}
+                                name={topThree[0].player?.name || 'Jugador'}
+                                className="w-20 h-20 sm:w-24 sm:h-24 ring-4 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)]"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-9 h-9 bg-yellow-400 rounded-full flex items-center justify-center text-black font-black text-base border-2 border-zinc-900 shadow-lg">
+                                1
+                              </div>
+                            </div>
+                            <div className="text-white text-base font-black truncate w-full text-center">
                               {topThree[0].player?.name || 'Jugador'}
                             </div>
-                            <div className="text-yellow-400 text-sm font-bold">{topThree[0].totalPoints} pts</div>
+                            <div className="font-mono font-black text-yellow-400 text-3xl mt-1 leading-none drop-shadow-[0_0_12px_rgba(250,204,21,0.4)]">
+                              {topThree[0].totalPoints}
+                            </div>
+                            <div className="text-yellow-500/70 text-xs uppercase tracking-wider font-bold">PTS</div>
+                            {/* Podium platform - tallest */}
+                            <div className="w-full mt-2 h-16 rounded-t-md bg-gradient-to-b from-yellow-400 to-yellow-600 flex items-center justify-center shadow-inner relative overflow-hidden">
+                              <span className="text-yellow-900 font-black text-3xl">1</span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                            </div>
                           </div>
                         )}
+
+                        {/* 3rd Place */}
                         {topThree[2] && (
-                          <div className="text-center">
-                            <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-orange-700/70 flex items-center justify-center text-lg font-bold text-white">
-                              3
+                          <div className="flex flex-col items-center flex-1 max-w-[120px]">
+                            <div className="relative mb-2">
+                              <UserAvatar
+                                imageUrl={topThree[2].player?.imageUrl || ''}
+                                name={topThree[2].player?.name || 'Jugador'}
+                                className="w-16 h-16 sm:w-18 sm:h-18 ring-2 ring-orange-600 shadow-lg"
+                              />
+                              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-zinc-900">
+                                3
+                              </div>
                             </div>
-                            <div className="text-zinc-300 text-xs font-semibold truncate max-w-[70px]">
+                            <div className="text-white text-sm font-bold truncate w-full text-center">
                               {topThree[2].player?.name || 'Jugador'}
                             </div>
-                            <div className="text-zinc-500 text-xs">{topThree[2].totalPoints} pts</div>
+                            <div className="font-mono font-black text-orange-500 text-xl mt-1 leading-none">
+                              {topThree[2].totalPoints}
+                            </div>
+                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">PTS</div>
+                            {/* Podium platform - shortest */}
+                            <div className="w-full mt-2 h-8 rounded-t-md bg-gradient-to-b from-orange-600 to-orange-800 flex items-center justify-center shadow-inner">
+                              <span className="text-orange-100 font-black text-xl">3</span>
+                            </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Full standings button */}
-                      <button
-                        onClick={() => setSelectedTournament(tournament)}
-                        className="w-full text-center text-zinc-400 hover:text-white text-sm py-2 transition-colors"
-                      >
-                        Ver clasificación completa →
-                      </button>
+                      {/* Tournament Highlights / Motivational stats */}
+                      {leader && (
+                        <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-zinc-800">
+                          <div className="text-center">
+                            <div className="font-mono font-bold text-yellow-400 text-lg">
+                              {leader.championshipsWon || 0}
+                            </div>
+                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">
+                              Victorias 1°
+                            </div>
+                          </div>
+                          <div className="text-center border-x border-zinc-800">
+                            <div className="font-mono font-bold text-white text-lg">
+                              {gapToLeader > 0 ? `+${gapToLeader}` : '—'}
+                            </div>
+                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">
+                              Brecha al 2°
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-mono font-bold text-red-500 text-lg">
+                              {tournament.participants.length}
+                            </div>
+                            <div className="text-zinc-500 text-[10px] uppercase tracking-wider">
+                              Pilotos
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Full Standings Table - Always visible */}
+                    <div className="border-t border-zinc-800 bg-zinc-950/40">
+                      <div className="px-4 py-3 flex items-center justify-between bg-zinc-900/50">
+                        <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold">
+                          Clasificación
+                        </h4>
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-600">
+                          Todos los pilotos
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-zinc-900/30">
+                              <th className="px-2 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-zinc-500">POS</th>
+                              <th className="px-2 py-2 text-left text-[10px] font-mono uppercase tracking-wider text-zinc-500">PILOTO</th>
+                              <th className="px-2 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-zinc-500">PTS</th>
+                              <th className="px-2 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-zinc-500">1°</th>
+                              <th className="px-2 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-zinc-500">2°</th>
+                              <th className="px-2 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-zinc-500">3°</th>
+                              <th className="px-2 py-2 text-center text-[10px] font-mono uppercase tracking-wider text-zinc-500">CAR</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedParticipants.map((participant, index) => (
+                              <tr
+                                key={participant.id}
+                                className={`border-t border-zinc-800/50 ${
+                                  index === 0 ? 'bg-yellow-500/5' : ''
+                                }`}
+                              >
+                                <td className="px-2 py-2.5 text-center">
+                                  <span className={`font-mono font-bold text-sm ${
+                                    index === 0 ? 'text-yellow-400' :
+                                    index === 1 ? 'text-zinc-300' :
+                                    index === 2 ? 'text-orange-500' : 'text-zinc-500'
+                                  }`}>
+                                    {index + 1}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-2.5">
+                                  <div className="flex items-center gap-2">
+                                    <UserAvatar
+                                      imageUrl={participant.player?.imageUrl || ''}
+                                      name={participant.player?.name || 'Jugador'}
+                                      className="w-7 h-7"
+                                    />
+                                    <span className="text-white font-semibold text-sm truncate">
+                                      {participant.player?.name || 'Jugador'}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-2 py-2.5 text-center">
+                                  <span className={`font-mono font-bold text-base ${
+                                    index === 0 ? 'text-yellow-400' : 'text-white'
+                                  }`}>
+                                    {participant.totalPoints}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-2.5 text-center">
+                                  <span className="font-mono font-bold text-yellow-500 text-sm">
+                                    {participant.championshipsWon || 0}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-2.5 text-center">
+                                  <span className="font-mono text-zinc-400 text-sm">
+                                    {participant.championshipsSecond || 0}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-2.5 text-center">
+                                  <span className="font-mono text-orange-500 text-sm">
+                                    {participant.championshipsThird || 0}
+                                  </span>
+                                </td>
+                                <td className="px-2 py-2.5 text-center">
+                                  <span className="font-mono text-zinc-500 text-sm">
+                                    {participant.championshipsPlayed || 0}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 );
@@ -673,100 +855,6 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
         </>
         )}
       </div>
-
-      {/* Tournament Details Modal */}
-      {selectedTournament && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 rounded-lg max-w-lg w-full border border-zinc-700 max-h-[80vh] overflow-hidden flex flex-col">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-white">{selectedTournament.name}</h3>
-                <p className="text-zinc-400 text-sm">
-                  {selectedTournament.playedCircuitIds.length} circuitos •
-                  {selectedTournament.status === 'ACTIVE' ? ' En curso' : ' Completado'}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedTournament(null)}
-                className="text-zinc-400 hover:text-white transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Modal Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-zinc-800">
-                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">POS</th>
-                    <th className="px-2 py-2 text-left text-xs font-mono uppercase text-zinc-400">JUGADOR</th>
-                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">PTS</th>
-                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">1°</th>
-                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">2°</th>
-                    <th className="px-2 py-2 text-center text-xs font-mono uppercase text-zinc-400">3°</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...selectedTournament.participants]
-                    .sort((a, b) => b.totalPoints - a.totalPoints)
-                    .map((participant, index) => (
-                      <tr key={participant.id} className="border-t border-zinc-800">
-                        <td className="px-2 py-3 text-center">
-                          <span className={`font-mono font-bold ${
-                            index === 0 ? 'text-yellow-500' :
-                            index === 1 ? 'text-zinc-400' :
-                            index === 2 ? 'text-orange-600' : 'text-zinc-500'
-                          }`}>
-                            {index + 1}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3">
-                          <span className="text-white font-semibold">
-                            {participant.player?.name || 'Jugador'}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="font-mono font-bold text-yellow-400 text-lg">
-                            {participant.totalPoints}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="font-mono font-bold text-yellow-500">
-                            {participant.championshipsWon}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="font-mono font-bold text-zinc-400">
-                            {participant.championshipsSecond}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="font-mono font-bold text-orange-600">
-                            {participant.championshipsThird}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-zinc-800">
-              <button
-                onClick={() => setSelectedTournament(null)}
-                className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-3 rounded-lg font-medium transition-colors"
-              >
-                CERRAR
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* PTS Explanation Modal */}
       {showPtsExplanation && (
