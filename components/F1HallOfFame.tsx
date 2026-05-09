@@ -340,98 +340,88 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                 const getPlayerName = (playerId: string) =>
                   getParticipant(playerId)?.player?.name || 'Jugador';
 
-                // KPI 1: Player with most VR (best laps) across tournament
-                const vrCounts: Record<string, number> = {};
-                tournamentGames.forEach((game: any) => {
-                  const stats = game.state?.playerStats || {};
-                  Object.entries(stats).forEach(([pid, s]: [string, any]) => {
-                    vrCounts[pid] = (vrCounts[pid] || 0) + (s.bestLaps || 0);
-                  });
-                });
-                const vrLeader = Object.entries(vrCounts)
-                  .filter(([pid]) => getParticipant(pid))
-                  .sort((a, b) => b[1] - a[1])[0];
+                // KPI: VR & PR per player with circuits where they were achieved
+                const vrByPlayer: Record<string, { count: number; circuits: string[] }> = {};
+                const prByPlayer: Record<string, { count: number; circuits: string[] }> = {};
+                // Per-player per-circuit aggregates (for favorite/worst circuit)
+                const playerCircuitAgg: Record<string, Record<string, {
+                  name: string; points: number; vrCount: number; prCount: number;
+                }>> = {};
 
-                // KPI 1b: Player with most PR (best averages)
-                const prCounts: Record<string, number> = {};
                 tournamentGames.forEach((game: any) => {
-                  const stats = game.state?.playerStats || {};
-                  Object.entries(stats).forEach(([pid, s]: [string, any]) => {
-                    prCounts[pid] = (prCounts[pid] || 0) + (s.bestAverages || 0);
-                  });
-                });
-                const prLeader = Object.entries(prCounts)
-                  .filter(([pid]) => getParticipant(pid))
-                  .sort((a, b) => b[1] - a[1])[0];
-
-                // KPI 2: Largest time gap in a single circuit
-                let biggestGap: { circuitName: string; gap: number; leaderName: string; lastName: string; leaderTime: number; lastTime: number } | null = null;
-                tournamentGames.forEach((game: any) => {
-                  const circuits = game.state?.settings?.circuits || [];
+                  const sbt = game.state?.sessionBestTimes || {};
+                  const gameCircuits = game.state?.settings?.circuits || [];
                   const circuitResults = game.state?.circuitResults || [];
-                  circuits.forEach((circuit: any) => {
-                    const results = circuitResults.find((r: any) => r.circuitId === circuit.id);
-                    if (!results) return;
-                    // Aggregate avg per player across all turns of that circuit
-                    const playerAvgs: Record<string, { sum: number; count: number }> = {};
-                    results.turns.forEach((turn: any[]) => {
-                      turn.forEach((tr: any) => {
-                        if (tr.averageTime && tr.averageTime > 0) {
-                          if (!playerAvgs[tr.playerId]) playerAvgs[tr.playerId] = { sum: 0, count: 0 };
-                          playerAvgs[tr.playerId].sum += tr.averageTime;
-                          playerAvgs[tr.playerId].count += 1;
-                        }
-                      });
-                    });
-                    const avgs = Object.entries(playerAvgs)
-                      .filter(([, v]) => v.count > 0)
-                      .map(([pid, v]) => ({ playerId: pid, avg: v.sum / v.count }));
-                    if (avgs.length < 2) return;
-                    avgs.sort((a, b) => a.avg - b.avg);
-                    const best = avgs[0];
-                    const worst = avgs[avgs.length - 1];
-                    const gap = worst.avg - best.avg;
-                    if (!biggestGap || gap > biggestGap.gap) {
-                      biggestGap = {
-                        circuitName: circuit.name,
-                        gap,
-                        leaderName: getPlayerName(best.playerId),
-                        lastName: getPlayerName(worst.playerId),
-                        leaderTime: best.avg,
-                        lastTime: worst.avg
-                      };
+
+                  // Iterate per circuit using sessionBestTimes (per-circuit VR/PR holder)
+                  Object.entries(sbt).forEach(([cid, bests]: [string, any]) => {
+                    const circuit = gameCircuits.find((c: any) => c.id === cid);
+                    const circuitName = circuit?.name || cid;
+
+                    if (bests?.bestLapPlayerId) {
+                      const pid = bests.bestLapPlayerId;
+                      if (!vrByPlayer[pid]) vrByPlayer[pid] = { count: 0, circuits: [] };
+                      vrByPlayer[pid].count += 1;
+                      vrByPlayer[pid].circuits.push(circuitName);
+                      if (!playerCircuitAgg[pid]) playerCircuitAgg[pid] = {};
+                      if (!playerCircuitAgg[pid][cid]) {
+                        playerCircuitAgg[pid][cid] = { name: circuitName, points: 0, vrCount: 0, prCount: 0 };
+                      }
+                      playerCircuitAgg[pid][cid].vrCount += 1;
+                    }
+                    if (bests?.bestAveragePlayerId) {
+                      const pid = bests.bestAveragePlayerId;
+                      if (!prByPlayer[pid]) prByPlayer[pid] = { count: 0, circuits: [] };
+                      prByPlayer[pid].count += 1;
+                      prByPlayer[pid].circuits.push(circuitName);
+                      if (!playerCircuitAgg[pid]) playerCircuitAgg[pid] = {};
+                      if (!playerCircuitAgg[pid][cid]) {
+                        playerCircuitAgg[pid][cid] = { name: circuitName, points: 0, vrCount: 0, prCount: 0 };
+                      }
+                      playerCircuitAgg[pid][cid].prCount += 1;
                     }
                   });
-                });
 
-                // KPI 3: Best circuit per player (where they scored most points)
-                const playerCircuitScores: Record<string, Record<string, { name: string; score: number }>> = {};
-                tournamentGames.forEach((game: any) => {
-                  const circuits = game.state?.settings?.circuits || [];
-                  const circuitResults = game.state?.circuitResults || [];
-                  circuits.forEach((circuit: any) => {
+                  // Sum points per (player, circuit) from turn results
+                  gameCircuits.forEach((circuit: any) => {
                     const results = circuitResults.find((r: any) => r.circuitId === circuit.id);
                     if (!results) return;
                     results.turns.forEach((turn: any[]) => {
                       turn.forEach((tr: any) => {
-                        if (!playerCircuitScores[tr.playerId]) playerCircuitScores[tr.playerId] = {};
-                        if (!playerCircuitScores[tr.playerId][circuit.id]) {
-                          playerCircuitScores[tr.playerId][circuit.id] = { name: circuit.name, score: 0 };
+                        const pid = tr.playerId;
+                        if (!playerCircuitAgg[pid]) playerCircuitAgg[pid] = {};
+                        if (!playerCircuitAgg[pid][circuit.id]) {
+                          playerCircuitAgg[pid][circuit.id] = { name: circuit.name, points: 0, vrCount: 0, prCount: 0 };
                         }
-                        playerCircuitScores[tr.playerId][circuit.id].score += (tr.turnScore || 0);
+                        playerCircuitAgg[pid][circuit.id].points += (tr.turnScore || 0);
                       });
                     });
                   });
                 });
-                const bestCircuitPerPlayer = sortedParticipants
+
+                // VR / PR leaders (filter to active participants)
+                const vrLeader = Object.entries(vrByPlayer)
+                  .filter(([pid]) => getParticipant(pid))
+                  .sort((a, b) => b[1].count - a[1].count)[0];
+                const prLeader = Object.entries(prByPlayer)
+                  .filter(([pid]) => getParticipant(pid))
+                  .sort((a, b) => b[1].count - a[1].count)[0];
+
+                // Favorite & worst circuit per player (by points scored)
+                const circuitInsightsPerPlayer = sortedParticipants
                   .map(p => {
-                    const scores = playerCircuitScores[p.playerId] || {};
-                    const best = Object.values(scores).sort((a, b) => b.score - a.score)[0];
-                    return best && best.score > 0 ? { player: p, circuitName: best.name, points: best.score } : null;
+                    const circuits = Object.values(playerCircuitAgg[p.playerId] || {})
+                      .filter(c => c.points > 0 || c.vrCount > 0 || c.prCount > 0);
+                    if (circuits.length === 0) return null;
+                    const sorted = [...circuits].sort((a, b) => b.points - a.points);
+                    const favorite = sorted[0];
+                    // Worst: only meaningful if player has ≥2 circuits
+                    const worst = sorted.length >= 2 ? sorted[sorted.length - 1] : null;
+                    return { player: p, favorite, worst };
                   })
                   .filter((x): x is NonNullable<typeof x> => x !== null);
 
-                // KPI 4: Remaining circuits with their VR/PR holders
+                // Remaining circuits with their VR/PR holders
                 const playedSet = new Set(tournament.playedCircuitIds);
                 const remainingCircuits = (circuits || [])
                   .filter(c => !playedSet.has(c.id))
@@ -451,54 +441,6 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                       bestAvg: c.historicalBestAverage
                     };
                   });
-
-                // KPI 5: Fastest single lap recorded in tournament
-                let fastestLap: { circuitName: string; time: number; playerName: string } | null = null;
-                let bestAverageRecord: { circuitName: string; time: number; playerName: string } | null = null;
-                tournamentGames.forEach((game: any) => {
-                  const sbt = game.state?.sessionBestTimes || {};
-                  const circuits = game.state?.settings?.circuits || [];
-                  Object.entries(sbt).forEach(([cid, bests]: [string, any]) => {
-                    const circuit = circuits.find((c: any) => c.id === cid);
-                    if (bests?.bestLap && bests?.bestLapPlayerId) {
-                      if (!fastestLap || bests.bestLap < fastestLap.time) {
-                        fastestLap = {
-                          circuitName: circuit?.name || cid,
-                          time: bests.bestLap,
-                          playerName: getPlayerName(bests.bestLapPlayerId)
-                        };
-                      }
-                    }
-                    if (bests?.bestAverage && bests?.bestAveragePlayerId) {
-                      if (!bestAverageRecord || bests.bestAverage < bestAverageRecord.time) {
-                        bestAverageRecord = {
-                          circuitName: circuit?.name || cid,
-                          time: bests.bestAverage,
-                          playerName: getPlayerName(bests.bestAveragePlayerId)
-                        };
-                      }
-                    }
-                  });
-                });
-
-                // KPI 6: Closest championship (smallest gap between 1st and 2nd in a single game)
-                let closestChampionship: { gap: number; winnerName: string; secondName: string } | null = null;
-                tournamentGames.forEach((game: any) => {
-                  const stats = game.state?.playerStats || {};
-                  const sorted = Object.entries(stats)
-                    .map(([pid, s]: [string, any]) => ({ pid, score: s.totalScore || 0 }))
-                    .sort((a, b) => b.score - a.score);
-                  if (sorted.length >= 2 && sorted[0].score > 0) {
-                    const gap = sorted[0].score - sorted[1].score;
-                    if (!closestChampionship || gap < closestChampionship.gap) {
-                      closestChampionship = {
-                        gap,
-                        winnerName: getPlayerName(sorted[0].pid),
-                        secondName: getPlayerName(sorted[1].pid)
-                      };
-                    }
-                  }
-                });
 
                 return (
                   <div
@@ -762,153 +704,137 @@ const F1HallOfFame: React.FC<F1HallOfFameProps> = ({
                           </span>
                         </div>
 
-                        {/* Top KPI Cards Row */}
-                        <div className="grid grid-cols-2 gap-2">
-                          {/* Fastest Lap of Tournament */}
-                          {fastestLap && (
-                            <div className="rounded-lg border border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-zinc-900 p-3">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-yellow-500 font-bold mb-1">
-                                ⚡ VUELTA MÁS RÁPIDA
+                        {/* VR Leader with Circuits */}
+                        {vrLeader && vrLeader[1].count > 0 && (
+                          <div className="rounded-lg border border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-zinc-900 p-3">
+                            <div className="text-[10px] font-mono uppercase tracking-wider text-yellow-500 font-bold mb-2">
+                              REY DE LA VR
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="font-mono font-black text-yellow-400 text-3xl leading-none drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]">
+                                {vrLeader[1].count}
                               </div>
-                              <div className="font-mono font-black text-white text-base">
-                                {formatTime((fastestLap as any).time)}
-                              </div>
-                              <div className="text-zinc-300 text-xs font-semibold mt-0.5">
-                                {(fastestLap as any).playerName}
-                              </div>
-                              <div className="text-zinc-500 text-[10px] mt-0.5">
-                                {(fastestLap as any).circuitName}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-white text-base font-bold truncate">
+                                  {getPlayerName(vrLeader[0])}
+                                </div>
+                                <div className="text-zinc-400 text-[10px] uppercase tracking-wider">
+                                  Vuelta{vrLeader[1].count !== 1 ? 's' : ''} Rápida{vrLeader[1].count !== 1 ? 's' : ''}
+                                </div>
                               </div>
                             </div>
-                          )}
-
-                          {/* Best Average of Tournament */}
-                          {bestAverageRecord && (
-                            <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-zinc-900 p-3">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold mb-1">
-                                🎯 MEJOR PROMEDIO
-                              </div>
-                              <div className="font-mono font-black text-white text-base">
-                                {formatTime((bestAverageRecord as any).time)}
-                              </div>
-                              <div className="text-zinc-300 text-xs font-semibold mt-0.5">
-                                {(bestAverageRecord as any).playerName}
-                              </div>
-                              <div className="text-zinc-500 text-[10px] mt-0.5">
-                                {(bestAverageRecord as any).circuitName}
+                            <div className="mt-2 pt-2 border-t border-yellow-500/20">
+                              <div className="text-[10px] text-zinc-500 mb-1 font-mono uppercase tracking-wider">Circuitos:</div>
+                              <div className="flex flex-wrap gap-1">
+                                {vrLeader[1].circuits.map((c, i) => (
+                                  <span key={i} className="text-[10px] bg-yellow-500/15 text-yellow-300 px-2 py-0.5 rounded font-semibold">
+                                    {c}
+                                  </span>
+                                ))}
                               </div>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
 
-                        {/* VR / PR Leaders */}
-                        <div className="grid grid-cols-2 gap-2">
-                          {vrLeader && vrLeader[1] > 0 && (
-                            <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-bold mb-1">
-                                REY DE LA VR
+                        {/* PR Leader with Circuits */}
+                        {prLeader && prLeader[1].count > 0 && (
+                          <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-zinc-900 p-3">
+                            <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold mb-2">
+                              REY DEL PR
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="font-mono font-black text-cyan-400 text-3xl leading-none drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">
+                                {prLeader[1].count}
                               </div>
-                              <div className="text-white text-sm font-bold truncate">
-                                {getPlayerName(vrLeader[0])}
-                              </div>
-                              <div className="flex items-baseline gap-1 mt-0.5">
-                                <span className="font-mono font-black text-yellow-400 text-2xl leading-none">
-                                  {vrLeader[1]}
-                                </span>
-                                <span className="text-zinc-500 text-[10px] uppercase tracking-wider">
-                                  vueltas rápidas
-                                </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-white text-base font-bold truncate">
+                                  {getPlayerName(prLeader[0])}
+                                </div>
+                                <div className="text-zinc-400 text-[10px] uppercase tracking-wider">
+                                  Mejor{prLeader[1].count !== 1 ? 'es' : ''} Promedio{prLeader[1].count !== 1 ? 's' : ''}
+                                </div>
                               </div>
                             </div>
-                          )}
-
-                          {prLeader && prLeader[1] > 0 && (
-                            <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-3">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 font-bold mb-1">
-                                REY DEL PR
-                              </div>
-                              <div className="text-white text-sm font-bold truncate">
-                                {getPlayerName(prLeader[0])}
-                              </div>
-                              <div className="flex items-baseline gap-1 mt-0.5">
-                                <span className="font-mono font-black text-cyan-400 text-2xl leading-none">
-                                  {prLeader[1]}
-                                </span>
-                                <span className="text-zinc-500 text-[10px] uppercase tracking-wider">
-                                  mejores promedios
-                                </span>
+                            <div className="mt-2 pt-2 border-t border-cyan-500/20">
+                              <div className="text-[10px] text-zinc-500 mb-1 font-mono uppercase tracking-wider">Circuitos:</div>
+                              <div className="flex flex-wrap gap-1">
+                                {prLeader[1].circuits.map((c, i) => (
+                                  <span key={i} className="text-[10px] bg-cyan-500/15 text-cyan-300 px-2 py-0.5 rounded font-semibold">
+                                    {c}
+                                  </span>
+                                ))}
                               </div>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
 
-                        {/* Biggest Gap & Closest Championship */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {biggestGap && (
-                            <div className="rounded-lg border border-red-500/30 bg-gradient-to-br from-red-500/10 to-zinc-900 p-3">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-red-400 font-bold mb-1">
-                                MAYOR DIFERENCIA
-                              </div>
-                              <div className="font-mono font-black text-red-400 text-xl leading-none">
-                                +{((biggestGap as any).gap / 1000).toFixed(2)}s
-                              </div>
-                              <div className="text-zinc-300 text-xs mt-1">
-                                <span className="text-yellow-400 font-bold">{(biggestGap as any).leaderName}</span>
-                                <span className="text-zinc-600"> vs </span>
-                                <span className="text-zinc-400">{(biggestGap as any).lastName}</span>
-                              </div>
-                              <div className="text-zinc-500 text-[10px] mt-0.5">
-                                {(biggestGap as any).circuitName}
-                              </div>
-                            </div>
-                          )}
-
-                          {closestChampionship && (closestChampionship as any).gap >= 0 && (
-                            <div className="rounded-lg border border-green-500/30 bg-gradient-to-br from-green-500/10 to-zinc-900 p-3">
-                              <div className="text-[10px] font-mono uppercase tracking-wider text-green-400 font-bold mb-1">
-                                CAMPEONATO MÁS REÑIDO
-                              </div>
-                              <div className="font-mono font-black text-green-400 text-xl leading-none">
-                                {(closestChampionship as any).gap === 0 ? 'EMPATE' : `${(closestChampionship as any).gap} pts`}
-                              </div>
-                              <div className="text-zinc-300 text-xs mt-1">
-                                <span className="text-yellow-400 font-bold">{(closestChampionship as any).winnerName}</span>
-                                <span className="text-zinc-600"> sobre </span>
-                                <span className="text-zinc-400">{(closestChampionship as any).secondName}</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Best Circuit per Player */}
-                        {bestCircuitPerPlayer.length > 0 && (
+                        {/* Per Player: Best & Worst Circuit */}
+                        {circuitInsightsPerPlayer.length > 0 && (
                           <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
                             <div className="px-3 py-2 bg-zinc-900/60 border-b border-zinc-800">
                               <h5 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
-                                CIRCUITO FAVORITO POR PILOTO
+                                MEJOR Y PEOR CIRCUITO POR PILOTO
                               </h5>
+                              <p className="text-[10px] text-zinc-600 mt-0.5">
+                                Basado en puntos sumados (incl. VR/PR)
+                              </p>
                             </div>
                             <div className="divide-y divide-zinc-800/50">
-                              {bestCircuitPerPlayer.map((entry, idx) => (
-                                <div key={entry.player.id} className="flex items-center justify-between px-3 py-2">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <span className="font-mono font-bold text-zinc-500 text-xs w-4 flex-shrink-0">
-                                      {idx + 1}
-                                    </span>
+                              {circuitInsightsPerPlayer.map((entry) => (
+                                <div key={entry.player.id} className="px-3 py-2.5">
+                                  <div className="flex items-center gap-2 mb-2">
                                     <UserAvatar
                                       imageUrl={entry.player.player?.imageUrl || ''}
                                       name={entry.player.player?.name || 'Jugador'}
-                                      className="w-6 h-6 flex-shrink-0"
+                                      className="w-7 h-7 flex-shrink-0"
                                     />
-                                    <span className="text-white font-semibold text-xs truncate">
+                                    <span className="text-white font-bold text-sm truncate">
                                       {entry.player.player?.name}
                                     </span>
                                   </div>
-                                  <div className="text-right flex items-center gap-2 flex-shrink-0">
-                                    <span className="text-zinc-300 text-xs">{entry.circuitName}</span>
-                                    <span className="font-mono font-bold text-yellow-400 text-sm w-8 text-right">
-                                      {entry.points}
-                                    </span>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    {/* Best */}
+                                    <div className="rounded bg-green-500/10 border border-green-500/20 px-2 py-1.5">
+                                      <div className="text-[9px] font-mono uppercase text-green-400 font-bold tracking-wider mb-0.5">
+                                        ▲ MEJOR
+                                      </div>
+                                      <div className="text-white font-semibold text-xs truncate">
+                                        {entry.favorite.name}
+                                      </div>
+                                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                                        <span className="font-mono font-bold text-yellow-400">{entry.favorite.points} pts</span>
+                                        {entry.favorite.vrCount > 0 && (
+                                          <span className="font-mono text-yellow-500">{entry.favorite.vrCount} VR</span>
+                                        )}
+                                        {entry.favorite.prCount > 0 && (
+                                          <span className="font-mono text-cyan-400">{entry.favorite.prCount} PR</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {/* Worst */}
+                                    {entry.worst ? (
+                                      <div className="rounded bg-red-500/10 border border-red-500/20 px-2 py-1.5">
+                                        <div className="text-[9px] font-mono uppercase text-red-400 font-bold tracking-wider mb-0.5">
+                                          ▼ PEOR
+                                        </div>
+                                        <div className="text-white font-semibold text-xs truncate">
+                                          {entry.worst.name}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                                          <span className="font-mono font-bold text-zinc-400">{entry.worst.points} pts</span>
+                                          {entry.worst.vrCount > 0 && (
+                                            <span className="font-mono text-yellow-500/70">{entry.worst.vrCount} VR</span>
+                                          )}
+                                          {entry.worst.prCount > 0 && (
+                                            <span className="font-mono text-cyan-400/70">{entry.worst.prCount} PR</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="rounded bg-zinc-800/50 border border-zinc-700/50 px-2 py-1.5 flex items-center justify-center">
+                                        <span className="text-zinc-600 text-[10px] font-mono">Solo 1 circuito</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               ))}
